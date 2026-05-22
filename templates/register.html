@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ro" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Înregistrare - Clinica Medicală</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/theme.js' %}"></script>
+</head>
+<body>
+<div class="auth-page">
+    <div class="auth-card" style="max-width:480px;">
+        <div class="auth-logo">
+            <div class="auth-logo-icon">M</div>
+            <h1 class="auth-title">Cont nou</h1>
+            <p class="auth-subtitle">Creează-ți contul de pacient gratuit</p>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <form method="POST" action="" novalidate>
+            {% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.first_name.id_for_label }}">Prenume</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}<ul class="errorlist">{% for e in form.first_name.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.last_name.id_for_label }}">Nume</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}<ul class="errorlist">{% for e in form.last_name.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.username.id_for_label }}">Nume utilizator</label>
+                {{ form.username }}
+                {% if form.username.errors %}<ul class="errorlist">{% for e in form.username.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}<ul class="errorlist">{% for e in form.email.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.password1.id_for_label }}">Parolă</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}<ul class="errorlist">{% for e in form.password1.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="{{ form.password2.id_for_label }}">Confirmă parola</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}<ul class="errorlist">{% for e in form.password2.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px;">Creează cont</button>
+        </form>
+
+        <div class="auth-divider"><span>sau</span></div>
+        <div class="auth-footer">
+            Ai deja cont? <a href="{% url 'login' %}" style="font-weight:600;">Autentifică-te</a>
+        </div>
+        <div style="text-align:center;margin-top:16px;">
+            <button onclick="toggleTheme()" class="theme-toggle" style="margin:0 auto;" id="theme-toggle-btn" aria-label="Comută tema">🌙</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

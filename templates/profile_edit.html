@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profilul Meu{% endblock %}
+{% block page_title %}Profilul Meu{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:18px;">
+            <div style="width:56px;height:56px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                {{ user.username|first|upper }}
+            </div>
+            <div>
+                <div style="font-size:18px;font-weight:600;color:var(--text);">
+                    {{ user.get_full_name|default:user.username }}
+                </div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">
+                    Pacient · {{ user.email }}
+                </div>
+                <div style="font-size:12px;color:var(--text-faint);margin-top:3px;">
+                    Cont creat: {{ user.date_joined|date:"d M Y" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="" novalidate>
+        {% csrf_token %}
+
+        <div class="card" style="margin-bottom:14px;">
+            <div class="card-header">
+                <div class="card-title">Date cont</div>
+            </div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="form-group">
+                        <label class="form-label">Prenume</label>
+                        {{ user_form.first_name }}
+                        {% if user_form.first_name.errors %}<ul class="errorlist">{% for e in user_form.first_name.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nume</label>
+                        {{ user_form.last_name }}
+                        {% if user_form.last_name.errors %}<ul class="errorlist">{% for e in user_form.last_name.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    {{ user_form.email }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px;">
+            <div class="card-header">
+                <div class="card-title">Date medicale</div>
+                <div class="card-subtitle">Confidențiale — vizibile doar medicului tău</div>
+            </div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="form-group">
+                        <label class="form-label">Telefon</label>
+                        {{ profile_form.phone }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CNP</label>
+                        {{ profile_form.cnp }}
+                        {% if profile_form.cnp.errors %}<ul class="errorlist">{% for e in profile_form.cnp.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data nașterii</label>
+                        {{ profile_form.birth_date }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Grup sanguin</label>
+                        {{ profile_form.blood_type }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Alergii cunoscute</label>
+                    {{ profile_form.allergies }}
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <a href="{% url 'patient_dashboard' %}" class="btn btn-ghost">Anulează</a>
+            <button type="submit" class="btn btn-primary">Salvează modificările</button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

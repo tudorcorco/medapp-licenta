@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Panou Medic{% endblock %}
+{% block page_title %}Programările pacienților{% endblock %}
+{% block nav_doctor %}active{% endblock %}
+
+{% block content %}
+<div class="stat-grid" style="margin-bottom:24px;">
+    <div class="stat-card">
+        <div class="stat-value">{{ appointments.count }}</div>
+        <div class="stat-label">Total programări</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">🗓 Lista programărilor</div>
+        <div class="card-subtitle">Dr. {{ user.get_full_name|default:user.username }}</div>
+    </div>
+    <div class="card-body" style="padding:12px;">
+        {% for appt in appointments %}
+            <div class="appt-item">
+                <div class="appt-info">
+                    <div class="appt-name">{{ appt.patient.get_full_name|default:appt.patient.username }}</div>
+                    <div class="appt-meta">📆 {{ appt.date_time|date:"d M Y, H:i" }}</div>
+                    {% if appt.reason %}<div class="appt-reason">„{{ appt.reason }}"</div>{% endif %}
+                    <div style="margin-top:6px;">
+                        {% if appt.is_confirmed %}
+                            <span class="badge badge-success">✓ Confirmată</span>
+                        {% else %}
+                            <span class="badge badge-warning">⏳ În așteptare</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="appt-actions">
+                    {% if not appt.is_confirmed %}
+                        <form method="POST" action="{% url 'approve_appointment' appt.id %}" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm">✓ Aprobă</button>
+                        </form>
+                    {% endif %}
+                    <form method="POST" action="{% url 'delete_appointment' appt.id %}" style="margin:0;"
+                          onsubmit="return confirm('Ești sigur că vrei să ștergi această programare?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-sm">✕ Șterge</button>
+                    </form>
+                </div>
+            </div>
+        {% empty %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <div class="empty-state-text">Nu ai nicio programare în așteptare.</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

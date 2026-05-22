@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Panou Pacient{% endblock %}
+{% block page_title %}Bun venit, {{ user.get_full_name|default:user.username }}!{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="stat-value">{{ appointments.count }}</div>
+        <div class="stat-label">Programări totale</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-success);">{{ confirmed_count }}</div>
+        <div class="stat-label">Confirmate</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-warning);">{{ pending_count }}</div>
+        <div class="stat-label">În așteptare</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 240px;gap:16px;align-items:start;">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📅 Programare nouă</div>
+            <div class="card-subtitle">Completează detaliile consultației</div>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="" novalidate>
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <ul class="errorlist">{% for e in field.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-teal btn-full" style="margin-top:4px;">
+                    Confirmă programarea
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="card-title">📋 Programările mele</div>
+            <div style="display:flex;gap:4px;">
+                <button class="dash-tab active" id="tab-btn-viit" onclick="switchTab('viit')">Viitoare</button>
+                <button class="dash-tab" id="tab-btn-ist"  onclick="switchTab('ist')">Istoric</button>
+            </div>
+        </div>
+        <div class="card-body" style="padding:12px;">
+
+            <div id="tab-viit">
+                {% for appt in upcoming %}
+                    <div class="appt-item">
+                        <div style="width:42px;height:42px;background:var(--c-primary-lt);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+                            <div style="font-size:16px;font-weight:600;color:var(--c-primary);line-height:1;">{{ appt.date_time|date:"d" }}</div>
+                            <div style="font-size:9px;color:var(--c-primary);text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
+                        </div>
+                        <div class="appt-info">
+                            <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
+                            <div class="appt-meta">{{ appt.date_time|date:"H:i" }}{% if appt.reason %} · {{ appt.reason|truncatechars:28 }}{% endif %}</div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                            {% if appt.is_confirmed %}
+                                <span class="badge badge-success">✓ Confirmat</span>
+                            {% else %}
+                                <span class="badge badge-warning">⏳ Așteptare</span>
+                                <form method="POST" action="{% url 'cancel_appointment' appt.id %}" style="margin:0;"
+                                      onsubmit="return confirm('Anulezi această programare?');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            style="background:none;border:none;cursor:pointer;color:var(--c-danger);font-size:11px;padding:0;display:flex;align-items:center;gap:3px;"
+                                            title="Anulează programarea">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        Anulează
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-text">Nicio programare viitoare.</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div id="tab-ist" style="display:none;">
+                {% for appt in past %}
+                    <div class="appt-item" style="opacity:.75;">
+                        <div style="width:42px;height:42px;background:var(--surface-2);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+                            <div style="font-size:16px;font-weight:600;color:var(--text-muted);line-height:1;">{{ appt.date_time|date:"d" }}</div>
+                            <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
+                        </div>
+                        <div class="appt-info">
+                            <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
+                            <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
+                        </div>
+                        <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ Finalizat</span>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🗂</div>
+                        <div class="empty-state-text">Niciun istoric încă.</div>
+                    </div>
+                {% endfor %}
+                {% if last_visit %}
+                    <div style="margin-top:10px;padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-md);font-size:12px;color:var(--text-muted);">
+                        🕐 Ultima vizită: <strong>{{ last_visit.date_time|date:"d M Y" }}</strong>
+                        · Dr. {{ last_visit.doctor.get_full_name|default:last_visit.doctor.username }}
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="card-title">👤 Profilul meu</div>
+            <a href="{% url 'profile_edit' %}" style="font-size:11px;color:var(--c-primary);">Editează</a>
+        </div>
+        <div class="card-body">
+
+            <div style="width:44px;height:44px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+                {{ user.username|first|upper }}
+            </div>
+
+            <div style="margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                    <div style="font-size:11px;color:var(--text-muted);">Profil completat</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--c-primary);">{{ profile_pct }}%</div>
+                </div>
+                <div style="height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;">
+                    <div style="height:100%;width:{{ profile_pct }}%;background:{% if profile_pct == 100 %}var(--c-success){% elif profile_pct >= 60 %}var(--c-primary){% else %}var(--c-warning){% endif %};border-radius:3px;transition:width .5s ease;"></div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:9px;">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Grup sanguin</div>
+                <div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">
+                    {% if profile.blood_type %}{{ profile.blood_type }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}
+                </div>
+            </div>
+            <div style="margin-bottom:9px;">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Alergii</div>
+                <div style="font-size:12px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;word-break:break-word;">
+                    {% if profile.allergies %}{{ profile.allergies|truncatechars:40 }}{% else %}<span style="color:var(--text-faint)">Niciuna înregistrată</span>{% endif %}
+                </div>
+            </div>
+            <div style="margin-bottom:9px;">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Telefon</div>
+                <div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">
+                    {% if profile.phone %}{{ profile.phone }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}
+                </div>
+            </div>
+            <div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">CNP</div>
+                <div style="font-size:12px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">
+                    {% if profile.cnp %}{{ profile.cnp|slice:":6" }}·······{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<style>
+.dash-tab {
+    padding: 4px 12px; font-size: 12px; border-radius: var(--radius-md);
+    border: none; background: transparent; color: var(--text-muted);
+    cursor: pointer; font-family: inherit; transition: var(--transition);
+}
+.dash-tab.active { background: var(--c-primary-lt); color: var(--c-primary); font-weight: 500; }
+.dash-tab:hover:not(.active) { background: var(--surface-2); }
+</style>
+
+<script>
+function switchTab(t) {
+    document.getElementById('tab-viit').style.display = t === 'viit' ? 'block' : 'none';
+    document.getElementById('tab-ist').style.display  = t === 'ist'  ? 'block' : 'none';
+    document.getElementById('tab-btn-viit').className = 'dash-tab' + (t === 'viit' ? ' active' : '');
+    document.getElementById('tab-btn-ist').className  = 'dash-tab' + (t === 'ist'  ? ' active' : '');
+}
+</script>
+
+{% endblock %}

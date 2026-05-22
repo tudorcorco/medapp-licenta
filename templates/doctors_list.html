@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Echipa Medicală{% endblock %}
+{% block page_title %}Echipa Medicală{% endblock %}
+{% block nav_doctors %}active{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:20px;">
+    <div style="font-size:15px;color:var(--text-muted);">
+        Alege medicul potrivit și programează-te direct din dashboard.
+    </div>
+</div>
+
+{% with demo_photos="img/doctor1.webp,img/doctor2.jpg,img/doctor3.jpg,img/doctor4.webp" %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;">
+    {% for item in doctor_data %}
+        <div class="card">
+
+            <div style="aspect-ratio:1;overflow:hidden;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
+                {% if item.profile and item.profile.avatar %}
+                    <img src="{{ item.profile.avatar.url }}"
+                         alt="Dr. {{ item.user.get_full_name|default:item.user.username }}"
+                         style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                {% else %}
+                    {% if forloop.counter == 1 %}
+                        <img src="{% static 'img/doctor1.webp' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% elif forloop.counter == 2 %}
+                        <img src="{% static 'img/doctor2.jpg' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% elif forloop.counter == 3 %}
+                        <img src="{% static 'img/doctor3.jpg' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% else %}
+                        <img src="{% static 'img/doctor4.webp' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div style="padding:16px 20px 20px;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+                    <div>
+                        <div style="font-size:16px;font-weight:600;color:var(--text);">
+                            Dr. {{ item.user.get_full_name|default:item.user.username }}
+                        </div>
+                        {% if item.profile and item.profile.specialization %}
+                            <div style="font-size:13px;color:var(--c-primary);margin-top:3px;font-weight:500;">
+                                {{ item.profile.specialization }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% if item.profile and item.profile.is_available %}
+                        <span class="badge badge-success" style="flex-shrink:0;">● Disponibil</span>
+                    {% else %}
+                        <span class="badge" style="flex-shrink:0;background:var(--surface-2);color:var(--text-muted);">Indisponibil</span>
+                    {% endif %}
+                </div>
+
+                {% if item.profile and item.profile.bio %}
+                    <div style="font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:14px;">
+                        {{ item.profile.bio|truncatechars:110 }}
+                    </div>
+                {% else %}
+                    <div style="font-size:13px;color:var(--text-faint);font-style:italic;margin-bottom:14px;">
+                        Biografie necompletată.
+                    </div>
+                {% endif %}
+
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border);">
+                    <div>
+                        <div style="font-size:11px;color:var(--text-muted);">Tarif consultație</div>
+                        <div style="font-size:18px;font-weight:600;color:var(--text);">
+                            {% if item.profile and item.profile.consultation_fee %}
+                                {{ item.profile.consultation_fee }} RON
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                    </div>
+                    <a href="{% url 'patient_dashboard' %}" class="btn btn-primary btn-sm">
+                        Programează-te →
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="empty-state" style="grid-column:1/-1;">
+            <div class="empty-state-icon">👨‍⚕️</div>
+            <div class="empty-state-text">Niciun medic înregistrat momentan.</div>
+        </div>
+    {% endfor %}
+</div>
+{% endwith %}
+
+{% endblock %}
