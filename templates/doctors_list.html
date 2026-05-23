@@ -7,39 +7,48 @@
 
 {% block content %}
 
-<div style="margin-bottom:20px;">
-    <div style="font-size:15px;color:var(--text-muted);">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="font-size:15px;color:var(--text-muted);flex:1;">
         Alege medicul potrivit și programează-te direct din dashboard.
     </div>
+
+    <form method="GET" action="" style="display:flex;align-items:center;gap:8px;">
+        <select name="specialty" class="form-input" style="width:200px;"
+                onchange="this.form.submit()">
+            <option value="">Toate specialitățile</option>
+            {% for spec in specialties %}
+                <option value="{{ spec }}" {% if spec == specialty_filter %}selected{% endif %}>
+                    {{ spec }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if specialty_filter %}
+            <a href="{% url 'doctors_list' %}" class="btn btn-ghost btn-sm">✕ Reset</a>
+        {% endif %}
+    </form>
 </div>
 
-{% with demo_photos="img/doctor1.webp,img/doctor2.jpg,img/doctor3.jpg,img/doctor4.webp" %}
+{% if specialty_filter %}
+    <div style="margin-bottom:14px;font-size:13px;color:var(--text-muted);">
+        Filtrare după: <strong style="color:var(--c-primary);">{{ specialty_filter }}</strong>
+        · {{ doctor_data|length }} medic{% if doctor_data|length != 1 %}i{% endif %} găsit{% if doctor_data|length != 1 %}i{% endif %}
+    </div>
+{% endif %}
+
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;">
     {% for item in doctor_data %}
         <div class="card">
-
             <div style="aspect-ratio:1;overflow:hidden;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
-                {% if item.profile and item.profile.avatar %}
-                    <img src="{{ item.profile.avatar.url }}"
-                         alt="Dr. {{ item.user.get_full_name|default:item.user.username }}"
-                         style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                {% if forloop.counter == 1 %}
+                    <img src="{% static 'img/doctor1.webp' %}" alt="doctor" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                {% elif forloop.counter == 2 %}
+                    <img src="{% static 'img/doctor2.jpg' %}" alt="doctor" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                {% elif forloop.counter == 3 %}
+                    <img src="{% static 'img/doctor3.jpg' %}" alt="doctor" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
                 {% else %}
-                    {% if forloop.counter == 1 %}
-                        <img src="{% static 'img/doctor1.webp' %}" alt="doctor"
-                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-                    {% elif forloop.counter == 2 %}
-                        <img src="{% static 'img/doctor2.jpg' %}" alt="doctor"
-                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-                    {% elif forloop.counter == 3 %}
-                        <img src="{% static 'img/doctor3.jpg' %}" alt="doctor"
-                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-                    {% else %}
-                        <img src="{% static 'img/doctor4.webp' %}" alt="doctor"
-                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-                    {% endif %}
+                    <img src="{% static 'img/doctor4.webp' %}" alt="doctor" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
                 {% endif %}
             </div>
-
             <div style="padding:16px 20px 20px;">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
                     <div>
@@ -69,30 +78,31 @@
                     </div>
                 {% endif %}
 
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:0.5px solid var(--border);">
                     <div>
                         <div style="font-size:11px;color:var(--text-muted);">Tarif consultație</div>
                         <div style="font-size:18px;font-weight:600;color:var(--text);">
                             {% if item.profile and item.profile.consultation_fee %}
                                 {{ item.profile.consultation_fee }} RON
-                            {% else %}
-                                —
-                            {% endif %}
+                            {% else %}—{% endif %}
                         </div>
                     </div>
-                    <a href="{% url 'patient_dashboard' %}" class="btn btn-primary btn-sm">
-                        Programează-te →
-                    </a>
+                    {% if item.profile and item.profile.is_available %}
+                        <a href="{% url 'patient_dashboard' %}" class="btn btn-primary btn-sm">Programează-te →</a>
+                    {% else %}
+                        <span class="btn btn-ghost btn-sm" style="cursor:not-allowed;opacity:.5;">Indisponibil</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
     {% empty %}
         <div class="empty-state" style="grid-column:1/-1;">
             <div class="empty-state-icon">👨‍⚕️</div>
-            <div class="empty-state-text">Niciun medic înregistrat momentan.</div>
+            <div class="empty-state-text">
+                {% if specialty_filter %}Niciun medic cu specializarea „{{ specialty_filter }}".{% else %}Niciun medic înregistrat.{% endif %}
+            </div>
         </div>
     {% endfor %}
 </div>
-{% endwith %}
 
 {% endblock %}

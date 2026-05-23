@@ -1,6 +1,6 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from .models import CustomUser, Appointment, PatientProfile
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm
+from .models import CustomUser, Appointment, PatientProfile, Prescription
 
 FA = {'class': 'form-input'}
 
@@ -58,7 +58,11 @@ class AppointmentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['doctor'].queryset = CustomUser.objects.filter(is_doctor=True)
+        # Doar medicii disponibili apar în dropdown
+        self.fields['doctor'].queryset = CustomUser.objects.filter(
+            is_doctor=True,
+            doctor_profile__is_available=True
+        )
         self.fields['doctor'].widget.attrs.update(FA)
         self.fields['doctor'].label = 'Selectează medicul'
 
@@ -85,3 +89,29 @@ class PatientProfileForm(forms.ModelForm):
             'blood_type': forms.TextInput(attrs={**FA, 'placeholder': 'Ex: A+, O-, AB+'}),
             'allergies':  forms.Textarea(attrs={**FA, 'rows': 3, 'placeholder': 'Ex: penicilină, latex...'}),
         }
+
+
+class PrescriptionForm(forms.ModelForm):
+    class Meta:
+        model   = Prescription
+        fields  = ['diagnosis', 'medication', 'instructions']
+        widgets = {
+            'diagnosis':    forms.Textarea(attrs={**FA, 'rows': 2, 'placeholder': 'Diagnostic...'}),
+            'medication':   forms.Textarea(attrs={**FA, 'rows': 4, 'placeholder': 'Un medicament per linie\nEx: Amoxicilină 500mg - 3x/zi - 7 zile'}),
+            'instructions': forms.Textarea(attrs={**FA, 'rows': 2, 'placeholder': 'Instrucțiuni suplimentare...'}),
+        }
+        labels = {
+            'diagnosis':    'Diagnostic',
+            'medication':   'Medicație prescrisă',
+            'instructions': 'Instrucțiuni',
+        }
+
+
+class ClinicPasswordChangeForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['old_password'].widget.attrs.update({**FA, 'placeholder': 'Parola actuală'})
+        self.fields['new_password1'].widget.attrs.update({**FA, 'placeholder': 'Parola nouă'})
+        self.fields['new_password2'].widget.attrs.update({**FA, 'placeholder': 'Confirmă parola nouă'})
+        for field in self.fields.values():
+            field.help_text = None

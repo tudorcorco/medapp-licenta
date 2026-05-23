@@ -59,16 +59,43 @@ class Appointment(models.Model):
         return f'{self.patient.username} -> Dr. {self.doctor.username} ({self.date_time.strftime("%Y-%m-%d %H:%M")})'
 
 
+class Prescription(models.Model):
+    """Rețetă medicală — creată de medic după consultație."""
+    appointment  = models.OneToOneField(
+        Appointment, on_delete=models.CASCADE,
+        related_name='prescription'
+    )
+    doctor       = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE,
+        related_name='prescriptions_written'
+    )
+    patient      = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE,
+        related_name='prescriptions_received'
+    )
+    diagnosis    = models.TextField(blank=True, default='')
+    medication   = models.TextField(help_text='Un medicament per linie')
+    instructions = models.TextField(blank=True, default='')
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Rețetă: {self.patient.username} de la Dr. {self.doctor.username} ({self.created_at.strftime("%Y-%m-%d")})'
+
+
 class AuditLog(models.Model):
     class Action(models.TextChoices):
-        LOGIN_SUCCESS   = 'LOGIN_SUCCESS',   'Autentificare reușită'
-        LOGIN_FAILED    = 'LOGIN_FAILED',    'Autentificare eșuată'
-        LOGOUT          = 'LOGOUT',          'Deconectare'
-        REGISTER        = 'REGISTER',        'Înregistrare cont nou'
-        APPT_CREATED    = 'APPT_CREATED',    'Programare creată'
-        APPT_APPROVED   = 'APPT_APPROVED',   'Programare aprobată'
-        APPT_DELETED    = 'APPT_DELETED',    'Programare ștearsă'
-        PROFILE_UPDATED = 'PROFILE_UPDATED', 'Profil actualizat'
+        LOGIN_SUCCESS        = 'LOGIN_SUCCESS',        'Autentificare reușită'
+        LOGIN_FAILED         = 'LOGIN_FAILED',         'Autentificare eșuată'
+        LOGOUT               = 'LOGOUT',               'Deconectare'
+        REGISTER             = 'REGISTER',             'Înregistrare cont nou'
+        APPT_CREATED         = 'APPT_CREATED',         'Programare creată'
+        APPT_APPROVED        = 'APPT_APPROVED',        'Programare aprobată'
+        APPT_DELETED         = 'APPT_DELETED',         'Programare ștearsă'
+        PROFILE_UPDATED      = 'PROFILE_UPDATED',      'Profil actualizat'
+        PRESCRIPTION_CREATED = 'PRESCRIPTION_CREATED', 'Rețetă creată'
+        PASSWORD_CHANGED     = 'PASSWORD_CHANGED',     'Parolă schimbată'
+        PATIENT_RECORD_VIEWED= 'PATIENT_RECORD_VIEWED','Fișă pacient vizualizată'
+        AVAILABILITY_CHANGED = 'AVAILABILITY_CHANGED', 'Disponibilitate schimbată'
 
     user       = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
     action     = models.CharField(max_length=50, choices=Action.choices)

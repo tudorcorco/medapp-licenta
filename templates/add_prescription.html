@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Adaugă Rețetă{% endblock %}
+{% block page_title %}Adaugă Rețetă{% endblock %}
+{% block nav_doctor %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+
+    <div class="card" style="margin-bottom:14px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:14px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;">
+                {{ appointment.patient.username|first|upper }}
+            </div>
+            <div>
+                <div style="font-size:15px;font-weight:600;color:var(--text);">
+                    {{ appointment.patient.get_full_name|default:appointment.patient.username }}
+                </div>
+                <div style="font-size:13px;color:var(--text-muted);">
+                    Consultație: {{ appointment.date_time|date:"d M Y, H:i" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">💊 Rețetă medicală</div>
+            <div class="card-subtitle">Completează diagnosticul și medicația prescrisă</div>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="" novalidate>
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <ul class="errorlist">{% for e in field.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <a href="{% url 'doctor_dashboard' %}" class="btn btn-ghost">Anulează</a>
+                    <button type="submit" class="btn btn-primary">Salvează rețeta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

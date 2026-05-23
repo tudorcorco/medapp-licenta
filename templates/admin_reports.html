@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rapoarte Admin{% endblock %}
+{% block page_title %}Rapoarte & Statistici{% endblock %}
+
+{% block content %}
+
+<div class="stat-grid" style="margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_patients }}</div>
+        <div class="stat-label">Total pacienți</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_doctors }}</div>
+        <div class="stat-label">Total medici</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-teal);">{{ available_doctors }}</div>
+        <div class="stat-label">Medici disponibili</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_appointments }}</div>
+        <div class="stat-label">Total programări</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-success);">{{ confirmed_appts }}</div>
+        <div class="stat-label">Confirmate</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-primary);">{{ new_patients_month }}</div>
+        <div class="stat-label">Pacienți noi luna asta</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📊 Programări per lună</div>
+            <div class="card-subtitle">Ultimele 6 luni</div>
+        </div>
+        <div class="card-body">
+            <canvas id="monthlyChart" style="max-height:260px;"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🏆 Top medici</div>
+            <div class="card-subtitle">După număr de programări</div>
+        </div>
+        <div class="card-body" style="padding:12px;">
+            {% for doc in top_doctors %}
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);">
+                    <div style="width:28px;height:28px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:600;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        {{ forloop.counter }}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px;font-weight:500;color:var(--text);">
+                            Dr. {{ doc.get_full_name|default:doc.username }}
+                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);">
+                            {% if doc.doctor_profile %}{{ doc.doctor_profile.specialization }}{% endif %}
+                        </div>
+                    </div>
+                    <span class="badge badge-primary">{{ doc.appt_count }}</span>
+                </div>
+            {% empty %}
+                <div class="empty-state"><div class="empty-state-text">Niciun medic.</div></div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">🔍 Ultimele acțiuni (Audit Log)</div>
+        <div class="card-subtitle">Jurnal de securitate — ultimele 10 intrări</div>
+    </div>
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+                <tr style="background:var(--surface-2);">
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">Data</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">Utilizator</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">Acțiune</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in audit_logs %}
+                    <tr style="border-bottom:0.5px solid var(--border);">
+                        <td style="padding:10px 14px;color:var(--text-muted);">{{ log.timestamp|date:"d M Y, H:i" }}</td>
+                        <td style="padding:10px 14px;color:var(--text);">{{ log.user.username|default:"—" }}</td>
+                        <td style="padding:10px 14px;">
+                            <span class="badge {% if 'LOGIN' in log.action %}badge-primary{% elif 'DELETED' in log.action %}badge-danger{% elif 'APPROVED' in log.action or 'CREATED' in log.action %}badge-success{% else %}badge-warning{% endif %}">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td style="padding:10px 14px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;">{{ log.ip_address|default:"—" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const labels = {{ monthly_labels|safe }};
+const counts = {{ monthly_counts|safe }};
+const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+const textCol = isDark ? '#8A9BBB' : '#6B7A99';
+
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Programări',
+            data: counts,
+            backgroundColor: isDark ? 'rgba(91,143,212,0.7)' : 'rgba(27,95,173,0.7)',
+            borderColor:     isDark ? '#5B8FD4' : '#1B5FAD',
+            borderWidth: 1,
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { color: textCol, stepSize: 1 },
+                grid: { color: gridCol },
+            },
+            x: {
+                ticks: { color: textCol },
+                grid: { display: false },
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

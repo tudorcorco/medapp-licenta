@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fișa pacientului{% endblock %}
+{% block page_title %}Fișa pacientului{% endblock %}
+{% block nav_doctor %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:780px;margin:0 auto;">
+
+    <a href="{% url 'doctor_dashboard' %}" class="btn btn-ghost btn-sm" style="margin-bottom:16px;display:inline-flex;">
+        ← Înapoi la programări
+    </a>
+
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:18px;">
+            <div style="width:56px;height:56px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                {{ patient.username|first|upper }}
+            </div>
+            <div>
+                <div style="font-size:19px;font-weight:600;color:var(--text);">
+                    {{ patient.get_full_name|default:patient.username }}
+                </div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">
+                    Pacient · {{ patient.email }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Date medicale</div>
+            </div>
+            <div class="card-body">
+                {% if patient_profile %}
+                    <div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--text-muted);">Grup sanguin</div><div style="font-size:15px;font-weight:500;color:var(--text);margin-top:2px;">{{ patient_profile.blood_type|default:"—" }}</div></div>
+                    <div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--text-muted);">Data nașterii</div><div style="font-size:14px;color:var(--text);margin-top:2px;">{{ patient_profile.birth_date|default:"—" }}</div></div>
+                    <div style="margin-bottom:10px;"><div style="font-size:11px;color:var(--text-muted);">Telefon</div><div style="font-size:14px;color:var(--text);margin-top:2px;">{{ patient_profile.phone|default:"—" }}</div></div>
+                    <div>
+                        <div style="font-size:11px;color:var(--text-muted);">Alergii cunoscute</div>
+                        {% if patient_profile.allergies %}
+                            <div style="margin-top:4px;padding:8px 10px;background:var(--c-danger-lt);border-radius:var(--radius-md);font-size:13px;color:var(--c-danger);">
+                                ⚠ {{ patient_profile.allergies }}
+                            </div>
+                        {% else %}
+                            <div style="font-size:14px;color:var(--text-faint);margin-top:2px;">Niciuna înregistrată</div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div style="color:var(--text-muted);font-size:13px;">Profil medical necompletat.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Statistici</div>
+            </div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="stat-card" style="margin:0;">
+                        <div class="stat-value">{{ appointments.count }}</div>
+                        <div class="stat-label">Vizite la tine</div>
+                    </div>
+                    <div class="stat-card" style="margin:0;">
+                        <div class="stat-value" style="color:var(--c-success);">{{ prescriptions.count }}</div>
+                        <div class="stat-label">Rețete emise</div>
+                    </div>
+                </div>
+                {% if appointments.first %}
+                    <div style="margin-top:12px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius-md);font-size:12px;color:var(--text-muted);">
+                        🕐 Ultima vizită: <strong>{{ appointments.first.date_time|date:"d M Y" }}</strong>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+            <div class="card-title">Istoricul consultațiilor</div>
+        </div>
+        <div class="card-body" style="padding:12px;">
+            {% for appt in appointments %}
+                <div class="appt-item">
+                    <div style="width:42px;height:42px;background:var(--surface-2);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+                        <div style="font-size:15px;font-weight:600;color:var(--text-muted);line-height:1;">{{ appt.date_time|date:"d" }}</div>
+                        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
+                    </div>
+                    <div class="appt-info">
+                        <div class="appt-name">{{ appt.date_time|date:"d M Y, H:i" }}</div>
+                        {% if appt.reason %}<div class="appt-reason">„{{ appt.reason }}"</div>{% endif %}
+                    </div>
+                    <div>
+                        {% if appt.is_confirmed %}<span class="badge badge-success">✓ Confirmat</span>
+                        {% else %}<span class="badge badge-warning">⏳ Așteptare</span>{% endif %}
+                        {% if appt.prescription %}<span class="badge badge-primary" style="margin-left:4px;">💊 Rețetă</span>{% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="empty-state"><div class="empty-state-text">Nicio consultație înregistrată.</div></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if prescriptions %}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Rețete emise</div>
+        </div>
+        <div class="card-body">
+            {% for rx in prescriptions %}
+                <div style="padding:12px;background:var(--surface-2);border-radius:var(--radius-md);margin-bottom:10px;">
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">{{ rx.created_at|date:"d M Y" }}</div>
+                    {% if rx.diagnosis %}<div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;">Diagnostic: {{ rx.diagnosis }}</div>{% endif %}
+                    <div style="font-size:13px;color:var(--text);white-space:pre-line;">{{ rx.medication }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
