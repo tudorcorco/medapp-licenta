@@ -1,0 +1,1 @@
+web: gunicorn clinic_core.wsgi

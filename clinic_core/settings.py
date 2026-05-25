@@ -1,10 +1,12 @@
 from pathlib import Path
+import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-o2a=_m!hea)&$bdj#-42@4zu8=prq6(iy*ic=8@i%k!s6_6w++'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-o2a=_m!hea)&$bdj#-42@4zu8=prq6(iy*ic=8@i%k!s6_6w++')
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
@@ -20,6 +22,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -47,16 +50,22 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'clinic_core.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE':   'django.db.backends.postgresql',
-        'NAME':     'medapp_db',
-        'USER':     'medapp_user',
-        'PASSWORD': 'parola_secreta',
-        'HOST':     'localhost',
-        'PORT':     '5432',
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE':   'django.db.backends.postgresql',
+            'NAME':     'medapp_db',
+            'USER':     'medapp_user',
+            'PASSWORD': 'parola_secreta',
+            'HOST':     'localhost',
+            'PORT':     '5432',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -70,23 +79,24 @@ TIME_ZONE     = 'Europe/Bucharest'
 USE_I18N      = True
 USE_TZ        = True
 
-STATIC_URL      = 'static/'
+STATIC_URL       = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT     = BASE_DIR / 'staticfiles'
+STATIC_ROOT      = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-AUTH_USER_MODEL    = 'accounts.CustomUser'
+AUTH_USER_MODEL     = 'accounts.CustomUser'
 LOGOUT_REDIRECT_URL = 'login'
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD  = 'django.db.models.BigAutoField'
 
 EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST          = 'smtp.mail.yahoo.com'
 EMAIL_PORT          = 587
 EMAIL_USE_TLS       = True
-EMAIL_HOST_USER     = 'bmwbmw192@yahoo.com'
-EMAIL_HOST_PASSWORD = 'xkjwxiqwkowscuho'
+EMAIL_HOST_USER     = os.environ.get('EMAIL_HOST_USER', 'bmwbmw192@yahoo.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'PUNE_AICI_APP_PASSWORD_YAHOO')
 DEFAULT_FROM_EMAIL  = 'MedApp Clinică <bmwbmw192@yahoo.com>'
 
 handler403 = 'django.views.defaults.permission_denied'
