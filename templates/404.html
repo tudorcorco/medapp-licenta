@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ro" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagină negăsită — MedApp</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/theme.js' %}"></script>
+</head>
+<body>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;">
+    <div style="text-align:center;max-width:420px;">
+        <div style="font-size:80px;line-height:1;margin-bottom:16px;">🏥</div>
+        <div style="font-size:72px;font-weight:700;color:var(--c-primary);line-height:1;margin-bottom:8px;">404</div>
+        <div style="font-size:22px;font-weight:600;color:var(--text);margin-bottom:12px;">Pagină negăsită</div>
+        <div style="font-size:15px;color:var(--text-muted);line-height:1.7;margin-bottom:32px;">
+            Pagina pe care o cauți nu există sau a fost mutată. Verifică adresa și încearcă din nou.
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <a href="javascript:history.back()" class="btn btn-ghost">← Înapoi</a>
+            <a href="/" class="btn btn-primary">Acasă</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

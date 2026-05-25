@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Evaluează consultația{% endblock %}
+{% block page_title %}Evaluează consultația{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:0 auto;">
+
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:14px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                {% if appointment.doctor.doctor_profile.avatar %}
+                    <img src="{{ appointment.doctor.doctor_profile.avatar.url }}"
+                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                {% else %}
+                    {{ appointment.doctor.username|first|upper }}
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-size:16px;font-weight:600;color:var(--text);">
+                    Dr. {{ appointment.doctor.get_full_name|default:appointment.doctor.username }}
+                </div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">
+                    Consultație: {{ appointment.date_time|date:"d M Y, H:i" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">⭐ Evaluează consultația</div>
+            <div class="card-subtitle">Feedback-ul tău ajută alți pacienți să aleagă medicul potrivit</div>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="" novalidate>
+                {% csrf_token %}
+
+                <div style="text-align:center;margin-bottom:28px;">
+                    <div style="font-size:14px;color:var(--text-muted);margin-bottom:14px;">
+                        Cât de mulțumit ai fost de consultație?
+                    </div>
+
+                    <div class="star-rating" id="starRating">
+                        {% for i in "12345" %}
+                        <button type="button" class="star-btn" data-value="{{ i }}"
+                                onclick="setRating({{ i }})"
+                                onmouseover="hoverRating({{ i }})"
+                                onmouseout="resetHover()">
+                            ★
+                        </button>
+                        {% endfor %}
+                    </div>
+
+                    <div id="ratingLabel" style="font-size:14px;color:var(--text-muted);margin-top:10px;min-height:20px;"></div>
+                    <input type="hidden" name="score" id="scoreInput" value="">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Comentariu (opțional)</label>
+                    <textarea name="comment" class="form-input" rows="3"
+                              placeholder="Descrie experiența ta cu acest medic..."></textarea>
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <a href="{% url 'patient_dashboard' %}" class="btn btn-ghost">Sari peste</a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn" disabled
+                            style="opacity:.5;cursor:not-allowed;">
+                        Trimite evaluarea
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<style>
+.star-rating { display:flex; gap:8px; justify-content:center; }
+.star-btn {
+    font-size:40px; background:none; border:none; cursor:pointer;
+    color:var(--text-faint); transition:color .15s, transform .15s;
+    line-height:1; padding:4px;
+}
+.star-btn.active, .star-btn.hover { color:#F5A623; transform:scale(1.15); }
+</style>
+
+<script>
+let currentRating = 0;
+const labels = ['', 'Foarte nemulțumit', 'Nemulțumit', 'Satisfăcut', 'Mulțumit', 'Excelent!'];
+
+function setRating(val) {
+    currentRating = val;
+    document.getElementById('scoreInput').value = val;
+    document.getElementById('ratingLabel').textContent = labels[val];
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').style.opacity = '1';
+    document.getElementById('submitBtn').style.cursor = 'pointer';
+    updateStars(val, 'active');
+}
+
+function hoverRating(val) {
+    updateStars(val, 'hover');
+    document.getElementById('ratingLabel').textContent = labels[val];
+}
+
+function resetHover() {
+    updateStars(currentRating, 'active');
+    document.getElementById('ratingLabel').textContent = currentRating ? labels[currentRating] : '';
+}
+
+function updateStars(val, cls) {
+    document.querySelectorAll('.star-btn').forEach((btn, i) => {
+        btn.className = 'star-btn' + (i < val ? ' ' + cls : '');
+    });
+}
+</script>
+
+{% endblock %}

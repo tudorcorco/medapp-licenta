@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Statistici Admin{% endblock %}
+{% block page_title %}Statistici & Grafice{% endblock %}
+{% block nav_stats %}active{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:20px;">
+    <a href="{% url 'admin_reports' %}" class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+        Înapoi la dashboard
+    </a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+    <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+                <div class="card-title">💰 Venituri lunare</div>
+                <div class="card-subtitle">Evoluție în timp (RON)</div>
+            </div>
+            <div style="display:flex;gap:0;background:var(--surface-2);border-radius:var(--radius-md);overflow:hidden;border:0.5px solid var(--border);">
+                <button id="rev-6m" onclick="switchRevenue('6m')"
+                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:var(--c-primary);color:#fff;font-family:inherit;">6 luni</button>
+                <button id="rev-1y" onclick="switchRevenue('1y')"
+                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text-muted);font-family:inherit;">1 an</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="position:relative;height:220px;">
+                <canvas id="revenueChart" role="img" aria-label="Grafic venituri lunare"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+                <div class="card-title">👥 Pacienți noi</div>
+                <div class="card-subtitle">Înregistrări lunare</div>
+            </div>
+            <div style="display:flex;gap:0;background:var(--surface-2);border-radius:var(--radius-md);overflow:hidden;border:0.5px solid var(--border);">
+                <button id="pat-6m" onclick="switchPatients('6m')"
+                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:var(--c-primary);color:#fff;font-family:inherit;">6 luni</button>
+                <button id="pat-1y" onclick="switchPatients('1y')"
+                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text-muted);font-family:inherit;">1 an</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div style="position:relative;height:220px;">
+                <canvas id="patientsChart" role="img" aria-label="Grafic pacienti noi"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px;">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📊 Programări pe luni</div>
+            <div class="card-subtitle">Ultimele 6 luni</div>
+        </div>
+        <div class="card-body">
+            <div style="position:relative;height:200px;">
+                <canvas id="monthlyChart" role="img" aria-label="Grafic programari lunare"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🔵 Status programări</div>
+            <div class="card-subtitle">Distribuție curentă</div>
+        </div>
+        <div class="card-body">
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);">
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#1D9E75;display:inline-block;"></span>Finalizate</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>Confirmate</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#BA7517;display:inline-block;"></span>Așteptare</span>
+            </div>
+            <div style="position:relative;height:200px;">
+                <canvas id="statusChart" role="img" aria-label="Grafic donut status programari"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">🏆 Top medici după venituri</div>
+        <div class="card-subtitle">Consultații finalizate × tarif</div>
+    </div>
+    <div class="card-body" style="padding:10px 14px;">
+        {% for doc in top_doctors %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ forloop.counter }}</div>
+            <div style="flex:1;">
+                <div style="font-size:14px;font-weight:500;color:var(--text);">Dr. {{ doc.user.get_full_name|default:doc.user.username }}</div>
+                <div style="font-size:12px;color:var(--text-muted);">{{ doc.specialization }} · {{ doc.appt_count }} programări</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:16px;font-weight:600;color:var(--c-primary);">{{ doc.revenue|floatformat:0 }} RON</div>
+            </div>
+        </div>
+        {% empty %}
+            <div class="empty-state"><div class="empty-state-text">Niciun medic.</div></div>
+        {% endfor %}
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gc  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+const tc  = isDark ? '#8A9BBB' : '#6B7A99';
+const monthly_labels = {{ monthly_labels|safe }};
+const monthly_counts = {{ monthly_counts|safe }};
+const revenue_labels = {{ revenue_labels|safe }};
+const revenue_data   = {{ revenue_data|safe }};
+const patients_labels= {{ patients_labels|safe }};
+const patients_data  = {{ patients_data|safe }};
+const revenue_labels_1y = {{ revenue_labels_1y|safe }};
+const revenue_data_1y   = {{ revenue_data_1y|safe }};
+const patients_labels_1y= {{ patients_labels_1y|safe }};
+const patients_data_1y  = {{ patients_data_1y|safe }};
+
+const defOpts = (yLabel) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+               tooltip: { callbacks: { label: ctx => yLabel ? `${ctx.parsed.y} ${yLabel}` : ctx.parsed.y }}},
+    scales: {
+        x: { ticks: { color: tc, autoSkip: false }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { color: tc }, grid: { color: gc } }
+    }
+});
+
+const revenueChart = new Chart(document.getElementById('revenueChart'), {
+    type: 'line',
+    data: {
+        labels: revenue_labels,
+        datasets: [{
+            label: 'Venituri',
+            data: revenue_data,
+            borderColor: '#185FA5',
+            backgroundColor: isDark ? 'rgba(91,143,212,0.15)' : 'rgba(24,95,165,0.1)',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#185FA5',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+        }]
+    },
+    options: defOpts('RON')
+});
+
+const patientsChart = new Chart(document.getElementById('patientsChart'), {
+    type: 'bar',
+    data: {
+        labels: patients_labels,
+        datasets: [{
+            label: 'Pacienți noi',
+            data: patients_data,
+            backgroundColor: isDark ? 'rgba(43,189,166,0.75)' : 'rgba(14,158,138,0.75)',
+            borderColor: isDark ? '#2BBDA6' : '#0E9E8A',
+            borderWidth: 1,
+            borderRadius: 6,
+        }]
+    },
+    options: defOpts('')
+});
+
+new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+        labels: monthly_labels,
+        datasets: [{
+            label: 'Programări',
+            data: monthly_counts,
+            backgroundColor: isDark ? 'rgba(91,143,212,0.75)' : 'rgba(24,95,165,0.75)',
+            borderColor: isDark ? '#5B8FD4' : '#185FA5',
+            borderWidth: 1,
+            borderRadius: 6,
+        }]
+    },
+    options: defOpts('')
+});
+
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Finalizate', 'Confirmate', 'Așteptare'],
+        datasets: [{
+            data: {{ status_counts|safe }},
+            backgroundColor: ['#1D9E75', '#185FA5', '#BA7517'],
+            borderWidth: 0, hoverOffset: 6,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, cutout: '68%',
+        plugins: { legend: { display: false } }
+    }
+});
+
+function switchRevenue(period) {
+    const labels = period === '6m' ? revenue_labels : revenue_labels_1y;
+    const data   = period === '6m' ? revenue_data   : revenue_data_1y;
+    revenueChart.data.labels = labels;
+    revenueChart.data.datasets[0].data = data;
+    revenueChart.update();
+    document.getElementById('rev-6m').style.background = period==='6m' ? 'var(--c-primary)' : 'transparent';
+    document.getElementById('rev-6m').style.color      = period==='6m' ? '#fff' : 'var(--text-muted)';
+    document.getElementById('rev-1y').style.background = period==='1y' ? 'var(--c-primary)' : 'transparent';
+    document.getElementById('rev-1y').style.color      = period==='1y' ? '#fff' : 'var(--text-muted)';
+}
+
+function switchPatients(period) {
+    const labels = period === '6m' ? patients_labels : patients_labels_1y;
+    const data   = period === '6m' ? patients_data   : patients_data_1y;
+    patientsChart.data.labels = labels;
+    patientsChart.data.datasets[0].data = data;
+    patientsChart.update();
+    document.getElementById('pat-6m').style.background = period==='6m' ? 'var(--c-primary)' : 'transparent';
+    document.getElementById('pat-6m').style.color      = period==='6m' ? '#fff' : 'var(--text-muted)';
+    document.getElementById('pat-1y').style.background = period==='1y' ? 'var(--c-primary)' : 'transparent';
+    document.getElementById('pat-1y').style.color      = period==='1y' ? '#fff' : 'var(--text-muted)';
+}
+</script>
+
+{% endblock %}

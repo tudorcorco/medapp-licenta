@@ -3,10 +3,36 @@
 
 {% block title %}Rapoarte Admin{% endblock %}
 {% block page_title %}Rapoarte & Statistici{% endblock %}
+{% block nav_reports %}active{% endblock %}
 
 {% block content %}
 
-<div class="stat-grid" style="margin-bottom:20px;">
+<div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+    <a href="{% url 'admin_profile_edit' %}" class="btn btn-ghost btn-sm">
+        ✏️ Editează profilul meu
+    </a>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-primary);">{{ revenue_month }} <span style="font-size:14px">RON</span></div>
+        <div class="stat-label">Venituri luna asta</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_appointments }}</div>
+        <div class="stat-label">Total programări</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-success);">{{ completed_appts }}</div>
+        <div class="stat-label">Finalizate</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-warning);">{{ new_patients_month }}</div>
+        <div class="stat-label">Pacienți noi luna asta</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
     <div class="stat-card">
         <div class="stat-value">{{ total_patients }}</div>
         <div class="stat-label">Total pacienți</div>
@@ -19,55 +45,86 @@
         <div class="stat-value" style="color:var(--c-teal);">{{ available_doctors }}</div>
         <div class="stat-label">Medici disponibili</div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ total_appointments }}</div>
-        <div class="stat-label">Total programări</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-success);">{{ confirmed_appts }}</div>
-        <div class="stat-label">Confirmate</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-primary);">{{ new_patients_month }}</div>
-        <div class="stat-label">Pacienți noi luna asta</div>
-    </div>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;">
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:16px;">
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">📊 Programări per lună</div>
+            <div class="card-title">📊 Programări pe luni</div>
             <div class="card-subtitle">Ultimele 6 luni</div>
         </div>
         <div class="card-body">
-            <canvas id="monthlyChart" style="max-height:260px;"></canvas>
+            <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;color:var(--text-muted);">
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>Programări</span>
+            </div>
+            <div style="position:relative;height:200px;">
+                <canvas id="monthlyChart" role="img" aria-label="Grafic programari lunare">Programări pe ultimele 6 luni.</canvas>
+            </div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🏆 Top medici</div>
-            <div class="card-subtitle">După număr de programări</div>
+            <div class="card-title">🔵 Status programări</div>
+            <div class="card-subtitle">Distribuție curentă</div>
         </div>
-        <div class="card-body" style="padding:12px;">
+        <div class="card-body">
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);">
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#1D9E75;display:inline-block;"></span>Finalizate</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>Confirmate</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#BA7517;display:inline-block;"></span>Așteptare</span>
+            </div>
+            <div style="position:relative;height:200px;">
+                <canvas id="statusChart" role="img" aria-label="Grafic donut status programari">Status programari.</canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">🏆 Top medici după venituri</div>
+            <div class="card-subtitle">Consultații finalizate × tarif</div>
+        </div>
+        <div class="card-body" style="padding:10px 14px;">
             {% for doc in top_doctors %}
-                <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);">
-                    <div style="width:28px;height:28px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:600;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        {{ forloop.counter }}
-                    </div>
-                    <div style="flex:1;">
-                        <div style="font-size:13px;font-weight:500;color:var(--text);">
-                            Dr. {{ doc.get_full_name|default:doc.username }}
-                        </div>
-                        <div style="font-size:11px;color:var(--text-muted);">
-                            {% if doc.doctor_profile %}{{ doc.doctor_profile.specialization }}{% endif %}
-                        </div>
-                    </div>
-                    <span class="badge badge-primary">{{ doc.appt_count }}</span>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ forloop.counter }}</div>
+                <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:500;color:var(--text);">Dr. {{ doc.user.get_full_name|default:doc.user.username }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">{{ doc.specialization }} · {{ doc.appt_count }} programări</div>
                 </div>
+                <div style="font-size:13px;font-weight:600;color:var(--c-primary);">{{ doc.revenue|floatformat:0 }} RON</div>
+            </div>
             {% empty %}
                 <div class="empty-state"><div class="empty-state-text">Niciun medic.</div></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📋 Ultimele programări</div>
+        </div>
+        <div class="card-body" style="padding:10px 14px;">
+            {% for appt in recent_appointments %}
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border);">
+                <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:500;color:var(--text);">{{ appt.patient.get_full_name|default:appt.patient.username }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }} · {{ appt.date_time|date:"d M, H:i" }}</div>
+                </div>
+                {% if appt.is_completed %}
+                    <span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:11px;">✓ Finalizată</span>
+                {% elif appt.is_confirmed %}
+                    <span class="badge badge-success" style="font-size:11px;">✓ Confirmată</span>
+                {% else %}
+                    <span class="badge badge-warning" style="font-size:11px;">⏳ Așteptare</span>
+                {% endif %}
+            </div>
             {% endfor %}
         </div>
     </div>
@@ -76,8 +133,8 @@
 
 <div class="card">
     <div class="card-header">
-        <div class="card-title">🔍 Ultimele acțiuni (Audit Log)</div>
-        <div class="card-subtitle">Jurnal de securitate — ultimele 10 intrări</div>
+        <div class="card-title">🔍 Jurnal de audit</div>
+        <div class="card-subtitle">Ultimele 8 acțiuni din sistem</div>
     </div>
     <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
@@ -91,16 +148,16 @@
             </thead>
             <tbody>
                 {% for log in audit_logs %}
-                    <tr style="border-bottom:0.5px solid var(--border);">
-                        <td style="padding:10px 14px;color:var(--text-muted);">{{ log.timestamp|date:"d M Y, H:i" }}</td>
-                        <td style="padding:10px 14px;color:var(--text);">{{ log.user.username|default:"—" }}</td>
-                        <td style="padding:10px 14px;">
-                            <span class="badge {% if 'LOGIN' in log.action %}badge-primary{% elif 'DELETED' in log.action %}badge-danger{% elif 'APPROVED' in log.action or 'CREATED' in log.action %}badge-success{% else %}badge-warning{% endif %}">
-                                {{ log.get_action_display }}
-                            </span>
-                        </td>
-                        <td style="padding:10px 14px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;">{{ log.ip_address|default:"—" }}</td>
-                    </tr>
+                <tr style="border-bottom:0.5px solid var(--border);">
+                    <td style="padding:10px 14px;color:var(--text-muted);">{{ log.timestamp|date:"d M Y, H:i" }}</td>
+                    <td style="padding:10px 14px;color:var(--text);">{{ log.user.username|default:"—" }}</td>
+                    <td style="padding:10px 14px;">
+                        <span class="badge {% if 'LOGIN' in log.action %}badge-primary{% elif 'DELETED' in log.action %}badge-danger{% elif 'COMPLETED' in log.action or 'APPROVED' in log.action %}badge-success{% else %}badge-warning{% endif %}">
+                            {{ log.get_action_display }}
+                        </span>
+                    </td>
+                    <td style="padding:10px 14px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;">{{ log.ip_address|default:"—" }}</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -109,41 +166,47 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const labels = {{ monthly_labels|safe }};
-const counts = {{ monthly_counts|safe }};
-const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
-const gridCol = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-const textCol = isDark ? '#8A9BBB' : '#6B7A99';
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gc = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
+const tc = isDark ? '#8A9BBB' : '#6B7A99';
 
 new Chart(document.getElementById('monthlyChart'), {
     type: 'bar',
     data: {
-        labels: labels,
+        labels: {{ monthly_labels|safe }},
         datasets: [{
             label: 'Programări',
-            data: counts,
-            backgroundColor: isDark ? 'rgba(91,143,212,0.7)' : 'rgba(27,95,173,0.7)',
-            borderColor:     isDark ? '#5B8FD4' : '#1B5FAD',
+            data: {{ monthly_counts|safe }},
+            backgroundColor: isDark ? 'rgba(91,143,212,0.75)' : 'rgba(24,95,165,0.75)',
+            borderColor: isDark ? '#5B8FD4' : '#185FA5',
             borderWidth: 1,
             borderRadius: 6,
         }]
     },
     options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false },
-        },
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
         scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { color: textCol, stepSize: 1 },
-                grid: { color: gridCol },
-            },
-            x: {
-                ticks: { color: textCol },
-                grid: { display: false },
-            }
+            x: { ticks: { color: tc, autoSkip: false }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: tc, stepSize: 1 }, grid: { color: gc } }
         }
+    }
+});
+
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Finalizate', 'Confirmate', 'Așteptare'],
+        datasets: [{
+            data: {{ status_counts|safe }},
+            backgroundColor: ['#1D9E75', '#185FA5', '#BA7517'],
+            borderWidth: 0,
+            hoverOffset: 6,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, cutout: '68%',
+        plugins: { legend: { display: false } }
     }
 });
 </script>

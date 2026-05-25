@@ -18,11 +18,18 @@
     .fc-label { font-size: 11px; font-weight: 600; color: #8796A5; text-transform: uppercase; letter-spacing: .07em; }
     .fc-value { font-family: 'DM Serif Display', Georgia, serif; font-size: 30px; color: #0B2545; margin-top: 4px; line-height: 1; }
     .fc-sub   { font-size: 12px; color: #0D9E8A; margin-top: 5px; }
-    .doctor-card-photo img {
+
+    .doctors-slider-wrapper {
+      overflow: hidden;
       width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center top;
+    }
+    .doctors-slider-track {
+      display: flex;
+      gap: 24px;
+      width: max-content;
+    }
+    .doctors-slider-track .doctor-card {
+      flex: 0 0 280px;
     }
   </style>
 </head>
@@ -63,8 +70,7 @@
     <div class="hero-actions">
       <a href="{% url 'register' %}" class="hero-btn-primary">Creează cont gratuit</a>
       <a href="{% url 'login' %}" class="hero-btn-ghost">
-        Intră în cont
-        <span class="hero-btn-ghost-arrow">→</span>
+        Intră în cont <span class="hero-btn-ghost-arrow">→</span>
       </a>
     </div>
     <div class="hero-stats">
@@ -77,34 +83,29 @@
   <div class="hero-image-col">
     <div style="width:100%;height:100%;background:linear-gradient(145deg,#dce8f5 0%,#b8d4eb 40%,#8fbdd8 100%);"></div>
     <div class="hero-image-overlay"></div>
-
     <div class="fc" style="top:10%;left:6%;animation:float 4s ease-in-out infinite;">
       <div class="fc-label">Programări azi</div>
-      <div class="fc-value">47</div>
-      <div class="fc-sub">↑ 12% față de ieri</div>
+      <div class="fc-value">{{ programari_azi }}</div>
+      <div class="fc-sub">↑ Programate azi</div>
     </div>
-
     <div class="fc" style="top:6%;right:6%;animation:float 5s ease-in-out infinite 0.8s;">
       <div class="fc-label">Medici activi</div>
-      <div class="fc-value">24</div>
+      <div class="fc-value">{{ medici_activi }}</div>
       <div class="fc-sub">↑ Online acum</div>
     </div>
-
     <div class="fc" style="top:42%;right:8%;animation:float 4.8s ease-in-out infinite 1.4s;">
       <div class="fc-label">Consultații totale</div>
-      <div class="fc-value">12k+</div>
+      <div class="fc-value">9k+</div>
       <div class="fc-sub">↑ Lunar</div>
     </div>
-
     <div class="fc" style="bottom:22%;left:6%;animation:float 4.5s ease-in-out infinite 1s;">
       <div class="fc-label">Satisfacție</div>
-      <div class="fc-value">98%</div>
-      <div class="fc-sub">★ 4.9 rating</div>
+      <div class="fc-value">88%</div>
+      <div class="fc-sub">★ 4.6 rating</div>
     </div>
-
     <div class="fc" style="bottom:5%;right:6%;animation:float 5.5s ease-in-out infinite 0.3s;">
       <div class="fc-label">Timp confirmare</div>
-      <div class="fc-value">2 min</div>
+      <div class="fc-value">5 min</div>
       <div class="fc-sub">⚡ Instant</div>
     </div>
   </div>
@@ -151,10 +152,10 @@
       <div class="section-label">De ce MedApp</div>
       <h2 class="section-title" style="margin-bottom:36px;">Sănătatea ta<br>este prioritatea noastră</h2>
       <div class="why-features">
-        <div class="why-feature reveal"><div class="why-feature-icon">🗓️</div><div><div class="why-feature-title">Programare online instant</div><div class="why-feature-desc">Alegi medicul, specialitatea și ora preferată direct din platformă, fără telefoane sau cozi.</div></div></div>
-        <div class="why-feature reveal reveal-delay-1"><div class="why-feature-icon">📋</div><div><div class="why-feature-title">Dosar medical digital</div><div class="why-feature-desc">Istoricul tău medical, analizele și rețetele stocate securizat și accesibile oricând.</div></div></div>
-        <div class="why-feature reveal reveal-delay-2"><div class="why-feature-icon">🔐</div><div><div class="why-feature-title">Confidențialitate garantată</div><div class="why-feature-desc">Platforma respectă standardele GDPR. Datele tale sunt criptate și accesibile doar ție și medicului tău.</div></div></div>
-        <div class="why-feature reveal reveal-delay-3"><div class="why-feature-icon">⚡</div><div><div class="why-feature-title">Confirmare în timp real</div><div class="why-feature-desc">Primești confirmare instantă pe email la fiecare programare sau modificare.</div></div></div>
+        <div class="why-feature reveal"><div class="why-feature-icon">🗓️</div><div><div class="why-feature-title">Programare online instant</div><div class="why-feature-desc">Alegi medicul, specialitatea și ora preferată direct din platformă.</div></div></div>
+        <div class="why-feature reveal reveal-delay-1"><div class="why-feature-icon">📋</div><div><div class="why-feature-title">Dosar medical digital</div><div class="why-feature-desc">Istoricul tău medical, analizele și rețetele stocate securizat.</div></div></div>
+        <div class="why-feature reveal reveal-delay-2"><div class="why-feature-icon">🔐</div><div><div class="why-feature-title">Confidențialitate garantată</div><div class="why-feature-desc">Datele tale sunt criptate și accesibile doar ție și medicului tău.</div></div></div>
+        <div class="why-feature reveal reveal-delay-3"><div class="why-feature-icon">⚡</div><div><div class="why-feature-title">Confirmare în timp real</div><div class="why-feature-desc">Primești confirmare instantă pe email la fiecare programare.</div></div></div>
       </div>
     </div>
   </div>
@@ -168,52 +169,66 @@
     </div>
     <a href="{% url 'login' %}" class="btn-solid">Programează-te →</a>
   </div>
-  <div class="doctors-grid">
 
-    <div class="doctor-card reveal">
-      <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-        <img src="{% static 'img/doctor1.webp' %}" alt="Dr. Maria Ionescu" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+  <div class="doctors-slider-wrapper">
+    <div class="doctors-slider-track" id="sliderTrack">
+
+      <div class="doctor-card">
+        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
+          <img src="{% static 'img/doctor1.webp' %}" alt="Dr. Maria Ionescu" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+        </div>
+        <div class="doctor-card-body">
+          <div class="doctor-card-name">Dr. Maria Ionescu</div>
+          <div class="doctor-card-spec">Cardiologie</div>
+          <div class="doctor-card-tag">Disponibil azi</div>
+        </div>
       </div>
-      <div class="doctor-card-body">
-        <div class="doctor-card-name">Dr. Maria Ionescu</div>
-        <div class="doctor-card-spec">Cardiologie</div>
-        <div class="doctor-card-tag">Disponibil azi</div>
+
+      <div class="doctor-card">
+        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
+          <img src="{% static 'img/doctor2.jpg' %}" alt="Dr. Andrei Popa" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+        </div>
+        <div class="doctor-card-body">
+          <div class="doctor-card-name">Dr. Andrei Popa</div>
+          <div class="doctor-card-spec">Medicină internă</div>
+          <div class="doctor-card-tag">Disponibil azi</div>
+        </div>
       </div>
+
+      <div class="doctor-card">
+        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
+          <img src="{% static 'img/doctor3.jpg' %}" alt="Dr. Radu Constantin" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+        </div>
+        <div class="doctor-card-body">
+          <div class="doctor-card-name">Dr. Radu Constantin</div>
+          <div class="doctor-card-spec">Neurologie</div>
+          <div class="doctor-card-tag">Disponibil azi</div>
+        </div>
+      </div>
+
+      <div class="doctor-card">
+        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
+          <img src="{% static 'img/doctor4.jpg' %}" alt="Dr. Alexandru Dumitrescu" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+        </div>
+        <div class="doctor-card-body">
+          <div class="doctor-card-name">Dr. Alexandru Dumitrescu</div>
+          <div class="doctor-card-spec">Ortopedie</div>
+          <div class="doctor-card-tag">Disponibil azi</div>
+        </div>
+      </div>
+
+      <div class="doctor-card">
+        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
+          <img src="{% static 'img/doctor5.jpg' %}" alt="Dr. Elena Georgescu" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+        </div>
+        <div class="doctor-card-body">
+          <div class="doctor-card-name">Dr. Elena Georgescu</div>
+          <div class="doctor-card-spec">Oftalmologie</div>
+          <div class="doctor-card-tag">Disponibil azi</div>
+        </div>
+      </div>
+
     </div>
-
-    <div class="doctor-card reveal reveal-delay-1">
-      <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-        <img src="{% static 'img/doctor2.jpg' %}" alt="Dr. Andrei Popa" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-      </div>
-      <div class="doctor-card-body">
-        <div class="doctor-card-name">Dr. Andrei Popa</div>
-        <div class="doctor-card-spec">Medicină internă</div>
-        <div class="doctor-card-tag">Disponibil azi</div>
-      </div>
-    </div>
-
-    <div class="doctor-card reveal reveal-delay-2">
-      <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-        <img src="{% static 'img/doctor3.jpg' %}" alt="Dr. Radu Constantin" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-      </div>
-      <div class="doctor-card-body">
-        <div class="doctor-card-name">Dr. Radu Constantin</div>
-        <div class="doctor-card-spec">Neurologie</div>
-        <div class="doctor-card-tag">Disponibil azi</div>
-      </div>
-    </div>
-
-    <div class="doctor-card reveal reveal-delay-3">
-      <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-        <img src="{% static 'img/doctor4.webp' %}" alt="Dr. Alexandru Dumitrescu" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-      </div>
-      <div class="doctor-card-body">
-        <div class="doctor-card-name">Dr. Alexandru Dumitrescu</div>
-        <div class="doctor-card-spec">Ortopedie</div>
-        <div class="doctor-card-tag">Disponibil azi</div>
-      </div>
-    </div>
-
   </div>
 </section>
 
@@ -265,16 +280,35 @@
 </footer>
 
 <script>
-  const nav = document.getElementById('mainNav');
-  window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 20);
-  });
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
-    });
-  }, { threshold: 0.12 });
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+const nav = document.getElementById('mainNav');
+window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 20));
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+
+const track = document.getElementById('sliderTrack');
+let pos = 0;
+const speed = 0.3;
+
+
+track.innerHTML += track.innerHTML;
+
+function animate() {
+    pos -= speed;
+    const firstCard = track.children[0];
+    const cardWidth = firstCard.offsetWidth + 24;
+    if (Math.abs(pos) >= cardWidth) {
+        pos += cardWidth;
+        track.appendChild(firstCard);
+    }
+    track.style.transform = `translateX(${pos}px)`;
+    requestAnimationFrame(animate);
+}
+
+animate();
 </script>
 
 </body>

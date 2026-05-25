@@ -50,21 +50,11 @@ class RegisterForm(UserCreationForm):
 class AppointmentForm(forms.ModelForm):
     class Meta:
         model   = Appointment
-        fields  = ['doctor', 'date_time', 'reason']
+        fields  = ['date_time', 'reason']
         widgets = {
             'date_time': forms.DateTimeInput(attrs={**FA, 'type': 'datetime-local'}),
             'reason':    forms.Textarea(attrs={**FA, 'rows': 3, 'placeholder': 'Motivul vizitei...'}),
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Doar medicii disponibili apar în dropdown
-        self.fields['doctor'].queryset = CustomUser.objects.filter(
-            is_doctor=True,
-            doctor_profile__is_available=True
-        )
-        self.fields['doctor'].widget.attrs.update(FA)
-        self.fields['doctor'].label = 'Selectează medicul'
 
 
 class PatientUserForm(forms.ModelForm):

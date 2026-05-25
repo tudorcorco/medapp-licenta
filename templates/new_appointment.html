@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Programare nouă{% endblock %}
+{% block page_title %}Programare nouă{% endblock %}
+{% block nav_doctors %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;margin:0 auto;">
+
+    <a href="{% url 'doctors_list' %}" class="btn btn-ghost btn-sm"
+       style="margin-bottom:20px;display:inline-flex;align-items:center;gap:6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+        Înapoi la medici
+    </a>
+
+    {% if selected_doctor %}
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:14px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                {% if selected_doctor.doctor_profile.avatar %}
+                    <img src="{{ selected_doctor.doctor_profile.avatar.url }}"
+                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                {% else %}
+                    {{ selected_doctor.username|first|upper }}
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-size:16px;font-weight:600;color:var(--text);">
+                    Dr. {{ selected_doctor.get_full_name|default:selected_doctor.username }}
+                </div>
+                <div style="font-size:13px;color:var(--c-primary);margin-top:2px;">
+                    {% if selected_doctor.doctor_profile.specialization %}
+                        {{ selected_doctor.doctor_profile.specialization }}
+                    {% endif %}
+                </div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">
+                    Tarif: {{ selected_doctor.doctor_profile.consultation_fee }} RON
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📅 Detalii programare</div>
+            <div class="card-subtitle">Completează informațiile consultației</div>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="" novalidate>
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <ul class="errorlist">{% for e in field.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <a href="{% url 'doctors_list' %}" class="btn btn-ghost">Anulează</a>
+                    <button type="submit" class="btn btn-teal" style="padding:10px 28px;">
+                        Confirmă programarea →
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block content %}
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-primary);">{{ revenue_total }} <span style="font-size:14px">RON</span></div>
+        <div class="stat-label">Venituri totale</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_appointments }}</div>
+        <div class="stat-label">Total programări</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-success);">{{ completed_appts }}</div>
+        <div class="stat-label">Finalizate</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_patients }}</div>
+        <div class="stat-label">Total pacienți</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_doctors }}</div>
+        <div class="stat-label">Total medici</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-teal);">{{ available_doctors }}</div>
+        <div class="stat-label">Medici disponibili</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">📋 Ultimele programări</div>
+        </div>
+        <div style="overflow:hidden;border-radius:0 0 var(--radius-lg) var(--radius-lg);">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="background:var(--surface-2);">
+                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Pacient</th>
+                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Medic</th>
+                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Data</th>
+                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in recent_appointments %}
+                    <tr style="border-bottom:0.5px solid var(--border);transition:background .15s;"
+                        onmouseover="this.style.background='var(--surface-2)'"
+                        onmouseout="this.style.background=''">
+                        <td style="padding:11px 16px;"><div style="font-weight:500;color:var(--text);">{{ appt.patient.get_full_name|default:appt.patient.username }}</div></td>
+                        <td style="padding:11px 16px;color:var(--text-muted);">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</td>
+                        <td style="padding:11px 16px;color:var(--text-muted);font-size:12px;">{{ appt.date_time|date:"d M Y, H:i" }}</td>
+                        <td style="padding:11px 16px;">
+                            {% if appt.is_completed %}
+                                <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ Finalizată</span>
+                            {% elif appt.is_confirmed %}
+                                <span class="badge badge-success">✓ Confirmată</span>
+                            {% else %}
+                                <span class="badge badge-warning">⏳ Așteptare</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="padding:32px;text-align:center;color:var(--text-muted);">Nicio programare.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="card-title">🔍 Jurnal de audit</div>
+            <div style="display:flex;gap:0;background:var(--surface-2);border-radius:var(--radius-md);overflow:hidden;border:0.5px solid var(--border);">
+                <button onclick="filterAudit('all')" id="af-all"
+                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:var(--c-primary);color:#fff;font-family:inherit;">Toate</button>
+                <button onclick="filterAudit('login')" id="af-login"
+                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text-muted);font-family:inherit;">Login</button>
+                <button onclick="filterAudit('appt')" id="af-appt"
+                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text-muted);font-family:inherit;">Programări</button>
+            </div>
+        </div>
+        <div style="overflow:hidden;border-radius:0 0 var(--radius-lg) var(--radius-lg);">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead>
+                    <tr style="background:var(--surface-2);">
+                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Data</th>
+                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Utilizator</th>
+                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Acțiune</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-body">
+                    {% for log in audit_logs %}
+                    <tr class="audit-row"
+                        data-type="{% if 'LOGIN' in log.action or 'LOGOUT' in log.action %}login{% elif 'APPT' in log.action %}appt{% else %}other{% endif %}"
+                        style="border-bottom:0.5px solid var(--border);transition:background .15s;"
+                        onmouseover="this.style.background='var(--surface-2)'"
+                        onmouseout="this.style.background=''">
+                        <td style="padding:10px 16px;color:var(--text-muted);font-size:12px;white-space:nowrap;">{{ log.timestamp|date:"d M, H:i" }}</td>
+                        <td style="padding:10px 16px;font-weight:500;color:var(--text);font-size:13px;">{{ log.user.username|default:"—" }}</td>
+                        <td style="padding:10px 16px;">
+                            <span class="badge {% if 'LOGIN' in log.action %}badge-primary{% elif 'LOGOUT' in log.action %}badge-primary{% elif 'DELETED' in log.action %}badge-danger{% elif 'COMPLETED' in log.action or 'APPROVED' in log.action %}badge-success{% else %}badge-warning{% endif %}" style="font-size:11px;">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function filterAudit(type) {
+    document.querySelectorAll('.audit-row').forEach(row => {
+        row.style.display = (type === 'all' || row.dataset.type === type) ? '' : 'none';
+    });
+    ['all','login','appt'].forEach(t => {
+        const btn = document.getElementById('af-' + t);
+        btn.style.background = t === type ? 'var(--c-primary)' : 'transparent';
+        btn.style.color = t === type ? '#fff' : 'var(--text-muted)';
+    });
+}
+</script>
+
+{% endblock %}

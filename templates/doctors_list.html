@@ -8,93 +8,91 @@
 {% block content %}
 
 <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-    <div style="font-size:15px;color:var(--text-muted);flex:1;">
-        Alege medicul potrivit și programează-te direct din dashboard.
-    </div>
-
+    <div style="font-size:15px;color:var(--text-muted);flex:1;">Alege medicul potrivit și programează-te.</div>
     <form method="GET" action="" style="display:flex;align-items:center;gap:8px;">
-        <select name="specialty" class="form-input" style="width:200px;"
-                onchange="this.form.submit()">
+        <select name="specialty" class="form-input" style="width:200px;" onchange="this.form.submit()">
             <option value="">Toate specialitățile</option>
             {% for spec in specialties %}
-                <option value="{{ spec }}" {% if spec == specialty_filter %}selected{% endif %}>
-                    {{ spec }}
-                </option>
+                <option value="{{ spec }}" {% if spec == specialty_filter %}selected{% endif %}>{{ spec }}</option>
             {% endfor %}
         </select>
-        {% if specialty_filter %}
-            <a href="{% url 'doctors_list' %}" class="btn btn-ghost btn-sm">✕ Reset</a>
-        {% endif %}
+        {% if specialty_filter %}<a href="{% url 'doctors_list' %}" class="btn btn-ghost btn-sm">✕ Reset</a>{% endif %}
     </form>
 </div>
 
 {% if specialty_filter %}
-    <div style="margin-bottom:14px;font-size:13px;color:var(--text-muted);">
-        Filtrare după: <strong style="color:var(--c-primary);">{{ specialty_filter }}</strong>
-        · {{ doctor_data|length }} medic{% if doctor_data|length != 1 %}i{% endif %} găsit{% if doctor_data|length != 1 %}i{% endif %}
-    </div>
+<div style="margin-bottom:14px;font-size:13px;color:var(--text-muted);">
+    Filtrare după: <strong style="color:var(--c-primary);">{{ specialty_filter }}</strong>
+    · {{ doctor_data|length }} medic{% if doctor_data|length != 1 %}i{% endif %} găsit{% if doctor_data|length != 1 %}i{% endif %}
+</div>
 {% endif %}
 
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;">
     {% for item in doctor_data %}
-        <div class="card">
-            <div style="aspect-ratio:1;overflow:hidden;border-radius:var(--radius-lg) var(--radius-lg) 0 0;">
-                {% if forloop.counter == 1 %}
-                    <img src="{% static 'img/doctor1.webp' %}" alt="doctor" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-                {% elif forloop.counter == 2 %}
-                    <img src="{% static 'img/doctor2.jpg' %}" alt="doctor" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-                {% elif forloop.counter == 3 %}
-                    <img src="{% static 'img/doctor3.jpg' %}" alt="doctor" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-                {% else %}
-                    <img src="{% static 'img/doctor4.webp' %}" alt="doctor" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-                {% endif %}
-            </div>
-            <div style="padding:16px 20px 20px;">
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
-                    <div>
-                        <div style="font-size:16px;font-weight:600;color:var(--text);">
-                            Dr. {{ item.user.get_full_name|default:item.user.username }}
-                        </div>
-                        {% if item.profile and item.profile.specialization %}
-                            <div style="font-size:13px;color:var(--c-primary);margin-top:3px;font-weight:500;">
-                                {{ item.profile.specialization }}
-                            </div>
+        <a href="{% url 'doctor_profile' item.user.id %}" style="text-decoration:none;display:block;">
+            <div class="card" style="transition:all .25s;cursor:pointer;"
+                 onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 36px rgba(20,100,165,0.15)'"
+                 onmouseout="this.style.transform='';this.style.boxShadow=''">
+
+                <div style="aspect-ratio:1;overflow:hidden;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:relative;">
+                    {% if item.profile and item.profile.avatar %}
+                        <img src="{{ item.profile.avatar.url }}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% elif forloop.counter == 1 %}
+                        <img src="{% static 'img/doctor1.webp' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% elif forloop.counter == 2 %}
+                        <img src="{% static 'img/doctor2.jpg' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% elif forloop.counter == 3 %}
+                        <img src="{% static 'img/doctor3.jpg' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% elif forloop.counter == 4 %}
+                        <img src="{% static 'img/doctor4.jpg' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% else %}
+                        <img src="{% static 'img/doctor5.jpg' %}" alt="doctor"
+                             style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+                    {% endif %}
+
+                    <div style="position:absolute;bottom:10px;right:10px;">
+                        {% if item.profile and item.profile.is_available %}
+                            <span class="badge badge-success">● Disponibil</span>
+                        {% else %}
+                            <span class="badge" style="background:rgba(0,0,0,0.5);color:white;">Indisponibil</span>
                         {% endif %}
                     </div>
-                    {% if item.profile and item.profile.is_available %}
-                        <span class="badge badge-success" style="flex-shrink:0;">● Disponibil</span>
-                    {% else %}
-                        <span class="badge" style="flex-shrink:0;background:var(--surface-2);color:var(--text-muted);">Indisponibil</span>
-                    {% endif %}
                 </div>
 
-                {% if item.profile and item.profile.bio %}
-                    <div style="font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:14px;">
-                        {{ item.profile.bio|truncatechars:110 }}
+                <div style="padding:16px 20px 20px;">
+                    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;">
+                        Dr. {{ item.user.get_full_name|default:item.user.username }}
                     </div>
-                {% else %}
-                    <div style="font-size:13px;color:var(--text-faint);font-style:italic;margin-bottom:14px;">
-                        Biografie necompletată.
-                    </div>
-                {% endif %}
-
-                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:0.5px solid var(--border);">
-                    <div>
-                        <div style="font-size:11px;color:var(--text-muted);">Tarif consultație</div>
-                        <div style="font-size:18px;font-weight:600;color:var(--text);">
-                            {% if item.profile and item.profile.consultation_fee %}
-                                {{ item.profile.consultation_fee }} RON
-                            {% else %}—{% endif %}
+                    {% if item.profile and item.profile.specialization %}
+                        <div style="font-size:13px;color:var(--c-primary);font-weight:500;margin-bottom:10px;">
+                            {{ item.profile.specialization }}
+                        </div>
+                    {% endif %}
+                    {% if item.profile and item.profile.bio %}
+                        <div style="font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:14px;">
+                            {{ item.profile.bio|truncatechars:90 }}
+                            <span style="color:var(--c-primary);font-size:12px;"> citește mai mult →</span>
+                        </div>
+                    {% endif %}
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:0.5px solid var(--border);">
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);">Tarif consultație</div>
+                            <div style="font-size:18px;font-weight:600;color:var(--text);">
+                                {% if item.profile and item.profile.consultation_fee %}{{ item.profile.consultation_fee }} RON{% else %}—{% endif %}
+                            </div>
+                        </div>
+                        <div style="font-size:12px;color:var(--c-primary);font-weight:500;">
+                            Vezi profil →
                         </div>
                     </div>
-                    {% if item.profile and item.profile.is_available %}
-                        <a href="{% url 'patient_dashboard' %}" class="btn btn-primary btn-sm">Programează-te →</a>
-                    {% else %}
-                        <span class="btn btn-ghost btn-sm" style="cursor:not-allowed;opacity:.5;">Indisponibil</span>
-                    {% endif %}
                 </div>
             </div>
-        </div>
+        </a>
     {% empty %}
         <div class="empty-state" style="grid-column:1/-1;">
             <div class="empty-state-icon">👨‍⚕️</div>

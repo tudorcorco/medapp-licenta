@@ -13,19 +13,14 @@
         <div class="stat-label">Total programări</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-warning);">
-            {{ appointments|length }}
-        </div>
-        <div class="stat-label">Neconfirmate</div>
+        <div class="stat-value" style="color:var(--c-success);">{% for a in appointments %}{% if a.is_completed %}1{% endif %}{% endfor %}</div>
+        <div class="stat-label">Finalizate</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-success);">
-            {% for a in appointments %}{% if a.is_confirmed %}1{% endif %}{% endfor %}
-        </div>
-        <div class="stat-label">Confirmate</div>
+        <div class="stat-value" style="color:var(--c-warning);">{% for a in appointments %}{% if not a.is_confirmed and not a.is_completed %}1{% endif %}{% endfor %}</div>
+        <div class="stat-label">În așteptare</div>
     </div>
-
-    <div class="card" style="padding:14px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:140px;">
+    <div class="card" style="padding:14px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:140px;">
         {% if doctor_profile %}
             {% if doctor_profile.is_available %}
                 <span class="badge badge-success" style="font-size:13px;padding:5px 14px;">● Disponibil</span>
@@ -35,9 +30,7 @@
         {% endif %}
         <form method="POST" action="{% url 'toggle_availability' %}" style="margin:0;">
             {% csrf_token %}
-            <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;">
-                Schimbă status
-            </button>
+            <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;">Schimbă status</button>
         </form>
     </div>
 </div>
@@ -49,34 +42,30 @@
     </div>
     <div class="card-body" style="padding:12px;">
         {% for appt in appointments %}
-            <div class="appt-item">
-                <div style="width:42px;height:42px;background:var(--c-primary-lt);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
-                    <div style="font-size:15px;font-weight:600;color:var(--c-primary);line-height:1;">{{ appt.date_time|date:"d" }}</div>
-                    <div style="font-size:9px;color:var(--c-primary);text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
+            <div class="appt-item" {% if appt.is_completed %}style="opacity:.65;"{% endif %}>
+                <div style="width:42px;height:42px;background:{% if appt.is_completed %}var(--surface-2){% else %}var(--c-primary-lt){% endif %};border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+                    <div style="font-size:15px;font-weight:600;color:{% if appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};line-height:1;">{{ appt.date_time|date:"d" }}</div>
+                    <div style="font-size:9px;color:{% if appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
                 </div>
-
                 <div class="appt-info">
-                    <a href="{% url 'patient_history' appt.patient.id %}"
-                       style="font-weight:600;font-size:15px;color:var(--text);text-decoration:none;">
+                    <a href="{% url 'patient_history' appt.patient.id %}" style="font-weight:600;font-size:15px;color:var(--text);text-decoration:none;">
                         {{ appt.patient.get_full_name|default:appt.patient.username }}
                         <span style="font-size:11px;color:var(--c-primary);margin-left:4px;">→ fișă</span>
                     </a>
                     <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
-                    {% if appt.reason %}
-                        <div class="appt-reason">„{{ appt.reason|truncatechars:60 }}"</div>
-                    {% endif %}
+                    {% if appt.reason %}<div class="appt-reason">„{{ appt.reason|truncatechars:60 }}"</div>{% endif %}
                     <div style="margin-top:5px;">
-                        {% if appt.is_confirmed %}
+                        {% if appt.is_completed %}
+                            <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ Finalizată</span>
+                        {% elif appt.is_confirmed %}
                             <span class="badge badge-success">✓ Confirmată</span>
                         {% else %}
                             <span class="badge badge-warning">⏳ În așteptare</span>
                         {% endif %}
-                        {% if appt.prescription %}
-                            <span class="badge badge-primary" style="margin-left:4px;">💊 Rețetă</span>
-                        {% endif %}
+                        {% if appt.prescription %}<span class="badge badge-primary" style="margin-left:4px;">💊 Rețetă</span>{% endif %}
                     </div>
                 </div>
-
+                {% if not appt.is_completed %}
                 <div class="appt-actions">
                     {% if not appt.is_confirmed %}
                         <form method="POST" action="{% url 'approve_appointment' appt.id %}" style="margin:0;">
@@ -84,19 +73,22 @@
                             <button type="submit" class="btn btn-success btn-sm">✓ Aprobă</button>
                         </form>
                     {% endif %}
-
-                    {% if appt.is_confirmed and not appt.prescription %}
-                        <a href="{% url 'add_prescription' appt.id %}" class="btn btn-primary btn-sm">
-                            💊 Rețetă
-                        </a>
+                    {% if appt.is_confirmed %}
+                        <form method="POST" action="{% url 'complete_appointment' appt.id %}" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-sm">✔ Finalizează</button>
+                        </form>
                     {% endif %}
-
+                    {% if appt.is_confirmed and not appt.prescription %}
+                        <a href="{% url 'add_prescription' appt.id %}" class="btn btn-ghost btn-sm">💊 Rețetă</a>
+                    {% endif %}
                     <form method="POST" action="{% url 'delete_appointment' appt.id %}" style="margin:0;"
                           onsubmit="return confirm('Ștergi această programare?');">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger btn-sm">✕</button>
                     </form>
                 </div>
+                {% endif %}
             </div>
         {% empty %}
             <div class="empty-state">

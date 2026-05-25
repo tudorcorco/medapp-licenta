@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, PatientProfile, DoctorProfile, Appointment, AuditLog
+from .models import CustomUser, PatientProfile, DoctorProfile, Appointment, AuditLog, Prescription, Rating
 
 
 @admin.register(CustomUser)
@@ -27,14 +27,24 @@ class DoctorProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ('patient', 'doctor', 'date_time', 'is_confirmed')
-    list_filter  = ('is_confirmed',)
+    list_display = ('patient', 'doctor', 'date_time', 'is_confirmed', 'is_completed')
+    list_filter  = ('is_confirmed', 'is_completed')
+
+
+@admin.register(Prescription)
+class PrescriptionAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'doctor', 'created_at')
+
+
+@admin.register(Rating)
+class RatingAdmin(admin.ModelAdmin):
+    list_display = ('patient', 'doctor', 'score', 'created_at')
 
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display  = ('timestamp', 'user', 'action', 'ip_address')
-    list_filter   = ('action',)
+    list_display    = ('timestamp', 'user', 'action', 'ip_address')
+    list_filter     = ('action',)
     readonly_fields = ('user', 'action', 'ip_address', 'user_agent', 'metadata', 'timestamp')
 
     def has_add_permission(self, request):    return False

@@ -6,7 +6,7 @@ SECRET_KEY = 'django-insecure-o2a=_m!hea)&$bdj#-42@4zu8=prq6(iy*ic=8@i%k!s6_6w++
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -66,22 +66,28 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'ro'
+TIME_ZONE     = 'Europe/Bucharest'
+USE_I18N      = True
+USE_TZ        = True
 
-TIME_ZONE = 'Europe/Bucharest'
-
-USE_I18N = True
-
-USE_TZ = True
-
-STATIC_URL = 'static/'
+STATIC_URL      = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT     = BASE_DIR / 'staticfiles'
 
-MEDIA_URL = '/media/'
+MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-AUTH_USER_MODEL = 'accounts.CustomUser'
-
+AUTH_USER_MODEL    = 'accounts.CustomUser'
 LOGOUT_REDIRECT_URL = 'login'
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST          = 'smtp.mail.yahoo.com'
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = 'bmwbmw192@yahoo.com'
+EMAIL_HOST_PASSWORD = 'xkjwxiqwkowscuho'
+DEFAULT_FROM_EMAIL  = 'MedApp Clinică <bmwbmw192@yahoo.com>'
+
+handler403 = 'django.views.defaults.permission_denied'
+handler404 = 'django.views.defaults.page_not_found'

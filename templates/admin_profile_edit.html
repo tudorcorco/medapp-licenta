@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editare Profil Admin{% endblock %}
+{% block page_title %}Profilul meu{% endblock %}
+{% block nav_reports %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:0 auto;">
+
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:16px;">
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                {{ user.username|first|upper }}
+            </div>
+            <div>
+                <div style="font-size:18px;font-weight:600;color:var(--text);">{{ user.get_full_name|default:user.username }}</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Administrator · {{ user.email }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;">
+        <div class="card-header">
+            <div class="card-title">Date cont</div>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="" novalidate>
+                {% csrf_token %}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="form-group">
+                        <label class="form-label">Prenume</label>
+                        <input type="text" name="first_name" class="form-input"
+                               value="{{ user.first_name }}" placeholder="Prenume">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nume</label>
+                        <input type="text" name="last_name" class="form-input"
+                               value="{{ user.last_name }}" placeholder="Nume">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-input"
+                           value="{{ user.email }}" placeholder="Email">
+                </div>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                    <a href="{% url 'admin_reports' %}" class="btn btn-ghost">Anulează</a>
+                    <button type="submit" class="btn btn-primary">Salvează</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Schimbă parola</div>
+        </div>
+        <div class="card-body">
+            <a href="{% url 'profile_security' %}" class="btn btn-ghost btn-full">
+                🔐 Mergi la pagina de securitate →
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

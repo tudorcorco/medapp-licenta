@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Editare Profil Medic{% endblock %}
+{% block page_title %}Profilul Meu{% endblock %}
+{% block nav_doctor %}active{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;margin:0 auto;">
+
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex;align-items:center;gap:18px;">
+            <div style="width:56px;height:56px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;">
+                {% else %}
+                    {{ user.username|first|upper }}
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-size:18px;font-weight:600;color:var(--text);">Dr. {{ user.get_full_name|default:user.username }}</div>
+                <div style="font-size:13px;color:var(--c-primary);margin-top:2px;">{{ profile.specialization|default:"Specializare necompletată" }}</div>
+                <div style="font-size:12px;color:var(--text-faint);margin-top:3px;">Cont creat: {{ user.date_joined|date:"d M Y" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="card" style="margin-bottom:14px;">
+            <div class="card-header"><div class="card-title">Date cont</div></div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="form-group">
+                        <label class="form-label">Prenume</label>
+                        <input type="text" name="first_name" class="form-input" value="{{ user.first_name }}" placeholder="Prenume">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nume</label>
+                        <input type="text" name="last_name" class="form-input" value="{{ user.last_name }}" placeholder="Nume">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-input" value="{{ user.email }}" placeholder="Email">
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:14px;">
+            <div class="card-header">
+                <div class="card-title">Date profesionale</div>
+                <div class="card-subtitle">Vizibile pacienților în catalogul medicilor</div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Poză de profil</label>
+                    <input type="file" name="avatar" class="form-input" accept="image/*">
+                    {% if profile.avatar %}
+                        <div style="margin-top:6px;font-size:12px;color:var(--text-muted);">
+                            Poza curentă: <a href="{{ profile.avatar.url }}" target="_blank" style="color:var(--c-primary);">vizualizează</a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div class="form-group">
+                        <label class="form-label">Specializare</label>
+                        <input type="text" name="specialization" class="form-input" value="{{ profile.specialization }}" placeholder="Ex: Cardiologie">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tarif consultație (RON)</label>
+                        <input type="number" name="consultation_fee" class="form-input" value="{{ profile.consultation_fee }}" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nr. Licență</label>
+                    <input type="text" name="license_number" class="form-input" value="{{ profile.license_number }}" placeholder="Ex: CMR-2024-001">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Despre mine</label>
+                    <textarea name="bio" class="form-input" rows="4" placeholder="Descriere experiență...">{{ profile.bio }}</textarea>
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                    <input type="checkbox" name="is_available" id="is_available" {% if profile.is_available %}checked{% endif %} style="width:16px;height:16px;cursor:pointer;">
+                    <label for="is_available" class="form-label" style="margin:0;cursor:pointer;">Disponibil pentru programări noi</label>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <a href="{% url 'doctor_dashboard' %}" class="btn btn-ghost">Anulează</a>
+            <button type="submit" class="btn btn-primary">Salvează modificările</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
