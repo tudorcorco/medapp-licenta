@@ -102,3 +102,5 @@ DEFAULT_FROM_EMAIL  = 'MedApp Clinică <bmwbmw192@yahoo.com>'
 handler403 = 'django.views.defaults.permission_denied'
 handler404 = 'django.views.defaults.page_not_found'
 CSRF_TRUSTED_ORIGINS = ['https://medapp-licenta-production.up.railway.app']
+
+WHITENOISE_ROOT = BASE_DIR / 'staticfiles'
