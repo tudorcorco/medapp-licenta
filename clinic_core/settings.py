@@ -96,8 +96,9 @@ EMAIL_HOST          = 'smtp.mail.yahoo.com'
 EMAIL_PORT          = 587
 EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = os.environ.get('EMAIL_HOST_USER', 'bmwbmw192@yahoo.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'PUNE_AICI_APP_PASSWORD_YAHOO')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL  = 'MedApp Clinică <bmwbmw192@yahoo.com>'
 
 handler403 = 'django.views.defaults.permission_denied'
 handler404 = 'django.views.defaults.page_not_found'
+CSRF_TRUSTED_ORIGINS = ['https://medapp-licenta-production.up.railway.app']
