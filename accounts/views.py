@@ -183,7 +183,7 @@ def home_view(request):
     medici             = DoctorProfile.objects.select_related('user').all()
     medici_activi      = DoctorProfile.objects.filter(is_available=True).count()
     consultatii_totale = Appointment.objects.filter(is_completed=True).count()
-    programari_azi     = Appointment.objects.filter(date_time__date=today).count()
+    programari_azi = Appointment.objects.filter(created_at__date=today).count()
     return render(request, 'index.html', {
         'medici':             medici,
         'medici_activi':      medici_activi,
