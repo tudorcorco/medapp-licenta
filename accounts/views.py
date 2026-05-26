@@ -53,10 +53,10 @@ def _send_email_safe(subject, message, recipient):
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[recipient],
-            fail_silently=True,
+            fail_silently=False,
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"EMAIL ERROR: {e}")
 
 
 def _get_admin_stats(now):
@@ -179,12 +179,13 @@ def _get_admin_stats(now):
 
 
 def home_view(request):
-    from django.utils import timezone
-    today = timezone.now().date()
+    today              = timezone.now().date()
+    medici             = DoctorProfile.objects.select_related('user').all()
     medici_activi      = DoctorProfile.objects.filter(is_available=True).count()
     consultatii_totale = Appointment.objects.filter(is_completed=True).count()
     programari_azi     = Appointment.objects.filter(date_time__date=today).count()
     return render(request, 'index.html', {
+        'medici':             medici,
         'medici_activi':      medici_activi,
         'consultatii_totale': consultatii_totale,
         'programari_azi':     programari_azi,
@@ -254,7 +255,7 @@ def patient_dashboard(request):
     ).exclude(rating__isnull=False).order_by('-date_time').first()
 
     hour = now.hour
-    greeting = 'Bună dimineața' if hour < 12 else ('Bună ziua' if hour < 18 else 'Bună seara')
+    greeting = 'Buna dimineata' if hour < 12 else ('Buna ziua' if hour < 18 else 'Buna seara')
 
     return render(request, 'patient_dashboard.html', {
         'appointments': all_appts, 'upcoming': upcoming, 'past': past,
@@ -274,7 +275,7 @@ def cancel_appointment(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user, is_confirmed=False)
     AuditLog.log(request, AuditLog.Action.APPT_DELETED, metadata={'appointment_id': appointment_id})
     appt.delete()
-    messages.info(request, 'Programarea a fost anulată.')
+    messages.info(request, 'Programarea a fost anulata.')
     return redirect('patient_dashboard')
 
 
@@ -285,7 +286,7 @@ def rate_doctor(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user, is_completed=True)
 
     if Rating.objects.filter(appointment=appt).exists():
-        messages.info(request, 'Ai evaluat deja această consultație.')
+        messages.info(request, 'Ai evaluat deja aceasta consultatie.')
         return redirect('patient_dashboard')
 
     if request.method == 'POST':
@@ -301,10 +302,10 @@ def rate_doctor(request, appointment_id):
             )
             AuditLog.log(request, AuditLog.Action.RATING_GIVEN,
                          metadata={'doctor': appt.doctor.username, 'score': score})
-            messages.success(request, 'Mulțumim pentru evaluare!')
+            messages.success(request, 'Multumim pentru evaluare!')
             return redirect('patient_dashboard')
         else:
-            messages.error(request, 'Te rugăm să selectezi un număr de stele.')
+            messages.error(request, 'Te rugam sa selectezi un numar de stele.')
 
     return render(request, 'rate_doctor.html', {'appointment': appt})
 
@@ -391,19 +392,19 @@ def gdpr_export(request):
 
     story.append(Paragraph('Date cont', h2_style))
     story.append(make_table([
-        ['Username',          clean(user.username)],
-        ['Nume complet',      clean(user.get_full_name() or '—')],
-        ['Email',             clean(user.email)],
+        ['Username',           clean(user.username)],
+        ['Nume complet',       clean(user.get_full_name() or '—')],
+        ['Email',              clean(user.email)],
         ['Data inregistrarii', clean(user.date_joined.strftime('%d %B %Y'))],
     ], [5*cm, 12*cm]))
 
     story.append(Paragraph('Date medicale', h2_style))
     story.append(make_table([
-        ['CNP',          clean(profile.cnp if profile else '—')],
+        ['CNP',           clean(profile.cnp if profile else '—')],
         ['Data nasterii', clean(str(profile.birth_date) if profile and profile.birth_date else '—')],
-        ['Grup sanguin', clean(profile.blood_type if profile else '—')],
-        ['Alergii',      clean(profile.allergies if profile else '—')],
-        ['Telefon',      clean(profile.phone if profile else '—')],
+        ['Grup sanguin',  clean(profile.blood_type if profile else '—')],
+        ['Alergii',       clean(profile.allergies if profile else '—')],
+        ['Telefon',       clean(profile.phone if profile else '—')],
     ], [5*cm, 12*cm]))
 
     story.append(Paragraph('Programari', h2_style))
@@ -475,7 +476,7 @@ def profile_security(request):
             user = form.save()
             update_session_auth_hash(request, user)
             AuditLog.log(request, AuditLog.Action.PASSWORD_CHANGED)
-            messages.success(request, 'Parola a fost schimbată cu succes!')
+            messages.success(request, 'Parola a fost schimbata cu succes!')
             return redirect('patient_dashboard' if request.user.is_patient else 'doctor_dashboard')
     else:
         form = ClinicPasswordChangeForm(request.user)
@@ -561,7 +562,7 @@ def new_appointment(request, doctor_id):
             appt.doctor  = doctor
             appt.save()
             AuditLog.log(request, AuditLog.Action.APPT_CREATED, metadata={'doctor': doctor.username})
-            messages.success(request, 'Programarea a fost creată cu succes!')
+            messages.success(request, 'Programarea a fost creata cu succes!')
             return redirect('patient_dashboard')
     else:
         form = AppointmentForm()
@@ -576,13 +577,18 @@ def new_appointment(request, doctor_id):
 def doctor_dashboard(request):
     if not getattr(request.user, 'is_doctor', False):
         return redirect('home')
-    appointments = Appointment.objects.filter(doctor=request.user).select_related('patient')
+    appointments    = Appointment.objects.filter(doctor=request.user).select_related('patient')
+    completed_count = appointments.filter(is_completed=True).count()
+    pending_count   = appointments.filter(is_confirmed=False, is_completed=False).count()
     try:
         doctor_profile_obj = request.user.doctor_profile
     except DoctorProfile.DoesNotExist:
         doctor_profile_obj = None
     return render(request, 'doctor_dashboard.html', {
-        'appointments': appointments, 'doctor_profile': doctor_profile_obj,
+        'appointments':    appointments,
+        'doctor_profile':  doctor_profile_obj,
+        'completed_count': completed_count,
+        'pending_count':   pending_count,
     })
 
 
@@ -632,15 +638,15 @@ def approve_appointment(request, appointment_id):
     AuditLog.log(request, AuditLog.Action.APPT_APPROVED, metadata={'appointment_id': appointment_id})
 
     _send_email_safe(
-        subject='Programarea ta a fost confirmată — MedApp',
-        message=f'Bună {appt.patient.get_full_name() or appt.patient.username},\n\n'
+        subject='Programarea ta a fost confirmata — MedApp',
+        message=f'Buna {appt.patient.get_full_name() or appt.patient.username},\n\n'
                 f'Programarea ta la Dr. {appt.doctor.get_full_name() or appt.doctor.username} '
-                f'din data de {appt.date_time.strftime("%d %B %Y, ora %H:%M")} a fost confirmată.\n\n'
-                f'Te așteptăm!\nEchipa MedApp',
+                f'din data de {appt.date_time.strftime("%d %B %Y, ora %H:%M")} a fost confirmata.\n\n'
+                f'Te asteptam!\nEchipa MedApp',
         recipient=appt.patient.email,
     )
 
-    messages.success(request, 'Programarea a fost aprobată.')
+    messages.success(request, 'Programarea a fost aprobata.')
     return redirect('doctor_dashboard')
 
 
@@ -653,7 +659,7 @@ def complete_appointment(request, appointment_id):
     appt.is_confirmed = True
     appt.save()
     AuditLog.log(request, AuditLog.Action.APPT_COMPLETED, metadata={'appointment_id': appointment_id})
-    messages.success(request, 'Consultația a fost marcată ca finalizată.')
+    messages.success(request, 'Consultatia a fost marcata ca finalizata.')
     return redirect('doctor_dashboard')
 
 
@@ -664,7 +670,7 @@ def delete_appointment(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
     AuditLog.log(request, AuditLog.Action.APPT_DELETED, metadata={'patient': appt.patient.username})
     appt.delete()
-    messages.info(request, 'Programarea a fost ștearsă.')
+    messages.info(request, 'Programarea a fost stearsa.')
     return redirect('doctor_dashboard')
 
 
@@ -674,7 +680,7 @@ def patient_history(request, patient_id):
         return redirect('home')
     patient = get_object_or_404(CustomUser, id=patient_id, is_patient=True)
     if not Appointment.objects.filter(doctor=request.user, patient=patient).exists():
-        messages.error(request, 'Nu ai acces la fișa acestui pacient.')
+        messages.error(request, 'Nu ai acces la fisa acestui pacient.')
         return redirect('doctor_dashboard')
     try:
         patient_profile = patient.patient_profile
@@ -695,7 +701,7 @@ def add_prescription(request, appointment_id):
         return redirect('home')
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
     if Prescription.objects.filter(appointment=appt).exists():
-        messages.info(request, 'Există deja o rețetă pentru această programare.')
+        messages.info(request, 'Exista deja o reteta pentru aceasta programare.')
         return redirect('doctor_dashboard')
     if request.method == 'POST':
         form = PrescriptionForm(request.POST)
@@ -706,7 +712,7 @@ def add_prescription(request, appointment_id):
             rx.patient     = appt.patient
             rx.save()
             AuditLog.log(request, AuditLog.Action.PRESCRIPTION_CREATED, metadata={'patient': appt.patient.username})
-            messages.success(request, 'Rețeta a fost salvată.')
+            messages.success(request, 'Reteta a fost salvata.')
             return redirect('doctor_dashboard')
     else:
         form = PrescriptionForm()

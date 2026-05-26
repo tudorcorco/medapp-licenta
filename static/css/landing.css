@@ -796,3 +796,21 @@ footer {
   .nav-links { display: none; }
   .doctors-header { flex-direction: column; align-items: flex-start; gap: 16px; }
 }
+
+
+.badge-indisponibil {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background-color: #fdecea;
+    color: #c0392b;
+    border: 1px solid #f5c6c2;
+}
+
+.doctor-card-tag--indisponibil {
+    background-color: #FFF4E5;
+    color: #C07000;
+    border: 1px solid #FFD88A;
+}

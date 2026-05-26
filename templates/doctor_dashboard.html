@@ -13,11 +13,11 @@
         <div class="stat-label">Total programări</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-success);">{% for a in appointments %}{% if a.is_completed %}1{% endif %}{% endfor %}</div>
+        <div class="stat-value" style="color:var(--c-success);">{{ completed_count }}</div>
         <div class="stat-label">Finalizate</div>
     </div>
     <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-warning);">{% for a in appointments %}{% if not a.is_confirmed and not a.is_completed %}1{% endif %}{% endfor %}</div>
+        <div class="stat-value" style="color:var(--c-warning);">{{ pending_count }}</div>
         <div class="stat-label">În așteptare</div>
     </div>
     <div class="card" style="padding:14px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:140px;">

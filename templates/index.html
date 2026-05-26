@@ -22,6 +22,7 @@
     .doctors-slider-wrapper {
       overflow: hidden;
       width: 100%;
+      height: 460px;
     }
     .doctors-slider-track {
       display: flex;
@@ -101,7 +102,7 @@
     <div class="fc" style="bottom:22%;left:6%;animation:float 4.5s ease-in-out infinite 1s;">
       <div class="fc-label">Satisfacție</div>
       <div class="fc-value">88%</div>
-      <div class="fc-sub">★ 4.6 rating</div>
+      <div class="fc-sub">★ 4.7 rating</div>
     </div>
     <div class="fc" style="bottom:5%;right:6%;animation:float 5.5s ease-in-out infinite 0.3s;">
       <div class="fc-label">Timp confirmare</div>
@@ -144,7 +145,7 @@
         </div>
       </div>
       <div class="why-badge-float">
-        <div class="why-badge-float-num">4.9 ★</div>
+        <div class="why-badge-float-num">4.7 ★</div>
         <div class="why-badge-float-label">Rating pacienți</div>
       </div>
     </div>
@@ -172,62 +173,26 @@
 
   <div class="doctors-slider-wrapper">
     <div class="doctors-slider-track" id="sliderTrack">
-
+      {% for doctor in medici %}
       <div class="doctor-card">
-        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-          <img src="{% static 'img/doctor1.webp' %}" alt="Dr. Maria Ionescu" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+        <div class="doctor-card-photo" style="padding:0;overflow:hidden;width:100%;height:280px;">
+          {% if doctor.avatar %}
+            <img src="{{ doctor.avatar.url }}" alt="{{ doctor.user.get_full_name }}" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+          {% else %}
+            <img src="{% static 'img/' %}{{ doctor.user.username|slice:'3:' }}.jpg" alt="{{ doctor.user.get_full_name }}" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
+          {% endif %}
         </div>
         <div class="doctor-card-body">
-          <div class="doctor-card-name">Dr. Maria Ionescu</div>
-          <div class="doctor-card-spec">Cardiologie</div>
-          <div class="doctor-card-tag">Disponibil azi</div>
+          <div class="doctor-card-name">Dr. {{ doctor.user.get_full_name }}</div>
+          <div class="doctor-card-spec">{{ doctor.specialization }}</div>
+          {% if doctor.is_available %}
+            <div class="doctor-card-tag">Disponibil azi</div>
+          {% else %}
+            <div class="doctor-card-tag doctor-card-tag--indisponibil">Indisponibil</div>
+          {% endif %}
         </div>
       </div>
-
-      <div class="doctor-card">
-        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-          <img src="{% static 'img/doctor2.jpg' %}" alt="Dr. Andrei Popa" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-        </div>
-        <div class="doctor-card-body">
-          <div class="doctor-card-name">Dr. Andrei Popa</div>
-          <div class="doctor-card-spec">Medicină internă</div>
-          <div class="doctor-card-tag">Disponibil azi</div>
-        </div>
-      </div>
-
-      <div class="doctor-card">
-        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-          <img src="{% static 'img/doctor3.jpg' %}" alt="Dr. Radu Constantin" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-        </div>
-        <div class="doctor-card-body">
-          <div class="doctor-card-name">Dr. Radu Constantin</div>
-          <div class="doctor-card-spec">Neurologie</div>
-          <div class="doctor-card-tag">Disponibil azi</div>
-        </div>
-      </div>
-
-      <div class="doctor-card">
-        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-          <img src="{% static 'img/doctor4.jpg' %}" alt="Dr. Alexandru Dumitrescu" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-        </div>
-        <div class="doctor-card-body">
-          <div class="doctor-card-name">Dr. Alexandru Dumitrescu</div>
-          <div class="doctor-card-spec">Ortopedie</div>
-          <div class="doctor-card-tag">Disponibil azi</div>
-        </div>
-      </div>
-
-      <div class="doctor-card">
-        <div class="doctor-card-photo" style="padding:0;overflow:hidden;aspect-ratio:1;">
-          <img src="{% static 'img/doctor5.jpg' %}" alt="Dr. Elena Georgescu" style="width:100%;height:100%;object-fit:cover;object-position:center top;">
-        </div>
-        <div class="doctor-card-body">
-          <div class="doctor-card-name">Dr. Elena Georgescu</div>
-          <div class="doctor-card-spec">Oftalmologie</div>
-          <div class="doctor-card-tag">Disponibil azi</div>
-        </div>
-      </div>
-
+      {% endfor %}
     </div>
   </div>
 </section>
@@ -288,24 +253,22 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-
 const track = document.getElementById('sliderTrack');
 let pos = 0;
 const speed = 0.3;
 
-
 track.innerHTML += track.innerHTML;
 
 function animate() {
-    pos -= speed;
-    const firstCard = track.children[0];
-    const cardWidth = firstCard.offsetWidth + 24;
-    if (Math.abs(pos) >= cardWidth) {
-        pos += cardWidth;
-        track.appendChild(firstCard);
-    }
-    track.style.transform = `translateX(${pos}px)`;
-    requestAnimationFrame(animate);
+  pos -= speed;
+  const firstCard = track.children[0];
+  const cardWidth = firstCard.offsetWidth + 24;
+  if (Math.abs(pos) >= cardWidth) {
+    pos += cardWidth;
+    track.appendChild(firstCard);
+  }
+  track.style.transform = `translateX(${pos}px)`;
+  requestAnimationFrame(animate);
 }
 
 animate();
