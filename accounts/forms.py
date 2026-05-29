@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm
-from .models import CustomUser, Appointment, PatientProfile, Prescription
+from .models import CustomUser, Appointment, PatientProfile, Prescription, Payment
 
 FA = {'class': 'form-input'}
 
@@ -48,6 +48,12 @@ class RegisterForm(UserCreationForm):
 
 
 class AppointmentForm(forms.ModelForm):
+    referral_serial = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={**FA, 'placeholder': 'Ex: BT-2024-001234'}),
+        label='Serie bilet trimitere',
+    )
+
     class Meta:
         model   = Appointment
         fields  = ['date_time', 'reason']
@@ -55,7 +61,6 @@ class AppointmentForm(forms.ModelForm):
             'date_time': forms.DateTimeInput(attrs={**FA, 'type': 'datetime-local'}),
             'reason':    forms.Textarea(attrs={**FA, 'rows': 3, 'placeholder': 'Motivul vizitei...'}),
         }
-
 
 class PatientUserForm(forms.ModelForm):
     class Meta:
@@ -71,17 +76,28 @@ class PatientUserForm(forms.ModelForm):
 class PatientProfileForm(forms.ModelForm):
     class Meta:
         model   = PatientProfile
-        fields  = ['phone', 'cnp', 'birth_date', 'blood_type', 'allergies']
+        fields  = ['phone', 'cnp', 'birth_date', 'blood_type', 'allergies', 'is_insured', 'health_card_serial']
         widgets = {
-            'phone':      forms.TextInput(attrs={**FA, 'placeholder': '07xx xxx xxx'}),
-            'cnp':        forms.TextInput(attrs={**FA, 'placeholder': '13 cifre', 'maxlength': '13'}),
-            'birth_date': forms.DateInput(attrs={**FA, 'type': 'date'}),
-            'blood_type': forms.TextInput(attrs={**FA, 'placeholder': 'Ex: A+, O-, AB+'}),
-            'allergies':  forms.Textarea(attrs={**FA, 'rows': 3, 'placeholder': 'Ex: penicilină, latex...'}),
+            'phone':             forms.TextInput(attrs={**FA, 'placeholder': '07xx xxx xxx'}),
+            'cnp':               forms.TextInput(attrs={**FA, 'placeholder': '13 cifre', 'maxlength': '13'}),
+            'birth_date':        forms.DateInput(attrs={**FA, 'type': 'date'}),
+            'blood_type':        forms.TextInput(attrs={**FA, 'placeholder': 'Ex: A+, O-, AB+'}),
+            'allergies':         forms.Textarea(attrs={**FA, 'rows': 3, 'placeholder': 'Ex: penicilină, latex...'}),
+            'health_card_serial':forms.TextInput(attrs={**FA, 'placeholder': 'Ex: 0004-1234-5678-9012'}),
+        }
+        labels = {
+            'is_insured':         'Asigurat CNAS',
+            'health_card_serial': 'Serie card de sănătate',
         }
 
 
 class PrescriptionForm(forms.ModelForm):
+    icd10_code = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={**FA, 'placeholder': 'Ex: J06, I10, E11 (opțional)'}),
+        label='Cod ICD-10',
+    )
+
     class Meta:
         model   = Prescription
         fields  = ['diagnosis', 'medication', 'instructions']
@@ -94,6 +110,28 @@ class PrescriptionForm(forms.ModelForm):
             'diagnosis':    'Diagnostic',
             'medication':   'Medicație prescrisă',
             'instructions': 'Instrucțiuni',
+        }
+
+
+class PaymentForm(forms.ModelForm):
+    pay_for_patient = forms.ModelChoiceField(
+        queryset=CustomUser.objects.filter(is_patient=True),
+        required=False,
+        empty_label='— Plătesc pentru mine —',
+        label='Plătesc pentru alt pacient (aparținător)',
+        widget=forms.Select(attrs={**FA}),
+    )
+
+    class Meta:
+        model   = Payment
+        fields  = ['method', 'note']
+        widgets = {
+            'method': forms.Select(attrs={**FA}),
+            'note':   forms.TextInput(attrs={**FA, 'placeholder': 'Observații (opțional)'}),
+        }
+        labels = {
+            'method': 'Metodă de plată',
+            'note':   'Observații',
         }
 
 

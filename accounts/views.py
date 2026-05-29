@@ -3,23 +3,27 @@ from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Sum
 from django.db.models.functions import TruncMonth
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import HttpResponse
 import json
+import uuid
 
 from .forms import (
     ClinicLoginForm, RegisterForm, AppointmentForm,
     PatientUserForm, PatientProfileForm,
-    PrescriptionForm, ClinicPasswordChangeForm,
+    PrescriptionForm, ClinicPasswordChangeForm, PaymentForm,
 )
 from .models import (
     CustomUser, Appointment, AuditLog,
     PatientProfile, DoctorProfile, Prescription, Rating,
+    Payment, Wallet,
 )
 
+
+# ── HELPERS ────────────────────────────────────────────────────────────────────
 
 def _profile_pct(profile, user):
     fields = [user.first_name, user.last_name, user.email,
@@ -59,6 +63,11 @@ def _send_email_safe(subject, message, recipient):
         print(f"EMAIL ERROR: {e}")
 
 
+def _get_or_create_wallet(user):
+    wallet, _ = Wallet.objects.get_or_create(user=user)
+    return wallet
+
+
 def _get_admin_stats(now):
     total_patients     = CustomUser.objects.filter(is_patient=True).count()
     total_doctors      = CustomUser.objects.filter(is_doctor=True).count()
@@ -73,9 +82,7 @@ def _get_admin_stats(now):
     revenue_total = 0
     revenue_month = 0
     for dp in DoctorProfile.objects.all():
-        completed_all   = Appointment.objects.filter(
-            doctor=dp.user, is_completed=True
-        ).count()
+        completed_all   = Appointment.objects.filter(doctor=dp.user, is_completed=True).count()
         completed_month = Appointment.objects.filter(
             doctor=dp.user, is_completed=True,
             date_time__month=now.month, date_time__year=now.year
@@ -109,15 +116,18 @@ def _get_admin_stats(now):
         try:
             fee  = float(doc.doctor_profile.consultation_fee)
             spec = doc.doctor_profile.specialization
+            score = doc.doctor_profile.performance_score()
         except DoctorProfile.DoesNotExist:
             fee  = 0
             spec = ''
+            score = 0
         completed = Appointment.objects.filter(doctor=doc, is_completed=True).count()
         top_doctors.append({
             'user': doc,
             'specialization': spec,
             'appt_count': doc.appt_count,
             'revenue': completed * fee,
+            'performance_score': score,
         })
 
     def _monthly_revenue(months_back):
@@ -178,12 +188,14 @@ def _get_admin_stats(now):
     }
 
 
+# ── PUBLIC ─────────────────────────────────────────────────────────────────────
+
 def home_view(request):
-    today              = timezone.now().date()
+    today              = timezone.localdate()
     medici             = DoctorProfile.objects.select_related('user').all()
     medici_activi      = DoctorProfile.objects.filter(is_available=True).count()
     consultatii_totale = Appointment.objects.filter(is_completed=True).count()
-    programari_azi = Appointment.objects.filter(created_at__date=today).count()
+    programari_azi     = Appointment.objects.filter(created_at__date=today).count()
     return render(request, 'index.html', {
         'medici':             medici,
         'medici_activi':      medici_activi,
@@ -217,6 +229,7 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             PatientProfile.objects.get_or_create(user=user)
+            _get_or_create_wallet(user)
             login(request, user)
             AuditLog.log(request, AuditLog.Action.REGISTER, metadata={'username': user.username})
             return redirect('patient_dashboard')
@@ -231,40 +244,46 @@ def logout_view(request):
     return redirect('login')
 
 
+# ── PACIENT ────────────────────────────────────────────────────────────────────
+
 @login_required(login_url='login')
 def patient_dashboard(request):
     if not getattr(request.user, 'is_patient', False):
         return redirect('home')
     profile, _ = PatientProfile.objects.get_or_create(user=request.user)
-    now = timezone.now()
+    wallet     = _get_or_create_wallet(request.user)
+    now        = timezone.now()
 
     all_appts       = Appointment.objects.filter(patient=request.user).select_related('doctor')
-    upcoming        = all_appts.filter(date_time__gte=now, is_completed=False).order_by('date_time')
+    upcoming        = all_appts.filter(date_time__gte=now, is_completed=False, is_no_show=False).order_by('date_time')
     past            = (all_appts.filter(date_time__lt=now) | all_appts.filter(is_completed=True)).distinct().order_by('-date_time')
     last_visit      = all_appts.filter(is_completed=True).order_by('-date_time').first()
     next_appt       = upcoming.first()
     confirmed_count = all_appts.filter(is_confirmed=True).count()
-    pending_count   = all_appts.filter(is_confirmed=False, is_completed=False).count()
+    pending_count   = all_appts.filter(is_confirmed=False, is_completed=False, is_no_show=False).count()
     completed_count = all_appts.filter(is_completed=True).count()
+    no_show_count   = all_appts.filter(is_no_show=True).count()
     profile_pct     = _profile_pct(profile, request.user)
     prescriptions   = Prescription.objects.filter(patient=request.user).select_related('doctor').order_by('-created_at')[:5]
     notif_list, notif_count = _get_notifications(request.user)
+    payments        = Payment.objects.filter(payer=request.user).order_by('-created_at')[:5]
 
     unrated = all_appts.filter(
         is_completed=True
     ).exclude(rating__isnull=False).order_by('-date_time').first()
 
     hour = now.hour
-    greeting = 'Buna dimineata' if hour < 12 else ('Buna ziua' if hour < 18 else 'Buna seara')
+    greeting = 'Bună dimineața' if hour < 12 else ('Bună ziua' if hour < 18 else 'Bună seara')
 
     return render(request, 'patient_dashboard.html', {
         'appointments': all_appts, 'upcoming': upcoming, 'past': past,
         'last_visit': last_visit, 'next_appt': next_appt, 'profile': profile,
         'confirmed_count': confirmed_count, 'pending_count': pending_count,
-        'completed_count': completed_count, 'profile_pct': profile_pct,
+        'completed_count': completed_count, 'no_show_count': no_show_count,
+        'profile_pct': profile_pct,
         'notif_list': notif_list, 'notif_count': notif_count,
         'prescriptions': prescriptions, 'greeting': greeting,
-        'unrated': unrated,
+        'unrated': unrated, 'wallet': wallet, 'payments': payments,
     })
 
 
@@ -275,7 +294,7 @@ def cancel_appointment(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user, is_confirmed=False)
     AuditLog.log(request, AuditLog.Action.APPT_DELETED, metadata={'appointment_id': appointment_id})
     appt.delete()
-    messages.info(request, 'Programarea a fost anulata.')
+    messages.info(request, 'Programarea a fost anulată.')
     return redirect('patient_dashboard')
 
 
@@ -286,7 +305,7 @@ def rate_doctor(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user, is_completed=True)
 
     if Rating.objects.filter(appointment=appt).exists():
-        messages.info(request, 'Ai evaluat deja aceasta consultatie.')
+        messages.info(request, 'Ai evaluat deja această consultație.')
         return redirect('patient_dashboard')
 
     if request.method == 'POST':
@@ -302,12 +321,110 @@ def rate_doctor(request, appointment_id):
             )
             AuditLog.log(request, AuditLog.Action.RATING_GIVEN,
                          metadata={'doctor': appt.doctor.username, 'score': score})
-            messages.success(request, 'Multumim pentru evaluare!')
+            messages.success(request, 'Mulțumim pentru evaluare!')
             return redirect('patient_dashboard')
         else:
-            messages.error(request, 'Te rugam sa selectezi un numar de stele.')
+            messages.error(request, 'Te rugăm să selectezi un număr de stele.')
 
     return render(request, 'rate_doctor.html', {'appointment': appt})
+
+
+@login_required(login_url='login')
+def payment_view(request, appointment_id):
+    """Pagina de plată pentru o programare"""
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    appt   = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
+    wallet = _get_or_create_wallet(request.user)
+
+    try:
+        dp  = appt.doctor.doctor_profile
+        fee = float(dp.consultation_fee)
+    except DoctorProfile.DoesNotExist:
+        fee = 0
+
+    # Daca e decontat CNAS, costul e 0
+    if appt.cnas_covered:
+        fee = 0
+
+    if request.method == 'POST':
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            method         = form.cleaned_data['method']
+            note           = form.cleaned_data['note']
+            pay_for        = form.cleaned_data.get('pay_for_patient')
+            beneficiary    = pay_for if pay_for else request.user
+            amount         = fee
+
+            if method == Payment.Method.WALLET:
+                if wallet.balance < amount:
+                    messages.error(request, f'Sold insuficient în wallet. Ai {wallet.balance} RON, necesari {amount} RON.')
+                    return redirect('payment_view', appointment_id=appointment_id)
+                wallet.balance -= amount
+                wallet.save()
+
+            if method == Payment.Method.ONLINE:
+                # Simulare Stripe — in productie aici ai stripe.PaymentIntent.create()
+                stripe_sim_id = f'pi_sim_{uuid.uuid4().hex[:16]}'
+                payment = Payment.objects.create(
+                    appointment=appt,
+                    payer=request.user,
+                    beneficiary=beneficiary,
+                    amount=amount,
+                    method=method,
+                    status=Payment.Status.COMPLETED,
+                    stripe_id=stripe_sim_id,
+                    note=note,
+                )
+                messages.success(request, f'Plată online simulată cu succes! Ref: {payment.reference}')
+            else:
+                payment = Payment.objects.create(
+                    appointment=appt,
+                    payer=request.user,
+                    beneficiary=beneficiary,
+                    amount=amount,
+                    method=method,
+                    status=Payment.Status.COMPLETED,
+                    note=note,
+                )
+                messages.success(request, f'Plată înregistrată! Ref: {payment.reference}')
+
+            appt.payment_method = method
+            appt.amount_paid    = amount
+            appt.save()
+
+            AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
+                         metadata={'appointment_id': appt.id, 'method': method, 'amount': str(amount)})
+
+            return redirect('patient_dashboard')
+    else:
+        form = PaymentForm()
+
+    return render(request, 'payment.html', {
+        'form': form, 'appointment': appt, 'fee': fee, 'wallet': wallet,
+    })
+
+
+@login_required(login_url='login')
+def wallet_topup(request):
+    """Reîncărcare wallet cu sumă simulată"""
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    wallet = _get_or_create_wallet(request.user)
+    if request.method == 'POST':
+        amount_str = request.POST.get('amount', '0')
+        try:
+            amount = float(amount_str)
+            if 1 <= amount <= 5000:
+                wallet.balance += amount
+                wallet.save()
+                AuditLog.log(request, AuditLog.Action.WALLET_TOPUP, metadata={'amount': amount})
+                messages.success(request, f'{amount} RON adăugați în wallet!')
+            else:
+                messages.error(request, 'Suma trebuie să fie între 1 și 5000 RON.')
+        except ValueError:
+            messages.error(request, 'Sumă invalidă.')
+    return redirect('patient_dashboard')
 
 
 @login_required(login_url='login')
@@ -345,7 +462,7 @@ def gdpr_export(request):
                             rightMargin=2*cm, leftMargin=2*cm,
                             topMargin=2*cm, bottomMargin=2*cm)
 
-    styles = getSampleStyleSheet()
+    styles     = getSampleStyleSheet()
     title_style = ParagraphStyle('title', parent=styles['Title'], fontSize=20, spaceAfter=6)
     h2_style    = ParagraphStyle('h2', parent=styles['Heading2'], fontSize=13,
                                  spaceBefore=16, spaceAfter=6,
@@ -385,7 +502,6 @@ def gdpr_export(request):
         return t
 
     story = []
-
     story.append(Paragraph('Export Date Personale - MedApp', title_style))
     story.append(Paragraph(f'Generat la: {timezone.now().strftime("%d %B %Y, %H:%M")}', normal))
     story.append(Spacer(1, 0.4*cm))
@@ -400,24 +516,34 @@ def gdpr_export(request):
 
     story.append(Paragraph('Date medicale', h2_style))
     story.append(make_table([
-        ['CNP',           clean(profile.cnp if profile else '—')],
-        ['Data nasterii', clean(str(profile.birth_date) if profile and profile.birth_date else '—')],
-        ['Grup sanguin',  clean(profile.blood_type if profile else '—')],
-        ['Alergii',       clean(profile.allergies if profile else '—')],
-        ['Telefon',       clean(profile.phone if profile else '—')],
+        ['CNP',            clean(profile.cnp if profile else '—')],
+        ['Data nasterii',  clean(str(profile.birth_date) if profile and profile.birth_date else '—')],
+        ['Grup sanguin',   clean(profile.blood_type if profile else '—')],
+        ['Alergii',        clean(profile.allergies if profile else '—')],
+        ['Telefon',        clean(profile.phone if profile else '—')],
+        ['Asigurat CNAS',  'Da' if (profile and profile.is_insured) else 'Nu'],
+        ['Card sanatate',  clean(profile.health_card_serial if profile else '—')],
     ], [5*cm, 12*cm]))
 
     story.append(Paragraph('Programari', h2_style))
     if appts.exists():
-        data = [['Medic', 'Data', 'Status']]
+        data = [['Medic', 'Data', 'Status', 'Plata']]
         for a in appts:
-            status = 'Finalizata' if a.is_completed else ('Confirmata' if a.is_confirmed else 'In asteptare')
+            if a.is_no_show:
+                status = 'Neprezentare'
+            elif a.is_completed:
+                status = 'Finalizata'
+            elif a.is_confirmed:
+                status = 'Confirmata'
+            else:
+                status = 'In asteptare'
             data.append([
                 clean(f'Dr. {a.doctor.get_full_name() or a.doctor.username}'),
                 a.date_time.strftime('%d %B %Y, %H:%M'),
                 status,
+                clean(a.payment_method or '—'),
             ])
-        story.append(make_header_table(data, [7*cm, 6*cm, 4*cm]))
+        story.append(make_header_table(data, [6*cm, 5*cm, 3*cm, 3*cm]))
     else:
         story.append(Paragraph('Nicio programare inregistrata.', normal))
 
@@ -438,7 +564,6 @@ def gdpr_export(request):
     buffer.seek(0)
 
     AuditLog.log(request, AuditLog.Action.GDPR_EXPORT)
-
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="datele_mele_medapp_{timezone.now().strftime("%Y%m%d")}.pdf"'
     return response
@@ -476,7 +601,7 @@ def profile_security(request):
             user = form.save()
             update_session_auth_hash(request, user)
             AuditLog.log(request, AuditLog.Action.PASSWORD_CHANGED)
-            messages.success(request, 'Parola a fost schimbata cu succes!')
+            messages.success(request, 'Parola a fost schimbată cu succes!')
             return redirect('patient_dashboard' if request.user.is_patient else 'doctor_dashboard')
     else:
         form = ClinicPasswordChangeForm(request.user)
@@ -491,9 +616,11 @@ def doctors_list(request):
     if not getattr(request.user, 'is_patient', False):
         return redirect('home')
     specialty_filter = request.GET.get('specialty', '').strip()
-    doctors = CustomUser.objects.filter(is_doctor=True, is_active=True)
-    doctor_data = []
-    specialties = set()
+    sort_by          = request.GET.get('sort', 'rating')
+    doctors          = CustomUser.objects.filter(is_doctor=True, is_active=True)
+    doctor_data      = []
+    specialties      = set()
+
     for doc in doctors:
         try:
             dp = doc.doctor_profile
@@ -505,10 +632,16 @@ def doctors_list(request):
             if specialty_filter.lower() not in (dp.specialization or '').lower():
                 continue
         doctor_data.append({'user': doc, 'profile': dp})
+
+    if sort_by == 'performance':
+        doctor_data.sort(key=lambda x: x['profile'].performance_score() if x['profile'] else 0, reverse=True)
+    else:
+        doctor_data.sort(key=lambda x: x['profile'].average_rating() or 0 if x['profile'] else 0, reverse=True)
+
     notif_list, notif_count = _get_notifications(request.user)
     return render(request, 'doctors_list.html', {
         'doctor_data': doctor_data, 'specialties': sorted(specialties),
-        'specialty_filter': specialty_filter,
+        'specialty_filter': specialty_filter, 'sort_by': sort_by,
         'notif_list': notif_list, 'notif_count': notif_count,
     })
 
@@ -528,6 +661,7 @@ def doctor_profile(request, doctor_id):
     unique_patients        = Appointment.objects.filter(doctor=doctor).values('patient').distinct().count()
     avg_rating             = profile.average_rating() if profile else None
     rating_count           = profile.rating_count() if profile else 0
+    performance_score      = profile.performance_score() if profile else 0
     recent_ratings         = Rating.objects.filter(doctor=doctor).select_related('patient').order_by('-created_at')[:5]
 
     notif_list, notif_count = _get_notifications(request.user)
@@ -537,6 +671,7 @@ def doctor_profile(request, doctor_id):
         'confirmed_appointments': confirmed_appointments,
         'unique_patients': unique_patients,
         'avg_rating': avg_rating, 'rating_count': rating_count,
+        'performance_score': performance_score,
         'recent_ratings': recent_ratings,
         'notif_list': notif_list, 'notif_count': notif_count,
     })
@@ -554,41 +689,124 @@ def new_appointment(request, doctor_id):
             return redirect('doctor_profile', doctor_id=doctor_id)
     except DoctorProfile.DoesNotExist:
         doctor_profile_obj = None
+
+    try:
+        patient_profile = request.user.patient_profile
+    except PatientProfile.DoesNotExist:
+        patient_profile = None
+
     if request.method == 'POST':
+        print(">>> PAYMENT METHOD PRIMIT:", request.POST.get('payment_method'))
+        print(">>> TOT POST-UL:", dict(request.POST))
         form = AppointmentForm(request.POST)
         if form.is_valid():
-            appt         = form.save(commit=False)
-            appt.patient = request.user
-            appt.doctor  = doctor
+            appt                 = form.save(commit=False)
+            appt.patient         = request.user
+            appt.doctor          = doctor
+            appt.referral_serial = form.cleaned_data.get('referral_serial', '')
+            appt.payment_method  = request.POST.get('payment_method', 'CASH')
             appt.save()
             AuditLog.log(request, AuditLog.Action.APPT_CREATED, metadata={'doctor': doctor.username})
-            messages.success(request, 'Programarea a fost creata cu succes!')
+            messages.success(request, 'Programarea a fost creată cu succes!')
+            if appt.payment_method == 'CARD_ONLINE':
+                return redirect('card_checkout', appointment_id=appt.id)
             return redirect('patient_dashboard')
     else:
         form = AppointmentForm()
+
     notif_list, notif_count = _get_notifications(request.user)
     return render(request, 'new_appointment.html', {
-        'form': form, 'selected_doctor': doctor,
-        'notif_list': notif_list, 'notif_count': notif_count,
+        'form': form,
+        'selected_doctor': doctor,
+        'patient_profile': patient_profile,
+        'notif_list': notif_list,
+        'notif_count': notif_count,
     })
 
+@login_required(login_url='login')
+def card_checkout(request, appointment_id):
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
+ 
+    try:
+        fee = float(appt.doctor.doctor_profile.consultation_fee)
+    except DoctorProfile.DoesNotExist:
+        fee = 0
+ 
+    if request.method == 'POST' and request.POST.get('confirmed') == '1':
+        stripe_ref = request.POST.get('stripe_ref', '')
+        Payment.objects.create(
+            appointment=appt,
+            payer=request.user,
+            beneficiary=request.user,
+            amount=fee,
+            method=Payment.Method.ONLINE,
+            status=Payment.Status.COMPLETED,
+            stripe_id=stripe_ref,
+        )
+        appt.payment_method = 'CARD_ONLINE'
+        appt.amount_paid    = fee
+        appt.save()
+        AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
+                     metadata={'method': 'CARD_ONLINE', 'amount': fee, 'ref': stripe_ref})
+        messages.success(request, f'Plată online confirmată! Ref: {stripe_ref}')
+        return redirect('patient_dashboard')
+ 
+    return render(request, 'card_checkout.html', {
+        'appointment': appt,
+        'fee': fee,
+    })
+
+# ── MEDIC ──────────────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
 def doctor_dashboard(request):
     if not getattr(request.user, 'is_doctor', False):
         return redirect('home')
-    appointments    = Appointment.objects.filter(doctor=request.user).select_related('patient')
+    now          = timezone.now()
+    appointments = Appointment.objects.filter(doctor=request.user).select_related('patient')
     completed_count = appointments.filter(is_completed=True).count()
-    pending_count   = appointments.filter(is_confirmed=False, is_completed=False).count()
+    pending_count   = appointments.filter(is_confirmed=False, is_completed=False, is_no_show=False).count()
+    no_show_count   = appointments.filter(is_no_show=True).count()
+
     try:
         doctor_profile_obj = request.user.doctor_profile
+        fee = float(doctor_profile_obj.consultation_fee)
     except DoctorProfile.DoesNotExist:
         doctor_profile_obj = None
+        fee = 0
+
+    # Venituri luna curenta
+    revenue_private = 0
+    revenue_cnas    = 0
+    appts_this_month = appointments.filter(
+        is_completed=True,
+        date_time__month=now.month,
+        date_time__year=now.year,
+    )
+    for a in appts_this_month:
+        if a.cnas_covered:
+            revenue_cnas += fee
+        else:
+            revenue_private += float(a.amount_paid) if a.amount_paid else fee
+
+    revenue_total_month = revenue_private + revenue_cnas
+
+    # Venituri totale
+    all_completed = appointments.filter(is_completed=True).count()
+    revenue_all_time = all_completed * fee
+
     return render(request, 'doctor_dashboard.html', {
-        'appointments':    appointments,
-        'doctor_profile':  doctor_profile_obj,
-        'completed_count': completed_count,
-        'pending_count':   pending_count,
+        'appointments':        appointments,
+        'doctor_profile':      doctor_profile_obj,
+        'completed_count':     completed_count,
+        'pending_count':       pending_count,
+        'no_show_count':       no_show_count,
+        'revenue_private':     int(revenue_private),
+        'revenue_cnas':        int(revenue_cnas),
+        'revenue_total_month': int(revenue_total_month),
+        'revenue_all_time':    int(revenue_all_time),
     })
 
 
@@ -638,15 +856,15 @@ def approve_appointment(request, appointment_id):
     AuditLog.log(request, AuditLog.Action.APPT_APPROVED, metadata={'appointment_id': appointment_id})
 
     _send_email_safe(
-        subject='Programarea ta a fost confirmata — MedApp',
-        message=f'Buna {appt.patient.get_full_name() or appt.patient.username},\n\n'
+        subject='Programarea ta a fost confirmată — MedApp',
+        message=f'Bună {appt.patient.get_full_name() or appt.patient.username},\n\n'
                 f'Programarea ta la Dr. {appt.doctor.get_full_name() or appt.doctor.username} '
-                f'din data de {appt.date_time.strftime("%d %B %Y, ora %H:%M")} a fost confirmata.\n\n'
-                f'Te asteptam!\nEchipa MedApp',
+                f'din data de {appt.date_time.strftime("%d %B %Y, ora %H:%M")} a fost confirmată.\n\n'
+                f'Te așteptăm!\nEchipa MedApp',
         recipient=appt.patient.email,
     )
 
-    messages.success(request, 'Programarea a fost aprobata.')
+    messages.success(request, 'Programarea a fost aprobată.')
     return redirect('doctor_dashboard')
 
 
@@ -655,11 +873,48 @@ def complete_appointment(request, appointment_id):
     if not getattr(request.user, 'is_doctor', False):
         return redirect('home')
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
-    appt.is_completed = True
+
+    if request.method == 'POST':
+        icd10   = request.POST.get('icd10_code', '').strip()
+        appt.is_completed = True
+        appt.is_confirmed = True
+        appt.icd10_code   = icd10
+
+        # Verificare CNAS: asigurat + bilet trimitere + cod ICD10
+        try:
+            pp = appt.patient.patient_profile
+            if pp.is_insured and appt.referral_serial and icd10:
+                appt.cnas_covered = True
+                appt.cnas_code    = appt.generate_cnas_code()
+                appt.amount_paid  = 0
+                AuditLog.log(request, AuditLog.Action.CNAS_GENERATED,
+                             metadata={'cnas_code': appt.cnas_code, 'appointment_id': appt.id})
+        except PatientProfile.DoesNotExist:
+            pass
+
+        appt.save()
+        AuditLog.log(request, AuditLog.Action.APPT_COMPLETED, metadata={'appointment_id': appointment_id})
+        messages.success(request, 'Consultația a fost finalizată.')
+        if appt.cnas_covered:
+            messages.info(request, f'Decontare CNAS generată. Cod: {appt.cnas_code}')
+    else:
+        appt.is_completed = True
+        appt.is_confirmed = True
+        appt.save()
+
+    return redirect('doctor_dashboard')
+
+
+@login_required(login_url='login')
+def mark_no_show(request, appointment_id):
+    if not getattr(request.user, 'is_doctor', False):
+        return redirect('home')
+    appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
+    appt.is_no_show  = True
     appt.is_confirmed = True
     appt.save()
-    AuditLog.log(request, AuditLog.Action.APPT_COMPLETED, metadata={'appointment_id': appointment_id})
-    messages.success(request, 'Consultatia a fost marcata ca finalizata.')
+    AuditLog.log(request, AuditLog.Action.APPT_NO_SHOW, metadata={'appointment_id': appointment_id})
+    messages.warning(request, f'Programarea lui {appt.patient.get_full_name() or appt.patient.username} marcată ca Neprezentare.')
     return redirect('doctor_dashboard')
 
 
@@ -670,7 +925,7 @@ def delete_appointment(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
     AuditLog.log(request, AuditLog.Action.APPT_DELETED, metadata={'patient': appt.patient.username})
     appt.delete()
-    messages.info(request, 'Programarea a fost stearsa.')
+    messages.info(request, 'Programarea a fost ștearsă.')
     return redirect('doctor_dashboard')
 
 
@@ -680,7 +935,7 @@ def patient_history(request, patient_id):
         return redirect('home')
     patient = get_object_or_404(CustomUser, id=patient_id, is_patient=True)
     if not Appointment.objects.filter(doctor=request.user, patient=patient).exists():
-        messages.error(request, 'Nu ai acces la fisa acestui pacient.')
+        messages.error(request, 'Nu ai acces la fișa acestui pacient.')
         return redirect('doctor_dashboard')
     try:
         patient_profile = patient.patient_profile
@@ -701,7 +956,7 @@ def add_prescription(request, appointment_id):
         return redirect('home')
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
     if Prescription.objects.filter(appointment=appt).exists():
-        messages.info(request, 'Exista deja o reteta pentru aceasta programare.')
+        messages.info(request, 'Există deja o rețetă pentru această programare.')
         return redirect('doctor_dashboard')
     if request.method == 'POST':
         form = PrescriptionForm(request.POST)
@@ -712,12 +967,14 @@ def add_prescription(request, appointment_id):
             rx.patient     = appt.patient
             rx.save()
             AuditLog.log(request, AuditLog.Action.PRESCRIPTION_CREATED, metadata={'patient': appt.patient.username})
-            messages.success(request, 'Reteta a fost salvata.')
+            messages.success(request, 'Rețeta a fost salvată.')
             return redirect('doctor_dashboard')
     else:
         form = PrescriptionForm()
     return render(request, 'add_prescription.html', {'form': form, 'appointment': appt})
 
+
+#  ADMIN 
 
 @login_required(login_url='login')
 def admin_reports(request):

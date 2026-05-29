@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Plată securizată{% endblock %}
+{% block page_title %}Plată online{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:0 auto;">
+
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="font-size:12px;color:var(--text-muted);">Plătești pentru</div>
+                <div style="font-size:15px;font-weight:600;color:var(--text);">Dr. {{ appointment.doctor.get_full_name }}</div>
+                <div style="font-size:12px;color:var(--text-muted);">{{ appointment.date_time|date:"d M Y, H:i" }}</div>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:12px;color:var(--text-muted);">Total</div>
+                <div style="font-size:26px;font-weight:700;color:var(--c-primary);">{{ fee }} RON</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+            <div class="card-title">🔒 Plată securizată</div>
+            <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+                <span style="font-size:11px;color:var(--text-muted);">Powered by</span>
+                <span style="font-size:13px;font-weight:700;color:#635bff;">stripe</span>
+            </div>
+        </div>
+        <div class="card-body" style="padding:24px;">
+
+            <div id="checkout-form">
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label">Număr card</label>
+                    <div style="position:relative;">
+                        <input type="text" id="card-number" class="form-input"
+                               placeholder="1234 5678 9012 3456"
+                               maxlength="19"
+                               style="padding-right:60px;"
+                               oninput="formatCard(this)">
+                        <div id="card-brand" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:20px;">💳</div>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                    <div class="form-group">
+                        <label class="form-label">Dată expirare</label>
+                        <input type="text" id="card-expiry" class="form-input"
+                               placeholder="MM / YY" maxlength="7"
+                               oninput="formatExpiry(this)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CVV</label>
+                        <input type="text" id="card-cvv" class="form-input"
+                               placeholder="123" maxlength="3"
+                               oninput="this.value=this.value.replace(/\D/g,'')">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom:24px;">
+                    <label class="form-label">Nume titular card</label>
+                    <input type="text" id="card-name" class="form-input"
+                           placeholder="Ex: ION POPESCU"
+                           style="text-transform:uppercase;">
+                </div>
+
+                <div id="error-msg" style="display:none;background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.3);border-radius:var(--radius-md);padding:10px 14px;font-size:13px;color:var(--c-danger);margin-bottom:14px;"></div>
+
+                <button onclick="processPayment()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;">
+                    🔒 Plătește {{ fee }} RON
+                </button>
+
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span style="font-size:11px;color:var(--text-muted);">Conexiune criptată SSL 256-bit. Datele cardului nu sunt stocate.</span>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading-state" style="display:none;text-align:center;padding:32px 0;">
+                <div style="font-size:32px;margin-bottom:12px;animation:spin 1s linear infinite;display:inline-block;">⟳</div>
+                <div style="font-size:15px;font-weight:600;color:var(--text);">Se procesează plata...</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:6px;">Nu închide această pagină</div>
+            </div>
+
+            <!-- Success -->
+            <div id="success-state" style="display:none;text-align:center;padding:32px 0;">
+                <div style="font-size:48px;margin-bottom:12px;">✅</div>
+                <div style="font-size:18px;font-weight:700;color:var(--c-success);">Plată procesată cu succes!</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:8px;" id="success-ref"></div>
+                <form method="POST" action="" id="confirm-form" style="display:none;">
+                    {% csrf_token %}
+                    <input type="hidden" name="stripe_ref" id="stripe-ref-input">
+                    <input type="hidden" name="confirmed" value="1">
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+
+<script>
+function formatCard(input) {
+    let v = input.value.replace(/\D/g, '').substring(0, 16);
+    input.value = v.replace(/(.{4})/g, '$1 ').trim();
+    const brand = document.getElementById('card-brand');
+    if (v.startsWith('4')) brand.textContent = '💳';
+    else if (v.startsWith('5')) brand.textContent = '💳';
+    else if (v.startsWith('3')) brand.textContent = '💳';
+    else brand.textContent = '💳';
+}
+
+function formatExpiry(input) {
+    let v = input.value.replace(/\D/g, '').substring(0, 4);
+    if (v.length >= 2) v = v.substring(0, 2) + ' / ' + v.substring(2);
+    input.value = v;
+}
+
+function processPayment() {
+    const number = document.getElementById('card-number').value.replace(/\s/g, '');
+    const expiry = document.getElementById('card-expiry').value;
+    const cvv    = document.getElementById('card-cvv').value;
+    const name   = document.getElementById('card-name').value;
+    const errDiv = document.getElementById('error-msg');
+
+    if (number.length < 16) {
+        errDiv.textContent = 'Număr de card invalid.';
+        errDiv.style.display = 'block'; return;
+    }
+    if (expiry.length < 7) {
+        errDiv.textContent = 'Data expirare invalidă.';
+        errDiv.style.display = 'block'; return;
+    }
+    if (cvv.length < 3) {
+        errDiv.textContent = 'CVV invalid.';
+        errDiv.style.display = 'block'; return;
+    }
+    if (!name.trim()) {
+        errDiv.textContent = 'Introdu numele titularului.';
+        errDiv.style.display = 'block'; return;
+    }
+
+    errDiv.style.display = 'none';
+    document.getElementById('checkout-form').style.display = 'none';
+    document.getElementById('loading-state').style.display = 'block';
+
+    setTimeout(function() {
+        const ref = 'pi_sim_' + Math.random().toString(36).substring(2, 18).toUpperCase();
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('success-state').style.display = 'block';
+        document.getElementById('success-ref').textContent = 'Referință tranzacție: ' + ref;
+        document.getElementById('stripe-ref-input').value = ref;
+
+        setTimeout(function() {
+            document.getElementById('confirm-form').submit();
+        }, 2000);
+    }, 2500);
+}
+</script>
+{% endblock %}
