@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-o2a=_m!hea)&$bdj#-42@4zu8=prq6(iy*ic=8@i%k!s6_6w++')
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
@@ -77,12 +77,16 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'ro'
 TIME_ZONE     = 'Europe/Bucharest'
 USE_I18N      = True
+USE_L10N      = False   # <-- FIX: oprește formatarea numerelor cu virgulă română
 USE_TZ        = True
 
 STATIC_URL       = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT      = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+if DEBUG:
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -96,7 +100,7 @@ EMAIL_HOST          = 'smtp.mail.yahoo.com'
 EMAIL_PORT          = 587
 EMAIL_USE_TLS       = True
 EMAIL_HOST_USER     = os.environ.get('EMAIL_HOST_USER', 'bmwbmw192@yahoo.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'xkjwxiqwkowscuho')
 DEFAULT_FROM_EMAIL  = 'MedApp Clinică <bmwbmw192@yahoo.com>'
 
 handler403 = 'django.views.defaults.permission_denied'

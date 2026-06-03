@@ -6,7 +6,7 @@
 {% block nav_doctors %}active{% endblock %}
 
 {% block content %}
-<div style="max-width:560px;margin:0 auto;">
+<div style="max-width:600px;margin:0 auto;">
 
     <a href="{% url 'doctors_list' %}" class="btn btn-ghost btn-sm"
        style="margin-bottom:20px;display:inline-flex;align-items:center;gap:6px;">
@@ -19,24 +19,15 @@
         <div class="card-body" style="display:flex;align-items:center;gap:14px;">
             <div style="width:48px;height:48px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 {% if selected_doctor.doctor_profile.avatar %}
-                    <img src="{{ selected_doctor.doctor_profile.avatar.url }}"
-                         style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+                    <img src="{{ selected_doctor.doctor_profile.avatar.url }}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
                 {% else %}
                     {{ selected_doctor.username|first|upper }}
                 {% endif %}
             </div>
             <div>
-                <div style="font-size:16px;font-weight:600;color:var(--text);">
-                    Dr. {{ selected_doctor.get_full_name|default:selected_doctor.username }}
-                </div>
-                <div style="font-size:13px;color:var(--c-primary);margin-top:2px;">
-                    {% if selected_doctor.doctor_profile.specialization %}
-                        {{ selected_doctor.doctor_profile.specialization }}
-                    {% endif %}
-                </div>
-                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">
-                    Tarif: {{ selected_doctor.doctor_profile.consultation_fee }} RON
-                </div>
+                <div style="font-size:16px;font-weight:600;color:var(--text);">Dr. {{ selected_doctor.get_full_name|default:selected_doctor.username }}</div>
+                <div style="font-size:13px;color:var(--c-primary);margin-top:2px;">{{ selected_doctor.doctor_profile.specialization }}</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Tarif: <strong>{{ selected_doctor.doctor_profile.consultation_fee }} RON</strong></div>
             </div>
         </div>
     </div>
@@ -45,36 +36,99 @@
     <div class="card">
         <div class="card-header">
             <div class="card-title">📅 Detalii programare</div>
-            <div class="card-subtitle">Completează informațiile consultației</div>
+            <div class="card-subtitle">Completează toate informațiile</div>
         </div>
         <div class="card-body">
-            <form method="POST" action="" novalidate>
+            <form method="POST" action="" novalidate id="appt-form">
                 {% csrf_token %}
                 <input type="hidden" name="payment_method" id="payment_method_hidden" value="CASH">
+                <input type="hidden" name="is_for_other" id="is_for_other_hidden" value="0">
 
                 <div class="form-group">
-                    <label class="form-label">{{ form.date_time.label }}</label>
+                    <label class="form-label">Data și ora</label>
                     {{ form.date_time }}
-                    {% if form.date_time.errors %}
-                        <ul class="errorlist">{% for e in form.date_time.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>
-                    {% endif %}
+                    {% if form.date_time.errors %}<ul class="errorlist">{% for e in form.date_time.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">{{ form.reason.label }}</label>
+                    <label class="form-label">Motivul vizitei</label>
                     {{ form.reason }}
-                    {% if form.reason.errors %}
-                        <ul class="errorlist">{% for e in form.reason.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>
-                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" style="margin-bottom:10px;display:block;">Programarea este pentru</label>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <label id="for-me-opt" onclick="selectFor('me')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--c-primary);background:var(--c-primary-lt);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
+                            <input type="radio" name="for_who" value="me" checked style="accent-color:var(--c-primary);">
+                            <span style="font-size:20px;">🙋</span>
+                            <div>
+                                <div style="font-size:14px;font-weight:600;color:var(--text);">Pentru mine</div>
+                                <div style="font-size:12px;color:var(--text-muted);">{{ user.get_full_name|default:user.username }}</div>
+                            </div>
+                        </label>
+                        <label id="for-other-opt" onclick="selectFor('other')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
+                            <input type="radio" name="for_who" value="other" style="accent-color:var(--c-primary);">
+                            <span style="font-size:20px;">👨‍👩‍👧</span>
+                            <div>
+                                <div style="font-size:14px;font-weight:600;color:var(--text);">Pentru altcineva</div>
+                                <div style="font-size:12px;color:var(--text-muted);">Copil, părinte, persoană vârstnică</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="beneficiary-section" style="display:none;margin-bottom:16px;">
+                    <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:16px;border-left:3px solid var(--c-primary);">
+                        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;">👤 Datele persoanei pentru care faci programarea</div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label class="form-label">Nume complet *</label>
+                            <input type="text" name="beneficiary_name" class="form-input" placeholder="Ex: Maria Ionescu" style="width:100%;">
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                            <div>
+                                <label class="form-label">CNP</label>
+                                <input type="text" name="beneficiary_cnp" class="form-input" placeholder="13 cifre" maxlength="13" style="width:100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Data nașterii</label>
+                                <input type="date" name="beneficiary_birth_date" class="form-input" style="width:100%;">
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <div>
+                                <label class="form-label">Telefon</label>
+                                <input type="text" name="beneficiary_phone" class="form-input" placeholder="07xx xxx xxx" style="width:100%;">
+                            </div>
+                            <div>
+                                <label class="form-label">Relație</label>
+                                <select name="beneficiary_relation" class="form-input" style="width:100%;">
+                                    <option value="">— Selectează —</option>
+                                    <option value="Copil">Copil</option>
+                                    <option value="Parinte">Părinte</option>
+                                    <option value="Sot/Sotie">Soț/Soție</option>
+                                    <option value="Bunic/Bunica">Bunic/Bunică</option>
+                                    <option value="Alta">Altă relație</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" style="margin-bottom:10px;display:block;">Metodă de plată</label>
+
+                    <!-- Banner promoțional cashback -->
+                    <div style="background:linear-gradient(135deg,rgba(13,158,138,0.12) 0%,rgba(13,158,138,0.04) 100%);border:1px solid rgba(13,158,138,0.35);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:20px;flex-shrink:0;">🎁</span>
+                        <div>
+                            <div style="font-size:13px;font-weight:700;color:var(--c-teal);">Plătește cu Wallet MedApp și primești 5% cashback!</div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">Suma se adaugă automat înapoi în Wallet-ul tău după confirmare.</div>
+                        </div>
+                    </div>
                     <div style="display:flex;flex-direction:column;gap:8px;">
 
                         <label class="pay-option" id="pay-cash" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
-                            <input type="radio" value="CASH" checked
-                                   style="accent-color:var(--c-primary);" onchange="selectPay(this)">
+                            <input type="radio" name="payment_method_radio" value="CASH" checked style="accent-color:var(--c-primary);" onchange="selectPay(this)">
                             <span style="font-size:20px;">💵</span>
                             <div>
                                 <div style="font-size:14px;font-weight:600;color:var(--text);">Cash</div>
@@ -82,89 +136,239 @@
                             </div>
                         </label>
 
-                        <label class="pay-option" id="pay-card" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
-                            <input type="radio" value="CARD_ONLINE"
-                                   style="accent-color:var(--c-primary);" onchange="selectPay(this)">
-                            <span style="font-size:20px;">💳</span>
-                            <div>
-                                <div style="font-size:14px;font-weight:600;color:var(--text);">Card online</div>
-                                <div style="font-size:12px;color:var(--text-muted);">Plată securizată cu cardul bancar</div>
+                        <label class="pay-option" id="pay-card" style="display:flex;flex-direction:column;gap:0;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;overflow:hidden;">
+                            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;">
+                                <input type="radio" name="payment_method_radio" value="CARD_ONLINE" style="accent-color:var(--c-primary);" onchange="selectPay(this)">
+                                <span style="font-size:20px;">💳</span>
+                                <div style="flex:1;">
+                                    <div style="font-size:14px;font-weight:600;color:var(--text);">Card online</div>
+                                    <div style="font-size:12px;color:var(--text-muted);">Completează datele cardului mai jos</div>
+                                </div>
+                            </div>
+                            <div id="card-fields" style="display:none;padding:0 16px 16px;border-top:1px solid var(--border);margin-top:0;">
+                                <div style="margin-top:12px;">
+                                    <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Număr card</label>
+                                    <input type="text" id="card-number" name="card_number" class="form-input" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)" style="width:100%;font-size:15px;letter-spacing:2px;">
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+                                    <div>
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Expirare</label>
+                                        <input type="text" id="card-expiry" name="card_expiry" class="form-input" placeholder="MM / YY" maxlength="7" oninput="formatExpiry(this)" style="width:100%;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">CVV</label>
+                                        <input type="text" id="card-cvv" name="card_cvv" class="form-input" placeholder="•••" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;letter-spacing:3px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Titular</label>
+                                        <input type="text" id="card-name" name="card_name" class="form-input" placeholder="ION POP" style="width:100%;text-transform:uppercase;">
+                                    </div>
+                                </div>
+                                <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">🔒 Datele cardului nu sunt stocate · Tranzacție securizată</div>
+                            </div>
+                        </label>
+
+                        <label class="pay-option" id="pay-wallet" style="display:flex;flex-direction:column;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;overflow:hidden;">
+                            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;">
+                                <input type="radio" name="payment_method_radio" value="WALLET" style="accent-color:var(--c-primary);" onchange="selectPay(this)">
+                                <span style="font-size:20px;">👛</span>
+                                <div style="flex:1;">
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <div style="font-size:14px;font-weight:600;color:var(--text);">Wallet MedApp</div>
+                                        <span style="background:linear-gradient(90deg,#0D9E8A,#07c4a8);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.03em;">🎁 5% CASHBACK</span>
+                                    </div>
+                                    <div style="font-size:12px;color:var(--text-muted);">
+                                        Card: <strong style="font-family:monospace;color:var(--c-teal);">{% if patient_wallet %}{{ patient_wallet.card_number }}{% else %}—{% endif %}</strong>
+                                    </div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:11px;color:var(--text-muted);">Sold</div>
+                                    <div style="font-size:16px;font-weight:700;color:{% if patient_wallet and patient_wallet.balance >= doctor_fee %}var(--c-success){% else %}var(--c-danger){% endif %};">
+                                        {% if patient_wallet %}{{ patient_wallet.balance }}{% else %}0{% endif %} RON
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="wallet-warning" style="display:none;padding:10px 16px;background:rgba(220,53,69,0.08);border-top:1px solid rgba(220,53,69,0.2);">
+                                <div style="font-size:12px;color:var(--c-danger);">
+                                    ⚠ Sold insuficient — ai {% if patient_wallet %}{{ patient_wallet.balance }}{% else %}0{% endif %} RON, necesari {{ doctor_fee }} RON.
+                                    <a href="{% url 'wallet_topup_card' %}?amount={{ doctor_fee }}" style="color:var(--c-primary);font-weight:600;">Reîncarcă acum →</a>
+                                </div>
+                            </div>
+                            <div id="wallet-ok" style="display:none;padding:10px 16px;background:rgba(13,158,138,0.08);border-top:1px solid rgba(13,158,138,0.2);">
+                                <div style="font-size:12px;color:var(--c-teal);">✓ Sold suficient — vor fi debitați {{ doctor_fee }} RON la confirmare</div>
                             </div>
                         </label>
 
                         <label class="pay-option" id="pay-cnas" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
-                            <input type="radio" value="CNAS"
-                                   style="accent-color:var(--c-primary);" onchange="selectPay(this)">
+                            <input type="radio" name="payment_method_radio" value="CNAS" style="accent-color:var(--c-primary);" onchange="selectPay(this)">
                             <span style="font-size:20px;">🏥</span>
                             <div>
                                 <div style="font-size:14px;font-weight:600;color:var(--text);">Asigurare sănătate (CNAS)</div>
-                                <div style="font-size:12px;color:var(--text-muted);">Necesită card de sănătate și bilet de trimitere</div>
+                                <div style="font-size:12px;color:var(--text-muted);">Cost 0 RON dacă ești asigurat cu bilet de trimitere</div>
                             </div>
                         </label>
 
                     </div>
                 </div>
 
-                <div id="cnas-section" style="display:none;margin-top:4px;">
+                <div id="cnas-section" style="display:none;margin-bottom:16px;">
                     {% if patient_profile and patient_profile.is_insured and patient_profile.health_card_serial %}
-                    <div style="background:rgba(13,158,138,0.08);border:1px solid rgba(13,158,138,0.3);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
+                    <div style="background:rgba(13,158,138,0.08);border:1px solid rgba(13,158,138,0.3);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;">
                         <span style="font-size:18px;">✓</span>
                         <div>
                             <div style="font-size:13px;font-weight:600;color:var(--c-teal);">Asigurat CNAS confirmat</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
-                                Card sănătate: <strong>{{ patient_profile.health_card_serial }}</strong>
-                            </div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Card sănătate: <strong>{{ patient_profile.health_card_serial }}</strong></div>
                         </div>
                     </div>
-                    {% elif patient_profile and not patient_profile.is_insured %}
-                    <div style="background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.3);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
-                        <span style="font-size:18px;">⚠</span>
-                        <div>
-                            <div style="font-size:13px;font-weight:600;color:var(--c-danger);">Nu ești marcat ca asigurat CNAS</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
-                                Actualizează-ți <a href="{% url 'profile_edit' %}" style="color:var(--c-primary);">profilul</a> înainte de programare.
-                            </div>
-                        </div>
+                    {% else %}
+                    <div style="background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.3);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:14px;">
+                        <div style="font-size:13px;font-weight:600;color:var(--c-danger);">⚠ Nu ești marcat ca asigurat CNAS</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Actualizează-ți <a href="{% url 'profile_edit' %}" style="color:var(--c-primary);">profilul</a> înainte de programare.</div>
                     </div>
                     {% endif %}
-
                     <div class="form-group">
-                        <label class="form-label">Serie bilet trimitere</label>
+                        <label class="form-label">Serie bilet trimitere *</label>
                         {{ form.referral_serial }}
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-                            De la medicul de familie — obligatoriu pentru decontare CNAS.
-                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Obligatoriu pentru decontare CNAS.</div>
                     </div>
                 </div>
 
+                <div id="form-error" style="display:none;background:rgba(220,53,69,0.1);border:1px solid rgba(220,53,69,0.4);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--c-danger);margin-bottom:14px;"></div>
+
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
                     <a href="{% url 'doctors_list' %}" class="btn btn-ghost">Anulează</a>
-                    <button type="submit" class="btn btn-teal" style="padding:10px 28px;">
+                    <button type="button" onclick="validateAndSubmit()" class="btn btn-teal" style="padding:10px 28px;">
                         Confirmă programarea →
                     </button>
                 </div>
             </form>
         </div>
     </div>
-
 </div>
 
 <script>
+const walletBalance = parseFloat("{{ patient_wallet.balance|default:0 }}".replace(',', '.'));
+const doctorFee     = parseFloat("{{ doctor_fee|default:0 }}".replace(',', '.'));
+
+function selectFor(type) {
+    const optMe    = document.getElementById('for-me-opt');
+    const optOther = document.getElementById('for-other-opt');
+    const section  = document.getElementById('beneficiary-section');
+    if (type === 'me') {
+        optMe.style.borderColor    = 'var(--c-primary)';
+        optMe.style.background     = 'var(--c-primary-lt)';
+        optOther.style.borderColor = 'var(--border)';
+        optOther.style.background  = 'transparent';
+        section.style.display      = 'none';
+        document.getElementById('is_for_other_hidden').value = '0';
+        optMe.querySelector('input').checked = true;
+    } else {
+        optOther.style.borderColor = 'var(--c-primary)';
+        optOther.style.background  = 'var(--c-primary-lt)';
+        optMe.style.borderColor    = 'var(--border)';
+        optMe.style.background     = 'transparent';
+        section.style.display      = 'block';
+        document.getElementById('is_for_other_hidden').value = '1';
+        optOther.querySelector('input').checked = true;
+    }
+}
+
 function selectPay(radio) {
     document.getElementById('payment_method_hidden').value = radio.value;
     document.querySelectorAll('.pay-option').forEach(el => {
         el.style.borderColor = 'var(--border)';
         el.style.background  = 'transparent';
     });
-    const label = radio.closest('.pay-option');
-    label.style.borderColor = 'var(--c-primary)';
-    label.style.background  = 'var(--c-primary-lt)';
-    document.getElementById('cnas-section').style.display =
-        radio.value === 'CNAS' ? 'block' : 'none';
+    radio.closest('.pay-option').style.borderColor = 'var(--c-primary)';
+    radio.closest('.pay-option').style.background  = 'var(--c-primary-lt)';
+
+    document.getElementById('card-fields').style.display   = radio.value === 'CARD_ONLINE' ? 'block' : 'none';
+    document.getElementById('cnas-section').style.display  = radio.value === 'CNAS' ? 'block' : 'none';
+
+    const walletWarn = document.getElementById('wallet-warning');
+    const walletOk   = document.getElementById('wallet-ok');
+    if (radio.value === 'WALLET') {
+        if (walletBalance < doctorFee) {
+            walletWarn.style.display = 'block';
+            walletOk.style.display   = 'none';
+        } else {
+            walletOk.style.display   = 'block';
+            walletWarn.style.display = 'none';
+        }
+    } else {
+        walletWarn.style.display = 'none';
+        walletOk.style.display   = 'none';
+    }
 }
+
+function formatCard(input) {
+    let v = input.value.replace(/\D/g,'').substring(0,16);
+    input.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+
+function formatExpiry(input) {
+    let v = input.value.replace(/\D/g,'').substring(0,4);
+    if (v.length >= 2) v = v.substring(0,2) + ' / ' + v.substring(2);
+    input.value = v;
+}
+
+function showError(msg) {
+    const el = document.getElementById('form-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function validateAndSubmit() {
+    document.getElementById('form-error').style.display = 'none';
+
+    // Re-citim radio-ul selectat chiar acum — indiferent dacă onchange s-a declanșat
+    const checkedRadio = document.querySelector('input[name="payment_method_radio"]:checked');
+    if (checkedRadio) {
+        document.getElementById('payment_method_hidden').value = checkedRadio.value;
+    }
+    const method = document.getElementById('payment_method_hidden').value;
+    const isOther = document.getElementById('is_for_other_hidden').value === '1';
+
+    if (isOther) {
+        const name = document.querySelector('input[name="beneficiary_name"]').value.trim();
+        if (!name) { showError('⚠ Introduceți numele persoanei pentru care faceți programarea.'); return; }
+    }
+
+    if (method === 'CARD_ONLINE') {
+        const num  = document.getElementById('card-number').value.replace(/\s/g,'');
+        const exp  = document.getElementById('card-expiry').value;
+        const cvv  = document.getElementById('card-cvv').value;
+        const name = document.getElementById('card-name').value.trim();
+        if (num.length < 16)  { showError('⚠ Numărul de card este invalid — trebuie să aibă 16 cifre.'); return; }
+        if (exp.length < 7)   { showError('⚠ Data de expirare este invalidă.'); return; }
+        if (cvv.length < 3)   { showError('⚠ CVV-ul este invalid.'); return; }
+        if (!name)            { showError('⚠ Introduceți numele titularului cardului.'); return; }
+    }
+
+    if (method === 'WALLET') {
+        if (walletBalance < doctorFee) {
+            showError(`⚠ Sold insuficient în Wallet. Ai ${walletBalance} RON, necesari ${doctorFee} RON.`);
+            return;
+        }
+    }
+
+    if (method === 'CNAS') {
+        {% if not patient_profile or not patient_profile.is_insured %}
+        showError('⚠ Nu ești marcat ca asigurat CNAS. Actualizează-ți profilul înainte de programare.');
+        return;
+        {% endif %}
+        const ref = document.querySelector('input[name="referral_serial"]');
+        if (!ref || !ref.value.trim()) { showError('⚠ Introduceți seria biletului de trimitere pentru CNAS.'); return; }
+    }
+
+    document.getElementById('appt-form').submit();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    const checked = document.querySelector('input[type="radio"]:checked');
+    const checked = document.querySelector('input[name="payment_method_radio"]:checked');
     if (checked) selectPay(checked);
+    selectFor('me');
 });
 </script>
 {% endblock %}

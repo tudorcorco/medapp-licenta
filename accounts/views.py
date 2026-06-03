@@ -3,11 +3,13 @@ from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Count, Avg, Sum
+from django.db.models import Count, Avg, Sum, Q
+from django.db import models
 from django.db.models.functions import TruncMonth
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import HttpResponse
+from decimal import Decimal
 import json
 import uuid
 
@@ -19,11 +21,9 @@ from .forms import (
 from .models import (
     CustomUser, Appointment, AuditLog,
     PatientProfile, DoctorProfile, Prescription, Rating,
-    Payment, Wallet,
+    Payment, Wallet, WalletTransaction, LoginAttempt,
 )
 
-
-# ── HELPERS ────────────────────────────────────────────────────────────────────
 
 def _profile_pct(profile, user):
     fields = [user.first_name, user.last_name, user.email,
@@ -114,12 +114,12 @@ def _get_admin_stats(now):
     top_doctors = []
     for doc in top_doctors_raw:
         try:
-            fee  = float(doc.doctor_profile.consultation_fee)
-            spec = doc.doctor_profile.specialization
+            fee   = float(doc.doctor_profile.consultation_fee)
+            spec  = doc.doctor_profile.specialization
             score = doc.doctor_profile.performance_score()
         except DoctorProfile.DoesNotExist:
-            fee  = 0
-            spec = ''
+            fee   = 0
+            spec  = ''
             score = 0
         completed = Appointment.objects.filter(doctor=doc, is_completed=True).count()
         top_doctors.append({
@@ -163,6 +163,24 @@ def _get_admin_stats(now):
     patients_labels,    patients_data    = _monthly_patients(6)
     patients_labels_1y, patients_data_1y = _monthly_patients(12)
 
+    # Ranking complet medici după performance_score (pentru secțiunea dedicată din admin_stats)
+    all_doctors = DoctorProfile.objects.select_related('user').all()
+    performance_ranking = []
+    for dp in all_doctors:
+        score = dp.performance_score()
+        performance_ranking.append({
+            'profile':      dp,
+            'score':        score,
+            'score_int':    int(score),
+            'is_top':       score >= 90,
+            'avg_rating':   dp.average_rating(),
+            'rating_count': dp.rating_count(),
+            'completed':    dp.user.appointments_as_doctor.filter(is_completed=True).count(),
+            'no_show':      dp.user.appointments_as_doctor.filter(is_no_show=True).count(),
+            'total':        dp.user.appointments_as_doctor.count(),
+        })
+    performance_ranking.sort(key=lambda x: x['score'], reverse=True)
+
     return {
         'total_patients':      total_patients,
         'total_doctors':       total_doctors,
@@ -185,10 +203,9 @@ def _get_admin_stats(now):
         'patients_data':       patients_data,
         'patients_labels_1y':  patients_labels_1y,
         'patients_data_1y':    patients_data_1y,
+        'performance_ranking': performance_ranking,
     }
 
-
-# ── PUBLIC ─────────────────────────────────────────────────────────────────────
 
 def home_view(request):
     today              = timezone.localdate()
@@ -207,18 +224,54 @@ def home_view(request):
 def login_view(request):
     if request.user.is_authenticated:
         return _redirect_by_role(request.user)
+
+    form = ClinicLoginForm()
+    ban_error = ''
+
     if request.method == 'POST':
-        form = ClinicLoginForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
-            return _redirect_by_role(user)
+        username = request.POST.get('username', '').strip()
+
+        # Verificăm ban înainte de orice
+        is_banned, ban_msg = LoginAttempt.check_ban(request, username)
+        if is_banned:
+            ban_error = ban_msg
         else:
-            AuditLog.log(request, AuditLog.Action.LOGIN_FAILED, metadata={'username': request.POST.get('username', '')})
-    else:
-        form = ClinicLoginForm()
-    return render(request, 'login.html', {'form': form})
+            form = ClinicLoginForm(request, data=request.POST)
+            if form.is_valid():
+                user = form.get_user()
+                login(request, user)
+                AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
+                return _redirect_by_role(user)
+            else:
+                # Înregistrăm eșecul și verificăm dacă se aplică ban
+                soft_banned, hard_banned = LoginAttempt.record_failure(request, username)
+                AuditLog.log(request, AuditLog.Action.LOGIN_FAILED, metadata={'username': username})
+
+                if hard_banned:
+                    AuditLog.log(request, AuditLog.Action.HARD_BAN, metadata={
+                        'username': username, 'ip': LoginAttempt.get_ip(request)
+                    })
+                    ban_error = f'Contul/IP-ul a fost blocat permanent din cauza activității suspecte. Contactați administratorul.'
+                elif soft_banned:
+                    AuditLog.log(request, AuditLog.Action.SOFT_BAN, metadata={
+                        'username': username, 'ip': LoginAttempt.get_ip(request)
+                    })
+                    ban_error = 'Prea multe încercări eșuate. Cont blocat 10 minute.'
+                else:
+                    # Calculăm câte încercări mai are
+                    from django.utils import timezone
+                    ip = LoginAttempt.get_ip(request)
+                    recent_count = LoginAttempt.objects.filter(
+                        ip_address=ip,
+                        is_soft_banned=False, is_hard_banned=False,
+                        timestamp__gte=timezone.now() - timezone.timedelta(hours=1),
+                    ).count()
+                    remaining = max(0, 5 - recent_count)
+                    if remaining > 0:
+                        form.add_error(None, f'Date incorecte. Mai ai {remaining} încercări înainte de blocare temporară.')
+                    else:
+                        form.add_error(None, 'Date incorecte.')
+    return render(request, 'login.html', {'form': form, 'ban_error': ban_error})
 
 
 def register_view(request):
@@ -244,8 +297,6 @@ def logout_view(request):
     return redirect('login')
 
 
-# ── PACIENT ────────────────────────────────────────────────────────────────────
-
 @login_required(login_url='login')
 def patient_dashboard(request):
     if not getattr(request.user, 'is_patient', False):
@@ -266,14 +317,14 @@ def patient_dashboard(request):
     profile_pct     = _profile_pct(profile, request.user)
     prescriptions   = Prescription.objects.filter(patient=request.user).select_related('doctor').order_by('-created_at')[:5]
     notif_list, notif_count = _get_notifications(request.user)
-    payments        = Payment.objects.filter(payer=request.user).order_by('-created_at')[:5]
+    payments        = Payment.objects.filter(beneficiary=request.user).order_by('-created_at')[:5]
 
     unrated = all_appts.filter(
         is_completed=True
     ).exclude(rating__isnull=False).order_by('-date_time').first()
 
     hour = now.hour
-    greeting = 'Bună dimineața' if hour < 12 else ('Bună ziua' if hour < 18 else 'Bună seara')
+    greeting = 'Buna dimineata' if hour < 12 else ('Buna ziua' if hour < 18 else 'Buna seara')
 
     return render(request, 'patient_dashboard.html', {
         'appointments': all_appts, 'upcoming': upcoming, 'past': past,
@@ -294,7 +345,7 @@ def cancel_appointment(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user, is_confirmed=False)
     AuditLog.log(request, AuditLog.Action.APPT_DELETED, metadata={'appointment_id': appointment_id})
     appt.delete()
-    messages.info(request, 'Programarea a fost anulată.')
+    messages.info(request, 'Programarea a fost anulata.')
     return redirect('patient_dashboard')
 
 
@@ -305,7 +356,7 @@ def rate_doctor(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user, is_completed=True)
 
     if Rating.objects.filter(appointment=appt).exists():
-        messages.info(request, 'Ai evaluat deja această consultație.')
+        messages.info(request, 'Ai evaluat deja aceasta consultatie.')
         return redirect('patient_dashboard')
 
     if request.method == 'POST':
@@ -321,110 +372,395 @@ def rate_doctor(request, appointment_id):
             )
             AuditLog.log(request, AuditLog.Action.RATING_GIVEN,
                          metadata={'doctor': appt.doctor.username, 'score': score})
-            messages.success(request, 'Mulțumim pentru evaluare!')
+            messages.success(request, 'Multumim pentru evaluare!')
             return redirect('patient_dashboard')
         else:
-            messages.error(request, 'Te rugăm să selectezi un număr de stele.')
+            messages.error(request, 'Te rugam sa selectezi un numar de stele.')
 
     return render(request, 'rate_doctor.html', {'appointment': appt})
 
 
 @login_required(login_url='login')
+def receipt_view(request, appointment_id):
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    appt    = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
+    payment = appt.payments.order_by('-created_at').first()
+    if not payment:
+        messages.info(request, 'Nu exista o plata inregistrata pentru aceasta programare.')
+        return redirect('patient_dashboard')
+
+    # Cashback transmis prin URL param (mai fiabil decât sesiunea)
+    cashback_amount = request.GET.get('cashback', None)
+
+    return render(request, 'receipt.html', {
+        'appointment':     appt,
+        'payment':         payment,
+        'cashback_amount': cashback_amount,
+    })
+
+
+@login_required(login_url='login')
+def receipt_pdf(request, appointment_id):
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    appt    = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
+    payment = appt.payments.order_by('-created_at').first()
+    if not payment:
+        return redirect('patient_dashboard')
+
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    import io
+
+    buffer = io.BytesIO()
+    doc    = SimpleDocTemplate(buffer, pagesize=A4,
+                               rightMargin=2*cm, leftMargin=2*cm,
+                               topMargin=2*cm, bottomMargin=2*cm)
+
+    styles       = getSampleStyleSheet()
+    title_style  = ParagraphStyle('title', parent=styles['Title'], fontSize=22,
+                                  textColor=colors.HexColor('#0B2545'), spaceAfter=4)
+    sub_style    = ParagraphStyle('sub', parent=styles['Normal'], fontSize=11,
+                                  textColor=colors.HexColor('#8796A5'), spaceAfter=20)
+    label_style  = ParagraphStyle('label', parent=styles['Normal'], fontSize=9,
+                                  textColor=colors.HexColor('#8796A5'),
+                                  fontName='Helvetica-Bold', spaceBefore=10)
+    value_style  = ParagraphStyle('value', parent=styles['Normal'], fontSize=13,
+                                  textColor=colors.HexColor('#1A2332'), fontName='Helvetica-Bold')
+    small_style  = ParagraphStyle('small', parent=styles['Normal'], fontSize=10,
+                                  textColor=colors.HexColor('#8796A5'))
+    footer_style = ParagraphStyle('footer', parent=styles['Normal'], fontSize=9,
+                                  textColor=colors.HexColor('#8796A5'), alignment=1)
+
+    def clean(text):
+        if not text:
+            return '—'
+        return (str(text)
+            .replace('ă','a').replace('Ă','A')
+            .replace('â','a').replace('Â','A')
+            .replace('î','i').replace('Î','I')
+            .replace('ș','s').replace('Ș','S')
+            .replace('ț','t').replace('Ț','T')
+            .replace('ş','s').replace('Ş','S')
+            .replace('ţ','t').replace('Ţ','T')
+        )
+
+    method_labels = {
+        'CASH':        'Cash',
+        'CARD_ONLINE': 'Card online',
+        'CNAS':        'Asigurare CNAS',
+        'WALLET':      'Wallet MedApp',
+    }
+
+    patient_name = clean(appt.beneficiary_name if appt.is_for_other and appt.beneficiary_name
+                         else appt.patient.get_full_name() or appt.patient.username)
+
+    story = []
+
+    story.append(Paragraph('MedApp', title_style))
+    story.append(Paragraph('Chitanta digitala de plata', sub_style))
+    story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#E2E8F0')))
+    story.append(Spacer(1, 0.4*cm))
+
+    ref_data = [
+        [Paragraph('NUMAR REFERINTA', label_style), Paragraph('DATA EMITERII', label_style)],
+        [Paragraph(clean(payment.reference), value_style),
+         Paragraph(payment.created_at.strftime('%d %B %Y, %H:%M'), value_style)],
+    ]
+    ref_table = Table(ref_data, colWidths=[9*cm, 8*cm])
+    ref_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.white),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(ref_table)
+    story.append(Spacer(1, 0.5*cm))
+
+    try:
+        spec = appt.doctor.doctor_profile.specialization
+    except DoctorProfile.DoesNotExist:
+        spec = ''
+
+    detail_data = [
+        [Paragraph('PACIENT', label_style),    Paragraph('MEDIC', label_style)],
+        [Paragraph(patient_name, value_style),
+         Paragraph(clean('Dr. ' + (appt.doctor.get_full_name() or appt.doctor.username)), value_style)],
+        [Paragraph('', small_style), Paragraph(clean(spec), small_style)],
+        [Paragraph('DATA CONSULTATIEI', label_style), Paragraph('METODA PLATA', label_style)],
+        [Paragraph(appt.date_time.strftime('%d %B %Y'), value_style),
+         Paragraph(method_labels.get(payment.method, payment.method), value_style)],
+        [Paragraph(appt.date_time.strftime('%H:%M'), small_style), Paragraph('', small_style)],
+    ]
+    det_table = Table(detail_data, colWidths=[9*cm, 8*cm])
+    det_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.white),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+    ]))
+    story.append(det_table)
+
+    if appt.cnas_code:
+        story.append(Spacer(1, 0.4*cm))
+        cnas_data = [
+            [Paragraph('COD VALIDARE CNAS', label_style)],
+            [Paragraph(clean(appt.cnas_code), value_style)],
+        ]
+        cnas_table = Table(cnas_data, colWidths=[17*cm])
+        cnas_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F0FDF4')),
+            ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#0D9E8A')),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(cnas_table)
+
+    story.append(Spacer(1, 0.6*cm))
+    story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#E2E8F0'), dash=(4,4)))
+    story.append(Spacer(1, 0.3*cm))
+
+    total_data = [
+        [Paragraph('TOTAL ACHITAT', label_style),
+         Paragraph(f'{payment.amount} RON',
+                   ParagraphStyle('total', parent=styles['Normal'],
+                                  fontSize=20, fontName='Helvetica-Bold',
+                                  textColor=colors.HexColor('#1464A5'), alignment=2))],
+    ]
+    total_table = Table(total_data, colWidths=[9*cm, 8*cm])
+    total_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.white),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+    ]))
+    story.append(total_table)
+
+    if payment.method == 'CASH':
+        story.append(Spacer(1, 0.3*cm))
+        story.append(Paragraph('Plata cash se efectueaza la receptia clinicii in ziua consultatiei.', small_style))
+
+    story.append(Spacer(1, 1*cm))
+    story.append(HRFlowable(width='100%', thickness=0.5, color=colors.HexColor('#E2E8F0')))
+    story.append(Spacer(1, 0.2*cm))
+    story.append(Paragraph(
+        f'MedApp · Chitanta digitala · {payment.created_at.strftime("%d %B %Y")} · Ref: {payment.reference}',
+        footer_style
+    ))
+    story.append(Paragraph('Acest document serveste ca dovada a platii efectuate.', footer_style))
+
+    doc.build(story)
+    buffer.seek(0)
+
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="chitanta_{payment.reference}.pdf"'
+    return response
+
+
+@login_required(login_url='login')
+def wallet_checkout(request, appointment_id):
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    appt      = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
+    my_wallet = _get_or_create_wallet(request.user)
+
+    try:
+        fee = float(appt.doctor.doctor_profile.consultation_fee)
+    except DoctorProfile.DoesNotExist:
+        fee = 0
+
+    if appt.cnas_covered:
+        fee = 0
+
+    fee_decimal = Decimal(str(fee))
+
+    if request.method == 'POST':
+        pay_type   = request.POST.get('pay_type', 'own')
+        other_card = request.POST.get('other_card', '').strip().upper()
+
+        if pay_type == 'own':
+            if my_wallet.balance < fee_decimal:
+                messages.error(request, f'Sold insuficient. Ai {my_wallet.balance} RON, necesari {fee} RON.')
+                return redirect('wallet_checkout', appointment_id=appointment_id)
+            my_wallet.balance -= fee_decimal
+            my_wallet.save()
+            payment = Payment.objects.create(
+                appointment=appt,
+                payer=request.user,
+                beneficiary=request.user,
+                amount=fee_decimal,
+                method=Payment.Method.WALLET,
+                status=Payment.Status.COMPLETED,
+                note='Plata din wallet propriu',
+            )
+            appt.payment_method = 'WALLET'
+            appt.amount_paid    = fee_decimal
+            appt.save()
+            AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
+                         metadata={'method': 'WALLET', 'amount': str(fee)})
+            return redirect('receipt_view', appointment_id=appt.id)
+
+        elif pay_type == 'other':
+            if not other_card:
+                messages.error(request, 'Introdu numarul cardului MedApp al platitorului.')
+                return redirect('wallet_checkout', appointment_id=appointment_id)
+            try:
+                other_wallet = Wallet.objects.select_related('user').get(card_number=other_card)
+                if other_wallet.user == request.user:
+                    messages.error(request, 'Acesta este propriul tau card.')
+                    return redirect('wallet_checkout', appointment_id=appointment_id)
+                if other_wallet.balance < fee_decimal:
+                    messages.error(request, f'Soldul platitorului este insuficient ({other_wallet.balance} RON).')
+                    return redirect('wallet_checkout', appointment_id=appointment_id)
+
+                other_wallet.balance -= fee_decimal
+                other_wallet.save()
+
+                _send_email_safe(
+                    subject='Debitare Wallet MedApp',
+                    message=(
+                        f'Buna {other_wallet.user.get_full_name() or other_wallet.user.username},\n\n'
+                        f'Contul tau MedApp a fost debitat cu {fee} RON '
+                        f'pentru programarea pacientului '
+                        f'{request.user.get_full_name() or request.user.username} '
+                        f'la Dr. {appt.doctor.get_full_name() or appt.doctor.username}.\n\n'
+                        f'Sold ramas: {other_wallet.balance} RON\n\n'
+                        f'Daca nu recunosti aceasta tranzactie, contacteaza-ne.\n'
+                        f'Echipa MedApp'
+                    ),
+                    recipient=other_wallet.user.email,
+                )
+
+                payment = Payment.objects.create(
+                    appointment=appt,
+                    payer=other_wallet.user,
+                    beneficiary=request.user,
+                    amount=fee_decimal,
+                    method=Payment.Method.WALLET,
+                    status=Payment.Status.COMPLETED,
+                    note=f'Plata de la {other_wallet.user.get_full_name() or other_wallet.user.username}',
+                )
+                appt.payment_method = 'WALLET'
+                appt.amount_paid    = fee_decimal
+                appt.save()
+                AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
+                             metadata={'method': 'WALLET_OTHER', 'payer': other_wallet.user.username})
+                return redirect('receipt_view', appointment_id=appt.id)
+
+            except Wallet.DoesNotExist:
+                messages.error(request, f'Numarul de card "{other_card}" nu exista in sistem.')
+                return redirect('wallet_checkout', appointment_id=appointment_id)
+
+    return render(request, 'wallet_checkout.html', {
+        'appointment': appt,
+        'fee': fee,
+        'fee_decimal': fee_decimal,
+        'my_wallet': my_wallet,
+    })
+
+
+@login_required(login_url='login')
+def wallet_topup(request):
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    if request.method == 'POST':
+        amount = request.POST.get('amount', '100')
+        return redirect(f'/patient/wallet/topup/card/?amount={amount}')
+    return redirect('patient_dashboard')
+
+
+@login_required(login_url='login')
+def wallet_topup_card(request):
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    wallet = _get_or_create_wallet(request.user)
+
+    if request.method == 'POST' and request.POST.get('confirmed') == '1':
+        stripe_ref = request.POST.get('stripe_ref', '')
+        try:
+            amount = Decimal(request.POST.get('amount', '0').replace(',', '.'))
+            if amount > 0:
+                wallet.balance += amount
+                wallet.save()
+                AuditLog.log(request, AuditLog.Action.WALLET_TOPUP,
+                             metadata={'amount': str(amount), 'ref': stripe_ref})
+                messages.success(request, f'{amount} RON adaugati in wallet! Ref: {stripe_ref}')
+        except Exception:
+            messages.error(request, 'Eroare la procesarea platii.')
+        return redirect('patient_dashboard')
+
+    try:
+        amount = float(request.GET.get('amount', '100').replace(',', '.'))
+        if amount <= 0 or amount > 5000:
+            amount = 100
+    except (ValueError, TypeError):
+        amount = 100
+
+    return render(request, 'wallet_topup_card.html', {
+        'wallet': wallet,
+        'amount': amount,
+    })
+
+
+@login_required(login_url='login')
 def payment_view(request, appointment_id):
-    """Pagina de plată pentru o programare"""
     if not getattr(request.user, 'is_patient', False):
         return redirect('home')
     appt   = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
     wallet = _get_or_create_wallet(request.user)
 
     try:
-        dp  = appt.doctor.doctor_profile
-        fee = float(dp.consultation_fee)
+        fee = float(appt.doctor.doctor_profile.consultation_fee)
     except DoctorProfile.DoesNotExist:
         fee = 0
 
-    # Daca e decontat CNAS, costul e 0
     if appt.cnas_covered:
         fee = 0
 
     if request.method == 'POST':
         form = PaymentForm(request.POST)
         if form.is_valid():
-            method         = form.cleaned_data['method']
-            note           = form.cleaned_data['note']
-            pay_for        = form.cleaned_data.get('pay_for_patient')
-            beneficiary    = pay_for if pay_for else request.user
-            amount         = fee
+            method      = form.cleaned_data['method']
+            note        = form.cleaned_data['note']
+            pay_for     = form.cleaned_data.get('pay_for_patient')
+            beneficiary = pay_for if pay_for else request.user
+            amount      = fee
 
             if method == Payment.Method.WALLET:
-                if wallet.balance < amount:
-                    messages.error(request, f'Sold insuficient în wallet. Ai {wallet.balance} RON, necesari {amount} RON.')
+                if wallet.balance < Decimal(str(amount)):
+                    messages.error(request, 'Sold insuficient in wallet.')
                     return redirect('payment_view', appointment_id=appointment_id)
-                wallet.balance -= amount
+                wallet.balance -= Decimal(str(amount))
                 wallet.save()
 
             if method == Payment.Method.ONLINE:
-                # Simulare Stripe — in productie aici ai stripe.PaymentIntent.create()
                 stripe_sim_id = f'pi_sim_{uuid.uuid4().hex[:16]}'
                 payment = Payment.objects.create(
-                    appointment=appt,
-                    payer=request.user,
-                    beneficiary=beneficiary,
-                    amount=amount,
-                    method=method,
-                    status=Payment.Status.COMPLETED,
-                    stripe_id=stripe_sim_id,
-                    note=note,
+                    appointment=appt, payer=request.user, beneficiary=beneficiary,
+                    amount=amount, method=method, status=Payment.Status.COMPLETED,
+                    stripe_id=stripe_sim_id, note=note,
                 )
-                messages.success(request, f'Plată online simulată cu succes! Ref: {payment.reference}')
             else:
                 payment = Payment.objects.create(
-                    appointment=appt,
-                    payer=request.user,
-                    beneficiary=beneficiary,
-                    amount=amount,
-                    method=method,
-                    status=Payment.Status.COMPLETED,
-                    note=note,
+                    appointment=appt, payer=request.user, beneficiary=beneficiary,
+                    amount=amount, method=method, status=Payment.Status.COMPLETED, note=note,
                 )
-                messages.success(request, f'Plată înregistrată! Ref: {payment.reference}')
 
             appt.payment_method = method
             appt.amount_paid    = amount
             appt.save()
-
             AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
                          metadata={'appointment_id': appt.id, 'method': method, 'amount': str(amount)})
-
-            return redirect('patient_dashboard')
+            return redirect('receipt_view', appointment_id=appt.id)
     else:
         form = PaymentForm()
 
     return render(request, 'payment.html', {
         'form': form, 'appointment': appt, 'fee': fee, 'wallet': wallet,
     })
-
-
-@login_required(login_url='login')
-def wallet_topup(request):
-    """Reîncărcare wallet cu sumă simulată"""
-    if not getattr(request.user, 'is_patient', False):
-        return redirect('home')
-    wallet = _get_or_create_wallet(request.user)
-    if request.method == 'POST':
-        amount_str = request.POST.get('amount', '0')
-        try:
-            amount = float(amount_str)
-            if 1 <= amount <= 5000:
-                wallet.balance += amount
-                wallet.save()
-                AuditLog.log(request, AuditLog.Action.WALLET_TOPUP, metadata={'amount': amount})
-                messages.success(request, f'{amount} RON adăugați în wallet!')
-            else:
-                messages.error(request, 'Suma trebuie să fie între 1 și 5000 RON.')
-        except ValueError:
-            messages.error(request, 'Sumă invalidă.')
-    return redirect('patient_dashboard')
 
 
 @login_required(login_url='login')
@@ -462,7 +798,7 @@ def gdpr_export(request):
                             rightMargin=2*cm, leftMargin=2*cm,
                             topMargin=2*cm, bottomMargin=2*cm)
 
-    styles     = getSampleStyleSheet()
+    styles      = getSampleStyleSheet()
     title_style = ParagraphStyle('title', parent=styles['Title'], fontSize=20, spaceAfter=6)
     h2_style    = ParagraphStyle('h2', parent=styles['Heading2'], fontSize=13,
                                  spaceBefore=16, spaceAfter=6,
@@ -601,7 +937,7 @@ def profile_security(request):
             user = form.save()
             update_session_auth_hash(request, user)
             AuditLog.log(request, AuditLog.Action.PASSWORD_CHANGED)
-            messages.success(request, 'Parola a fost schimbată cu succes!')
+            messages.success(request, 'Parola a fost schimbata cu succes!')
             return redirect('patient_dashboard' if request.user.is_patient else 'doctor_dashboard')
     else:
         form = ClinicPasswordChangeForm(request.user)
@@ -687,53 +1023,173 @@ def new_appointment(request, doctor_id):
         if not doctor_profile_obj.is_available:
             messages.error(request, 'Acest medic nu este disponibil momentan.')
             return redirect('doctor_profile', doctor_id=doctor_id)
+        doctor_fee = float(doctor_profile_obj.consultation_fee)
     except DoctorProfile.DoesNotExist:
         doctor_profile_obj = None
+        doctor_fee = 0
 
     try:
         patient_profile = request.user.patient_profile
     except PatientProfile.DoesNotExist:
         patient_profile = None
 
+    patient_wallet = _get_or_create_wallet(request.user)
+
     if request.method == 'POST':
-        print(">>> PAYMENT METHOD PRIMIT:", request.POST.get('payment_method'))
-        print(">>> TOT POST-UL:", dict(request.POST))
-        form = AppointmentForm(request.POST)
+        form           = AppointmentForm(request.POST)
+        payment_method = request.POST.get('payment_method', 'CASH')
+        # Fallback: dacă hidden input-ul nu a fost actualizat de JS, citim direct radio-ul
+        radio_value = request.POST.get('payment_method_radio', '')
+        if radio_value and radio_value != payment_method:
+            payment_method = radio_value
+
         if form.is_valid():
             appt                 = form.save(commit=False)
             appt.patient         = request.user
             appt.doctor          = doctor
             appt.referral_serial = form.cleaned_data.get('referral_serial', '')
-            appt.payment_method  = request.POST.get('payment_method', 'CASH')
-            appt.save()
-            AuditLog.log(request, AuditLog.Action.APPT_CREATED, metadata={'doctor': doctor.username})
-            messages.success(request, 'Programarea a fost creată cu succes!')
-            if appt.payment_method == 'CARD_ONLINE':
-                return redirect('card_checkout', appointment_id=appt.id)
-            return redirect('patient_dashboard')
+            appt.payment_method  = payment_method
+
+            is_for_other = request.POST.get('is_for_other', '0') == '1'
+            appt.is_for_other = is_for_other
+            if is_for_other:
+                appt.beneficiary_name     = request.POST.get('beneficiary_name', '').strip()
+                appt.beneficiary_cnp      = request.POST.get('beneficiary_cnp', '').strip()
+                appt.beneficiary_phone    = request.POST.get('beneficiary_phone', '').strip()
+                appt.beneficiary_relation = request.POST.get('beneficiary_relation', '').strip()
+                birth_str = request.POST.get('beneficiary_birth_date', '')
+                if birth_str:
+                    try:
+                        from datetime import date
+                        appt.beneficiary_birth_date = date.fromisoformat(birth_str)
+                    except ValueError:
+                        pass
+
+            fee_decimal = Decimal(str(doctor_fee))
+
+            if payment_method == 'WALLET':
+                if patient_wallet.balance < fee_decimal:
+                    messages.error(request, f'Sold insuficient in Wallet. Ai {patient_wallet.balance} RON, necesari {doctor_fee} RON.')
+                    return render(request, 'new_appointment.html', {
+                        'form': form, 'selected_doctor': doctor,
+                        'patient_profile': patient_profile,
+                        'patient_wallet': patient_wallet,
+                        'doctor_fee': doctor_fee,
+                        'notif_list': [], 'notif_count': 0,
+                    })
+
+                from django.db import transaction as db_transaction
+                with db_transaction.atomic():
+                    patient_wallet.balance -= fee_decimal
+                    patient_wallet.save()
+                    appt.amount_paid = fee_decimal
+                    appt.save()
+
+                    Payment.objects.create(
+                        appointment=appt,
+                        payer=request.user,
+                        beneficiary=request.user,
+                        amount=fee_decimal,
+                        method=Payment.Method.WALLET,
+                        status=Payment.Status.COMPLETED,
+                        note='Plata wallet la creare programare',
+                    )
+
+                    # Cashback 5% la plata cu Wallet MedApp (ACID)
+                    cashback_amount = (fee_decimal * Decimal('0.05')).quantize(Decimal('0.01'))
+                    if cashback_amount > 0:
+                        patient_wallet.balance += cashback_amount
+                        patient_wallet.save()
+
+                        WalletTransaction.objects.create(
+                            wallet=patient_wallet,
+                            tx_type=WalletTransaction.TxType.CASHBACK,
+                            amount=cashback_amount,
+                            balance_after=patient_wallet.balance,
+                            description=f'Cashback 5% Wallet — Dr. {appt.doctor.get_full_name() or appt.doctor.username}',
+                            appointment=appt,
+                        )
+
+                        AuditLog.log(request, AuditLog.Action.CASHBACK_CREDIT, {
+                            'amount': str(cashback_amount),
+                            'appointment_id': appt.id,
+                        })
+
+            elif payment_method == 'CARD_ONLINE':
+                stripe_ref = f'PI-{uuid.uuid4().hex[:16].upper()}'
+                appt.amount_paid = fee_decimal
+                appt.save()
+                Payment.objects.create(
+                    appointment=appt,
+                    payer=request.user,
+                    beneficiary=request.user,
+                    amount=fee_decimal,
+                    method=Payment.Method.ONLINE,
+                    status=Payment.Status.COMPLETED,
+                    stripe_id=stripe_ref,
+                )
+
+            elif payment_method == 'CNAS':
+                appt.save()
+                Payment.objects.create(
+                    appointment=appt,
+                    payer=request.user,
+                    beneficiary=request.user,
+                    amount=Decimal('0'),
+                    method=Payment.Method.CNAS,
+                    status=Payment.Status.COMPLETED,
+                )
+
+            else:
+                appt.save()
+                Payment.objects.create(
+                    appointment=appt,
+                    payer=request.user,
+                    beneficiary=request.user,
+                    amount=fee_decimal,
+                    method=Payment.Method.CASH,
+                    status=Payment.Status.PENDING,
+                    note='De achitat la receptie',
+                )
+
+            AuditLog.log(request, AuditLog.Action.APPT_CREATED, metadata={
+                'doctor': doctor.username,
+                'payment': payment_method,
+                'for_other': is_for_other,
+            })
+
+            # Cashback prin URL param pentru plata cu Wallet
+            if payment_method == 'WALLET':
+                cashback_val = (Decimal(str(doctor_fee)) * Decimal('0.05')).quantize(Decimal('0.01'))
+                return redirect(f"/patient/receipt/{appt.id}/?cashback={cashback_val}")
+
+            return redirect('receipt_view', appointment_id=appt.id)
     else:
         form = AppointmentForm()
 
     notif_list, notif_count = _get_notifications(request.user)
     return render(request, 'new_appointment.html', {
-        'form': form,
+        'form':            form,
         'selected_doctor': doctor,
         'patient_profile': patient_profile,
-        'notif_list': notif_list,
-        'notif_count': notif_count,
+        'patient_wallet':  patient_wallet,
+        'doctor_fee':      doctor_fee,
+        'notif_list':      notif_list,
+        'notif_count':     notif_count,
     })
+
 
 @login_required(login_url='login')
 def card_checkout(request, appointment_id):
     if not getattr(request.user, 'is_patient', False):
         return redirect('home')
     appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
- 
+
     try:
         fee = float(appt.doctor.doctor_profile.consultation_fee)
     except DoctorProfile.DoesNotExist:
         fee = 0
- 
+
     if request.method == 'POST' and request.POST.get('confirmed') == '1':
         stripe_ref = request.POST.get('stripe_ref', '')
         Payment.objects.create(
@@ -750,15 +1206,13 @@ def card_checkout(request, appointment_id):
         appt.save()
         AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
                      metadata={'method': 'CARD_ONLINE', 'amount': fee, 'ref': stripe_ref})
-        messages.success(request, f'Plată online confirmată! Ref: {stripe_ref}')
-        return redirect('patient_dashboard')
- 
+        return redirect('receipt_view', appointment_id=appt.id)
+
     return render(request, 'card_checkout.html', {
         'appointment': appt,
         'fee': fee,
     })
 
-# ── MEDIC ──────────────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
 def doctor_dashboard(request):
@@ -777,9 +1231,8 @@ def doctor_dashboard(request):
         doctor_profile_obj = None
         fee = 0
 
-    # Venituri luna curenta
-    revenue_private = 0
-    revenue_cnas    = 0
+    revenue_private  = 0
+    revenue_cnas     = 0
     appts_this_month = appointments.filter(
         is_completed=True,
         date_time__month=now.month,
@@ -792,10 +1245,8 @@ def doctor_dashboard(request):
             revenue_private += float(a.amount_paid) if a.amount_paid else fee
 
     revenue_total_month = revenue_private + revenue_cnas
-
-    # Venituri totale
-    all_completed = appointments.filter(is_completed=True).count()
-    revenue_all_time = all_completed * fee
+    all_completed       = appointments.filter(is_completed=True).count()
+    revenue_all_time    = all_completed * fee
 
     return render(request, 'doctor_dashboard.html', {
         'appointments':        appointments,
@@ -854,17 +1305,15 @@ def approve_appointment(request, appointment_id):
     appt.is_confirmed = True
     appt.save()
     AuditLog.log(request, AuditLog.Action.APPT_APPROVED, metadata={'appointment_id': appointment_id})
-
     _send_email_safe(
-        subject='Programarea ta a fost confirmată — MedApp',
-        message=f'Bună {appt.patient.get_full_name() or appt.patient.username},\n\n'
+        subject='Programarea ta a fost confirmata — MedApp',
+        message=f'Buna {appt.patient.get_full_name() or appt.patient.username},\n\n'
                 f'Programarea ta la Dr. {appt.doctor.get_full_name() or appt.doctor.username} '
-                f'din data de {appt.date_time.strftime("%d %B %Y, ora %H:%M")} a fost confirmată.\n\n'
-                f'Te așteptăm!\nEchipa MedApp',
+                f'din data de {appt.date_time.strftime("%d %B %Y, ora %H:%M")} a fost confirmata.\n\n'
+                f'Te asteptam!\nEchipa MedApp',
         recipient=appt.patient.email,
     )
-
-    messages.success(request, 'Programarea a fost aprobată.')
+    messages.success(request, 'Programarea a fost aprobata.')
     return redirect('doctor_dashboard')
 
 
@@ -875,12 +1324,11 @@ def complete_appointment(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
 
     if request.method == 'POST':
-        icd10   = request.POST.get('icd10_code', '').strip()
+        icd10             = request.POST.get('icd10_code', '').strip()
         appt.is_completed = True
         appt.is_confirmed = True
         appt.icd10_code   = icd10
 
-        # Verificare CNAS: asigurat + bilet trimitere + cod ICD10
         try:
             pp = appt.patient.patient_profile
             if pp.is_insured and appt.referral_serial and icd10:
@@ -894,9 +1342,9 @@ def complete_appointment(request, appointment_id):
 
         appt.save()
         AuditLog.log(request, AuditLog.Action.APPT_COMPLETED, metadata={'appointment_id': appointment_id})
-        messages.success(request, 'Consultația a fost finalizată.')
+        messages.success(request, 'Consultatia a fost finalizata.')
         if appt.cnas_covered:
-            messages.info(request, f'Decontare CNAS generată. Cod: {appt.cnas_code}')
+            messages.info(request, f'Decontare CNAS generata. Cod: {appt.cnas_code}')
     else:
         appt.is_completed = True
         appt.is_confirmed = True
@@ -910,11 +1358,11 @@ def mark_no_show(request, appointment_id):
     if not getattr(request.user, 'is_doctor', False):
         return redirect('home')
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
-    appt.is_no_show  = True
+    appt.is_no_show   = True
     appt.is_confirmed = True
     appt.save()
     AuditLog.log(request, AuditLog.Action.APPT_NO_SHOW, metadata={'appointment_id': appointment_id})
-    messages.warning(request, f'Programarea lui {appt.patient.get_full_name() or appt.patient.username} marcată ca Neprezentare.')
+    messages.warning(request, f'Programarea lui {appt.patient.get_full_name() or appt.patient.username} marcata ca Neprezentare.')
     return redirect('doctor_dashboard')
 
 
@@ -925,7 +1373,7 @@ def delete_appointment(request, appointment_id):
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
     AuditLog.log(request, AuditLog.Action.APPT_DELETED, metadata={'patient': appt.patient.username})
     appt.delete()
-    messages.info(request, 'Programarea a fost ștearsă.')
+    messages.info(request, 'Programarea a fost stearsa.')
     return redirect('doctor_dashboard')
 
 
@@ -935,7 +1383,7 @@ def patient_history(request, patient_id):
         return redirect('home')
     patient = get_object_or_404(CustomUser, id=patient_id, is_patient=True)
     if not Appointment.objects.filter(doctor=request.user, patient=patient).exists():
-        messages.error(request, 'Nu ai acces la fișa acestui pacient.')
+        messages.error(request, 'Nu ai acces la fisa acestui pacient.')
         return redirect('doctor_dashboard')
     try:
         patient_profile = patient.patient_profile
@@ -956,7 +1404,7 @@ def add_prescription(request, appointment_id):
         return redirect('home')
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
     if Prescription.objects.filter(appointment=appt).exists():
-        messages.info(request, 'Există deja o rețetă pentru această programare.')
+        messages.info(request, 'Exista deja o reteta pentru aceasta programare.')
         return redirect('doctor_dashboard')
     if request.method == 'POST':
         form = PrescriptionForm(request.POST)
@@ -967,14 +1415,12 @@ def add_prescription(request, appointment_id):
             rx.patient     = appt.patient
             rx.save()
             AuditLog.log(request, AuditLog.Action.PRESCRIPTION_CREATED, metadata={'patient': appt.patient.username})
-            messages.success(request, 'Rețeta a fost salvată.')
+            messages.success(request, 'Reteta a fost salvata.')
             return redirect('doctor_dashboard')
     else:
         form = PrescriptionForm()
     return render(request, 'add_prescription.html', {'form': form, 'appointment': appt})
 
-
-#  ADMIN 
 
 @login_required(login_url='login')
 def admin_reports(request):
@@ -983,8 +1429,83 @@ def admin_reports(request):
     now = timezone.now()
     ctx = _get_admin_stats(now)
     ctx['recent_appointments'] = Appointment.objects.select_related('patient', 'doctor').order_by('-created_at')[:8]
-    ctx['audit_logs']          = AuditLog.objects.select_related('user').order_by('-timestamp')[:10]
+    ctx['audit_logs'] = AuditLog.objects.select_related('user').order_by('-timestamp')[:50]
+
+    ctx['hard_bans'] = LoginAttempt.objects.filter(
+        is_hard_banned=True, revoked=False
+    ).order_by('-timestamp')
+
+    ctx['soft_bans'] = LoginAttempt.objects.filter(
+        is_soft_banned=True, revoked=False,
+        soft_ban_until__gt=now
+    ).order_by('-soft_ban_until')
+
+    from django.db.models import Count as DbCount
+    attempts_per_ip = (
+        LoginAttempt.objects
+        .filter(
+            is_soft_banned=False, is_hard_banned=False,
+            revoked=False,
+            timestamp__gte=now - timezone.timedelta(hours=24),
+        )
+        .values('ip_address', 'username')
+        .annotate(count=DbCount('id'))
+        .order_by('-count')[:10]
+    )
+    ctx['attempts_per_ip'] = attempts_per_ip
+    ctx['failed_attempts_24h'] = sum(a['count'] for a in attempts_per_ip)
+
+    ctx['cash_pending'] = Payment.objects.filter(
+        method=Payment.Method.CASH,
+        status=Payment.Status.PENDING,
+    ).select_related('appointment__patient', 'appointment__doctor').order_by('appointment__date_time')
+
+    ctx['now'] = now
     return render(request, 'admin_dashboard.html', ctx)
+
+
+@login_required(login_url='login')
+def confirm_cash_payment(request, payment_id):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return redirect('home')
+    if request.method == 'POST':
+        payment = get_object_or_404(Payment, id=payment_id, method=Payment.Method.CASH, status=Payment.Status.PENDING)
+        payment.status = Payment.Status.COMPLETED
+        payment.note = f'Confirmat cash de {request.user.get_full_name() or request.user.username}'
+        payment.save()
+        AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED, metadata={
+            'payment_id': payment_id,
+            'appointment_id': payment.appointment.id,
+            'amount': str(payment.amount),
+            'confirmed_by': request.user.username,
+        })
+        messages.success(request, f'Plata cash de {payment.amount} RON confirmata pentru {payment.appointment.get_patient_display_name()}.')
+    return redirect('admin_reports')
+
+
+@login_required(login_url='login')
+def revoke_ban(request, ban_id):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return redirect('home')
+    if request.method == 'POST':
+        ban = get_object_or_404(LoginAttempt, id=ban_id)
+        now = timezone.now()
+
+        LoginAttempt.objects.filter(
+            ip_address=ban.ip_address, revoked=False
+        ).update(revoked=True, revoked_at=now)
+
+        if ban.username:
+            LoginAttempt.objects.filter(
+                username=ban.username, revoked=False
+            ).update(revoked=True, revoked_at=now)
+
+        AuditLog.log(request, AuditLog.Action.BAN_REVOKED, metadata={
+            'username': ban.username,
+            'ip': ban.ip_address,
+        })
+        messages.success(request, f'Banul pentru {ban.username or ban.ip_address} a fost revocat.')
+    return redirect('admin_reports')
 
 
 @login_required(login_url='login')

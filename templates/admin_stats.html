@@ -6,230 +6,351 @@
 {% block nav_stats %}active{% endblock %}
 
 {% block content %}
+<div style="display:flex;flex-direction:column;gap:24px;">
 
-<div style="margin-bottom:20px;">
-    <a href="{% url 'admin_reports' %}" class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-        Înapoi la dashboard
-    </a>
-</div>
+    <!-- ═══ GRAFICE VENITURI ═══ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-
-    <div class="card">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-            <div>
-                <div class="card-title">💰 Venituri lunare</div>
-                <div class="card-subtitle">Evoluție în timp (RON)</div>
+        <!-- Venituri lunare 6 luni -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">💰 Venituri lunare</div>
+                    <div class="card-subtitle">Ultimele 6 luni</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="switchRevChart('6m')" id="rev-btn-6m" class="btn btn-sm btn-primary" style="font-size:11px;">6 luni</button>
+                    <button onclick="switchRevChart('1y')" id="rev-btn-1y" class="btn btn-sm btn-ghost" style="font-size:11px;">12 luni</button>
+                </div>
             </div>
-            <div style="display:flex;gap:0;background:var(--surface-2);border-radius:var(--radius-md);overflow:hidden;border:0.5px solid var(--border);">
-                <button id="rev-6m" onclick="switchRevenue('6m')"
-                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:var(--c-primary);color:#fff;font-family:inherit;">6 luni</button>
-                <button id="rev-1y" onclick="switchRevenue('1y')"
-                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text-muted);font-family:inherit;">1 an</button>
+            <div class="card-body" style="position:relative;height:180px;">
+                <canvas id="revenueChart"></canvas>
             </div>
         </div>
-        <div class="card-body">
-            <div style="position:relative;height:220px;">
-                <canvas id="revenueChart" role="img" aria-label="Grafic venituri lunare"></canvas>
-            </div>
-        </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-            <div>
-                <div class="card-title">👥 Pacienți noi</div>
-                <div class="card-subtitle">Înregistrări lunare</div>
+        <!-- Pacienți noi -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">👥 Pacienți noi</div>
+                    <div class="card-subtitle">Creștere lunară</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="switchPatientsChart('6m')" id="pat-btn-6m" class="btn btn-sm btn-primary" style="font-size:11px;">6 luni</button>
+                    <button onclick="switchPatientsChart('1y')" id="pat-btn-1y" class="btn btn-sm btn-ghost" style="font-size:11px;">12 luni</button>
+                </div>
             </div>
-            <div style="display:flex;gap:0;background:var(--surface-2);border-radius:var(--radius-md);overflow:hidden;border:0.5px solid var(--border);">
-                <button id="pat-6m" onclick="switchPatients('6m')"
-                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:var(--c-primary);color:#fff;font-family:inherit;">6 luni</button>
-                <button id="pat-1y" onclick="switchPatients('1y')"
-                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text-muted);font-family:inherit;">1 an</button>
-            </div>
-        </div>
-        <div class="card-body">
-            <div style="position:relative;height:220px;">
-                <canvas id="patientsChart" role="img" aria-label="Grafic pacienti noi"></canvas>
+            <div class="card-body" style="position:relative;height:180px;">
+                <canvas id="patientsChart"></canvas>
             </div>
         </div>
     </div>
 
-</div>
+    <!-- ═══ PROGRAMĂRI ═══ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
 
-<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px;">
+        <!-- Programări pe luni -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">📅 Programări pe luni</div>
+                <div class="card-subtitle">Ultimele 6 luni</div>
+            </div>
+            <div class="card-body" style="position:relative;height:200px;">
+                <canvas id="appointmentsChart"></canvas>
+            </div>
+        </div>
 
+        <!-- Status programări -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">🔵 Status programări</div>
+                <div class="card-subtitle">Distribuție curentă</div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+                <div style="display:flex;gap:20px;font-size:12px;color:var(--text-muted);">
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0D9E8A;margin-right:5px;"></span>Finalizate</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1464A5;margin-right:5px;"></span>Confirmate</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#F0A500;margin-right:5px;"></span>Așteptare</span>
+                </div>
+                <div style="position:relative;height:200px;width:200px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TOP MEDICI DUPĂ VENITURI ═══ -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">📊 Programări pe luni</div>
-            <div class="card-subtitle">Ultimele 6 luni</div>
-        </div>
-        <div class="card-body">
-            <div style="position:relative;height:200px;">
-                <canvas id="monthlyChart" role="img" aria-label="Grafic programari lunare"></canvas>
+            <div>
+                <div class="card-title">🏆 Top medici după venituri</div>
+                <div class="card-subtitle">Consultații finalizate × tarif</div>
             </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+            {% for doc in top_doctors %}
+            <div style="display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:1px solid var(--border);{% if forloop.last %}border-bottom:none;{% endif %}">
+                <div style="width:28px;height:28px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    {{ forloop.counter }}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:14px;font-weight:600;color:var(--text);">Dr. {{ doc.user.get_full_name|default:doc.user.username }}</div>
+                    <div style="font-size:12px;color:var(--text-muted);">{{ doc.specialization }} · {{ doc.appt_count }} programări</div>
+                </div>
+                <div style="font-size:16px;font-weight:700;color:var(--c-primary);">{{ doc.revenue|floatformat:0 }} RON</div>
+            </div>
+            {% empty %}
+            <div class="empty-state">Nu există date.</div>
+            {% endfor %}
         </div>
     </div>
 
+    <!-- ═══ PERFORMANCE SCORE ═══ -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🔵 Status programări</div>
-            <div class="card-subtitle">Distribuție curentă</div>
+            <div>
+                <div class="card-title">⚡ Performance Score Medici</div>
+                <div class="card-subtitle">
+                    Scor ponderat 0–100 &nbsp;·&nbsp;
+                    <span style="color:var(--c-success);font-weight:600;">50% Calitate</span> (rating) &nbsp;+&nbsp;
+                    <span style="color:var(--c-primary);font-weight:600;">30% Fiabilitate</span> (consultații vs no-show) &nbsp;+&nbsp;
+                    <span style="color:var(--c-teal);font-weight:600;">20% Volum</span> (relativ la clinică)
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);">
-                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#1D9E75;display:inline-block;"></span>Finalizate</span>
-                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>Confirmate</span>
-                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#BA7517;display:inline-block;"></span>Așteptare</span>
+
+        <!-- Legenda scor -->
+        <div style="padding:0 24px 16px;display:flex;gap:12px;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:linear-gradient(90deg,#0D9E8A,#07c4a8);"></span>
+                <span style="color:var(--text-muted);">Top Doctor <strong style="color:var(--text);">≥ 90</strong></span>
+            </span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#1464A5;"></span>
+                <span style="color:var(--text-muted);">Performant <strong style="color:var(--text);">70–89</strong></span>
+            </span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#F0A500;"></span>
+                <span style="color:var(--text-muted);">Mediu <strong style="color:var(--text);">50–69</strong></span>
+            </span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#666;"></span>
+                <span style="color:var(--text-muted);">Insuficient date <strong style="color:var(--text);">< 50</strong></span>
+            </span>
+        </div>
+
+        <div class="card-body" style="padding:0;">
+            {% for item in performance_ranking %}
+            {% with score=item.score_int %}
+            <div style="padding:18px 24px;border-bottom:1px solid var(--border);{% if forloop.last %}border-bottom:none;{% endif %}">
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
+
+                    <!-- Rank badge -->
+                    <div style="width:32px;height:32px;border-radius:50%;
+                        {% if forloop.counter == 1 %}background:linear-gradient(135deg,#FFD700,#FFA500);
+                        {% elif forloop.counter == 2 %}background:linear-gradient(135deg,#C0C0C0,#A8A8A8);
+                        {% elif forloop.counter == 3 %}background:linear-gradient(135deg,#CD7F32,#A0522D);
+                        {% else %}background:var(--surface-2);{% endif %}
+                        color:{% if forloop.counter <= 3 %}white{% else %}var(--text-muted){% endif %};
+                        font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        {{ forloop.counter }}
+                    </div>
+
+                    <!-- Nume + Specializare -->
+                    <div style="flex:1;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:14px;font-weight:600;color:var(--text);">
+                                Dr. {{ item.profile.user.get_full_name|default:item.profile.user.username }}
+                            </span>
+                            {% if item.is_top %}
+                            <span style="background:linear-gradient(90deg,#0D9E8A,#07c4a8);color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.04em;">
+                                ⭐ TOP DOCTOR
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                            {{ item.profile.specialization|default:"Specializare necompletată" }}
+                            &nbsp;·&nbsp;
+                            {{ item.completed }} consultații finalizate
+                            {% if item.no_show > 0 %}&nbsp;·&nbsp;<span style="color:var(--c-danger);">{{ item.no_show }} no-show</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Scor -->
+                    <div style="text-align:right;flex-shrink:0;">
+                        <div style="font-size:26px;font-weight:800;
+                            color:{% if score >= 90 %}var(--c-teal){% elif score >= 70 %}var(--c-primary){% elif score >= 50 %}var(--c-warning){% else %}var(--text-muted){% endif %};">
+                            {{ score }}
+                        </div>
+                        <div style="font-size:10px;color:var(--text-muted);font-weight:600;">/ 100</div>
+                    </div>
+                </div>
+
+                <!-- Progress bar -->
+                <div style="background:var(--surface-2);border-radius:6px;height:8px;overflow:hidden;position:relative;">
+                    <div style="
+                        height:100%;
+                        width:{{ score }}%;
+                        border-radius:6px;
+                        transition:width .6s ease;
+                        background:{% if score >= 90 %}linear-gradient(90deg,#0D9E8A,#07c4a8){% elif score >= 70 %}linear-gradient(90deg,#1464A5,#2980d4){% elif score >= 50 %}linear-gradient(90deg,#F0A500,#f5c430){% else %}#555{% endif %};
+                    "></div>
+                </div>
+
+                <!-- Detalii factori -->
+                <div style="display:flex;gap:20px;margin-top:8px;">
+                    <span style="font-size:11px;color:var(--text-muted);">
+                        ⭐ Rating:
+                        <strong style="color:var(--text);">
+                            {% if item.avg_rating %}{{ item.avg_rating }}/5{% else %}—{% endif %}
+                        </strong>
+                        {% if item.rating_count %}({{ item.rating_count }} recenzii){% endif %}
+                    </span>
+                    <span style="font-size:11px;color:var(--text-muted);">
+                        ✅ Finalizate:
+                        <strong style="color:var(--text);">{{ item.completed }}</strong>
+                    </span>
+                    <span style="font-size:11px;color:var(--text-muted);">
+                        📋 Total programări:
+                        <strong style="color:var(--text);">{{ item.total }}</strong>
+                    </span>
+                </div>
             </div>
-            <div style="position:relative;height:200px;">
-                <canvas id="statusChart" role="img" aria-label="Grafic donut status programari"></canvas>
-            </div>
+            {% endwith %}
+            {% empty %}
+            <div class="empty-state" style="padding:40px;">Nu există medici înregistrați.</div>
+            {% endfor %}
         </div>
     </div>
 
-</div>
+</div><!-- end flex column -->
 
-<div class="card">
-    <div class="card-header">
-        <div class="card-title">🏆 Top medici după venituri</div>
-        <div class="card-subtitle">Consultații finalizate × tarif</div>
-    </div>
-    <div class="card-body" style="padding:10px 14px;">
-        {% for doc in top_doctors %}
-        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ forloop.counter }}</div>
-            <div style="flex:1;">
-                <div style="font-size:14px;font-weight:500;color:var(--text);">Dr. {{ doc.user.get_full_name|default:doc.user.username }}</div>
-                <div style="font-size:12px;color:var(--text-muted);">{{ doc.specialization }} · {{ doc.appt_count }} programări</div>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-size:16px;font-weight:600;color:var(--c-primary);">{{ doc.revenue|floatformat:0 }} RON</div>
-            </div>
-        </div>
-        {% empty %}
-            <div class="empty-state"><div class="empty-state-text">Niciun medic.</div></div>
-        {% endfor %}
-    </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-const gc  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)';
-const tc  = isDark ? '#8A9BBB' : '#6B7A99';
-const monthly_labels = {{ monthly_labels|safe }};
-const monthly_counts = {{ monthly_counts|safe }};
-const revenue_labels = {{ revenue_labels|safe }};
-const revenue_data   = {{ revenue_data|safe }};
-const patients_labels= {{ patients_labels|safe }};
-const patients_data  = {{ patients_data|safe }};
-const revenue_labels_1y = {{ revenue_labels_1y|safe }};
-const revenue_data_1y   = {{ revenue_data_1y|safe }};
-const patients_labels_1y= {{ patients_labels_1y|safe }};
-const patients_data_1y  = {{ patients_data_1y|safe }};
+const gridColor  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+const labelColor = isDark ? '#8a9ab5' : '#6b7a99';
 
-const defOpts = (yLabel) => ({
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false },
-               tooltip: { callbacks: { label: ctx => yLabel ? `${ctx.parsed.y} ${yLabel}` : ctx.parsed.y }}},
-    scales: {
-        x: { ticks: { color: tc, autoSkip: false }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { color: tc }, grid: { color: gc } }
+Chart.defaults.color = labelColor;
+Chart.defaults.borderColor = gridColor;
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+
+// ── Date din Django ─────────────────────────────────────────────────────
+const rev6mLabels  = {{ revenue_labels|safe }};
+const rev6mData    = {{ revenue_data|safe }};
+const rev1yLabels  = {{ revenue_labels_1y|safe }};
+const rev1yData    = {{ revenue_data_1y|safe }};
+const pat6mLabels  = {{ patients_labels|safe }};
+const pat6mData    = {{ patients_data|safe }};
+const pat1yLabels  = {{ patients_labels_1y|safe }};
+const pat1yData    = {{ patients_data_1y|safe }};
+const apptLabels   = {{ monthly_labels|safe }};
+const apptCounts   = {{ monthly_counts|safe }};
+const statusData   = {{ status_counts|safe }};
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+function lineOpts(labels, data, color) {
+    return {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                borderColor: color,
+                backgroundColor: color.replace(')', ', 0.12)').replace('rgb', 'rgba'),
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: color,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: gridColor } },
+                y: { grid: { color: gridColor }, beginAtZero: true }
+            }
+        }
+    };
+}
+
+// ── Revenue chart ────────────────────────────────────────────────────────
+let revChart = new Chart(document.getElementById('revenueChart'),
+    lineOpts(rev6mLabels, rev6mData, 'rgb(20, 100, 165)'));
+
+function switchRevChart(period) {
+    revChart.data.labels   = period === '6m' ? rev6mLabels : rev1yLabels;
+    revChart.data.datasets[0].data = period === '6m' ? rev6mData : rev1yData;
+    revChart.update();
+    document.getElementById('rev-btn-6m').className = 'btn btn-sm ' + (period==='6m'?'btn-primary':'btn-ghost');
+    document.getElementById('rev-btn-1y').className = 'btn btn-sm ' + (period==='1y'?'btn-primary':'btn-ghost');
+}
+
+// ── Patients chart ───────────────────────────────────────────────────────
+let patChart = new Chart(document.getElementById('patientsChart'),
+    lineOpts(pat6mLabels, pat6mData, 'rgb(13, 158, 138)'));
+
+function switchPatientsChart(period) {
+    patChart.data.labels   = period === '6m' ? pat6mLabels : pat1yLabels;
+    patChart.data.datasets[0].data = period === '6m' ? pat6mData : pat1yData;
+    patChart.update();
+    document.getElementById('pat-btn-6m').className = 'btn btn-sm ' + (period==='6m'?'btn-primary':'btn-ghost');
+    document.getElementById('pat-btn-1y').className = 'btn btn-sm ' + (period==='1y'?'btn-primary':'btn-ghost');
+}
+
+// ── Appointments bar chart ───────────────────────────────────────────────
+new Chart(document.getElementById('appointmentsChart'), {
+    type: 'bar',
+    data: {
+        labels: apptLabels,
+        datasets: [{
+            data: apptCounts,
+            backgroundColor: 'rgba(20,100,165,0.55)',
+            borderColor: 'rgba(20,100,165,0.9)',
+            borderWidth: 1,
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: gridColor }, beginAtZero: true, ticks: { stepSize: 1 } }
+        }
     }
 });
 
-const revenueChart = new Chart(document.getElementById('revenueChart'), {
-    type: 'line',
-    data: {
-        labels: revenue_labels,
-        datasets: [{
-            label: 'Venituri',
-            data: revenue_data,
-            borderColor: '#185FA5',
-            backgroundColor: isDark ? 'rgba(91,143,212,0.15)' : 'rgba(24,95,165,0.1)',
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: '#185FA5',
-            pointRadius: 5,
-            pointHoverRadius: 7,
-        }]
-    },
-    options: defOpts('RON')
-});
-
-const patientsChart = new Chart(document.getElementById('patientsChart'), {
-    type: 'bar',
-    data: {
-        labels: patients_labels,
-        datasets: [{
-            label: 'Pacienți noi',
-            data: patients_data,
-            backgroundColor: isDark ? 'rgba(43,189,166,0.75)' : 'rgba(14,158,138,0.75)',
-            borderColor: isDark ? '#2BBDA6' : '#0E9E8A',
-            borderWidth: 1,
-            borderRadius: 6,
-        }]
-    },
-    options: defOpts('')
-});
-
-new Chart(document.getElementById('monthlyChart'), {
-    type: 'bar',
-    data: {
-        labels: monthly_labels,
-        datasets: [{
-            label: 'Programări',
-            data: monthly_counts,
-            backgroundColor: isDark ? 'rgba(91,143,212,0.75)' : 'rgba(24,95,165,0.75)',
-            borderColor: isDark ? '#5B8FD4' : '#185FA5',
-            borderWidth: 1,
-            borderRadius: 6,
-        }]
-    },
-    options: defOpts('')
-});
-
+// ── Status donut chart ───────────────────────────────────────────────────
 new Chart(document.getElementById('statusChart'), {
     type: 'doughnut',
     data: {
         labels: ['Finalizate', 'Confirmate', 'Așteptare'],
         datasets: [{
-            data: {{ status_counts|safe }},
-            backgroundColor: ['#1D9E75', '#185FA5', '#BA7517'],
-            borderWidth: 0, hoverOffset: 6,
+            data: statusData,
+            backgroundColor: ['#0D9E8A', '#1464A5', '#F0A500'],
+            borderWidth: 0,
+            hoverOffset: 6,
         }]
     },
     options: {
-        responsive: true, maintainAspectRatio: false, cutout: '68%',
-        plugins: { legend: { display: false } }
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.label}: ${ctx.parsed}`
+                }
+            }
+        }
     }
 });
-
-function switchRevenue(period) {
-    const labels = period === '6m' ? revenue_labels : revenue_labels_1y;
-    const data   = period === '6m' ? revenue_data   : revenue_data_1y;
-    revenueChart.data.labels = labels;
-    revenueChart.data.datasets[0].data = data;
-    revenueChart.update();
-    document.getElementById('rev-6m').style.background = period==='6m' ? 'var(--c-primary)' : 'transparent';
-    document.getElementById('rev-6m').style.color      = period==='6m' ? '#fff' : 'var(--text-muted)';
-    document.getElementById('rev-1y').style.background = period==='1y' ? 'var(--c-primary)' : 'transparent';
-    document.getElementById('rev-1y').style.color      = period==='1y' ? '#fff' : 'var(--text-muted)';
-}
-
-function switchPatients(period) {
-    const labels = period === '6m' ? patients_labels : patients_labels_1y;
-    const data   = period === '6m' ? patients_data   : patients_data_1y;
-    patientsChart.data.labels = labels;
-    patientsChart.data.datasets[0].data = data;
-    patientsChart.update();
-    document.getElementById('pat-6m').style.background = period==='6m' ? 'var(--c-primary)' : 'transparent';
-    document.getElementById('pat-6m').style.color      = period==='6m' ? '#fff' : 'var(--text-muted)';
-    document.getElementById('pat-1y').style.background = period==='1y' ? 'var(--c-primary)' : 'transparent';
-    document.getElementById('pat-1y').style.color      = period==='1y' ? '#fff' : 'var(--text-muted)';
-}
 </script>
-
 {% endblock %}

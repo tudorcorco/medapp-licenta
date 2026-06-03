@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reîncarcă Wallet{% endblock %}
+{% block page_title %}Reîncarcă Wallet MedApp{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:0 auto;">
+
+    <div style="background:linear-gradient(135deg,#1464A5 0%,#0B2545 100%);border-radius:16px;padding:24px;margin-bottom:20px;color:white;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.06);"></div>
+        <div style="position:absolute;bottom:-30px;left:40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.04);"></div>
+        <div style="position:relative;z-index:2;">
+            <div style="font-size:13px;opacity:.7;margin-bottom:16px;letter-spacing:.05em;">MEDAPP WALLET</div>
+            <div style="font-size:18px;font-family:monospace;letter-spacing:3px;margin-bottom:20px;">{{ wallet.card_number }}</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+                <div>
+                    <div style="font-size:11px;opacity:.6;margin-bottom:2px;">TITULAR</div>
+                    <div style="font-size:14px;font-weight:600;letter-spacing:.05em;">{{ user.get_full_name|default:user.username|upper }}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:11px;opacity:.6;margin-bottom:2px;">SOLD CURENT</div>
+                    <div style="font-size:22px;font-weight:700;">{{ wallet.balance }} RON</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
+            <div style="font-size:15px;font-weight:700;color:var(--text);">💳 Reîncarcă prin card bancar</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Sumă de adăugat: <strong id="header-amount">{{ amount }}</strong> RON</div>
+        </div>
+
+        <div style="padding:24px;" id="checkout-form">
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+                {% for suma in "50,100,200,500"|cut:" " %}{% endfor %}
+                <button type="button" onclick="setAmount(50)"  class="btn btn-ghost btn-sm" style="flex:1;">50 RON</button>
+                <button type="button" onclick="setAmount(100)" class="btn btn-ghost btn-sm" style="flex:1;">100 RON</button>
+                <button type="button" onclick="setAmount(200)" class="btn btn-ghost btn-sm" style="flex:1;">200 RON</button>
+                <button type="button" onclick="setAmount(500)" class="btn btn-ghost btn-sm" style="flex:1;">500 RON</button>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Sumă personalizată (RON)</label>
+                <input type="number" id="custom-amount" class="form-input" min="1" max="5000"
+                       value="{{ amount|stringformat:'g' }}" style="width:100%;font-size:16px;"
+                       oninput="updateAmount(this.value)">
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Număr card</label>
+                <input type="text" id="card-number" class="form-input"
+                       placeholder="1234 5678 9012 3456" maxlength="19"
+                       oninput="formatCard(this)" style="width:100%;font-size:16px;letter-spacing:2px;">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                <div>
+                    <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Dată expirare</label>
+                    <input type="text" id="card-expiry" class="form-input"
+                           placeholder="MM / YY" maxlength="7"
+                           oninput="formatExpiry(this)" style="width:100%;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">CVV</label>
+                    <input type="text" id="card-cvv" class="form-input"
+                           placeholder="•••" maxlength="3"
+                           oninput="this.value=this.value.replace(/\D/g,'')"
+                           style="width:100%;letter-spacing:4px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom:24px;">
+                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Nume titular</label>
+                <input type="text" id="card-name" class="form-input"
+                       placeholder="Ex: ION POPESCU" style="width:100%;text-transform:uppercase;">
+            </div>
+
+            <div id="error-msg" style="display:none;background:rgba(220,53,69,0.1);border:1px solid rgba(220,53,69,0.4);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--c-danger);margin-bottom:14px;"></div>
+
+            <button onclick="processTopup()" type="button"
+                    style="width:100%;padding:14px;background:var(--c-teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">
+                + Adaugă <span id="btn-amount">{{ amount|stringformat:'g' }}</span> RON în wallet
+            </button>
+
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <span style="font-size:11px;color:var(--text-muted);">Tranzacție securizată · Datele cardului nu sunt stocate</span>
+            </div>
+        </div>
+
+        <div id="loading-state" style="display:none;text-align:center;padding:48px 24px;">
+            <div style="font-size:36px;margin-bottom:12px;">⏳</div>
+            <div style="font-size:16px;font-weight:600;color:var(--text);">Se procesează...</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:6px;">Nu închide această pagină</div>
+        </div>
+
+        <div id="success-state" style="display:none;text-align:center;padding:48px 24px;">
+            <div style="font-size:48px;margin-bottom:16px;">✅</div>
+            <div style="font-size:20px;font-weight:700;color:var(--c-success);margin-bottom:8px;">Wallet reîncărcat!</div>
+            <div style="font-size:13px;color:var(--text-muted);" id="success-ref"></div>
+            <form method="POST" action="{% url 'wallet_topup_card' %}" id="confirm-form">
+                {% csrf_token %}
+                <input type="hidden" name="stripe_ref" id="stripe-ref-input">
+                <input type="hidden" name="amount" id="amount-input">
+                <input type="hidden" name="confirmed" value="1">
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentAmount = parseFloat("{{ amount }}".replace(',', '.')) || 100;
+
+function setAmount(val) {
+    currentAmount = val;
+    document.getElementById('custom-amount').value = val;
+    document.getElementById('btn-amount').textContent = val;
+    document.getElementById('header-amount').textContent = val;
+}
+
+function updateAmount(val) {
+    currentAmount = parseFloat(val) || 0;
+    document.getElementById('btn-amount').textContent = currentAmount;
+    document.getElementById('header-amount').textContent = currentAmount;
+}
+
+function formatCard(input) {
+    let v = input.value.replace(/\D/g,'').substring(0,16);
+    input.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+
+function formatExpiry(input) {
+    let v = input.value.replace(/\D/g,'').substring(0,4);
+    if (v.length >= 2) v = v.substring(0,2) + ' / ' + v.substring(2);
+    input.value = v;
+}
+
+function processTopup() {
+    const number = document.getElementById('card-number').value.replace(/\s/g,'');
+    const expiry = document.getElementById('card-expiry').value;
+    const cvv    = document.getElementById('card-cvv').value;
+    const name   = document.getElementById('card-name').value.trim();
+    const errDiv = document.getElementById('error-msg');
+
+    if (currentAmount < 1 || currentAmount > 5000) {
+        errDiv.textContent = '⚠ Suma trebuie să fie între 1 și 5000 RON.';
+        errDiv.style.display = 'block'; return;
+    }
+    if (number.length < 16) {
+        errDiv.textContent = '⚠ Număr de card invalid.';
+        errDiv.style.display = 'block'; return;
+    }
+    if (expiry.length < 7) {
+        errDiv.textContent = '⚠ Dată expirare invalidă.';
+        errDiv.style.display = 'block'; return;
+    }
+    if (cvv.length < 3) {
+        errDiv.textContent = '⚠ CVV invalid.';
+        errDiv.style.display = 'block'; return;
+    }
+    if (!name) {
+        errDiv.textContent = '⚠ Introdu numele titularului.';
+        errDiv.style.display = 'block'; return;
+    }
+
+    errDiv.style.display = 'none';
+    document.getElementById('checkout-form').style.display = 'none';
+    document.getElementById('loading-state').style.display = 'block';
+
+    setTimeout(function() {
+        const ref = 'TUP-' + Date.now() + '-' + Math.random().toString(36).substring(2,8).toUpperCase();
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('success-state').style.display = 'block';
+        document.getElementById('success-ref').textContent = 'Ref: ' + ref + ' · ' + currentAmount + ' RON adăugați';
+        document.getElementById('stripe-ref-input').value = ref;
+        document.getElementById('amount-input').value = currentAmount;
+        setTimeout(function() {
+            document.getElementById('confirm-form').submit();
+        }, 2000);
+    }, 2500);
+}
+</script>
+{% endblock %}

@@ -1,136 +1,259 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard Admin{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Panou Administrare{% endblock %}
+{% block page_title %}Panou Administrare{% endblock %}
 {% block nav_reports %}active{% endblock %}
 
 {% block content %}
+<div style="display:flex;flex-direction:column;gap:24px;">
 
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
-    <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-primary);">{{ revenue_total }} <span style="font-size:14px">RON</span></div>
-        <div class="stat-label">Venituri totale</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ total_appointments }}</div>
-        <div class="stat-label">Total programări</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-success);">{{ completed_appts }}</div>
-        <div class="stat-label">Finalizate</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ total_patients }}</div>
-        <div class="stat-label">Total pacienți</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{ total_doctors }}</div>
-        <div class="stat-label">Total medici</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" style="color:var(--c-teal);">{{ available_doctors }}</div>
-        <div class="stat-label">Medici disponibili</div>
-    </div>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">📋 Ultimele programări</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_patients }}</div>
+            <div class="stat-label">👥 Pacienți înregistrați</div>
         </div>
-        <div style="overflow:hidden;border-radius:0 0 var(--radius-lg) var(--radius-lg);">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <thead>
-                    <tr style="background:var(--surface-2);">
-                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Pacient</th>
-                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Medic</th>
-                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Data</th>
-                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for appt in recent_appointments %}
-                    <tr style="border-bottom:0.5px solid var(--border);transition:background .15s;"
-                        onmouseover="this.style.background='var(--surface-2)'"
-                        onmouseout="this.style.background=''">
-                        <td style="padding:11px 16px;"><div style="font-weight:500;color:var(--text);">{{ appt.patient.get_full_name|default:appt.patient.username }}</div></td>
-                        <td style="padding:11px 16px;color:var(--text-muted);">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</td>
-                        <td style="padding:11px 16px;color:var(--text-muted);font-size:12px;">{{ appt.date_time|date:"d M Y, H:i" }}</td>
-                        <td style="padding:11px 16px;">
-                            {% if appt.is_completed %}
-                                <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ Finalizată</span>
-                            {% elif appt.is_confirmed %}
-                                <span class="badge badge-success">✓ Confirmată</span>
-                            {% else %}
-                                <span class="badge badge-warning">⏳ Așteptare</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="4" style="padding:32px;text-align:center;color:var(--text-muted);">Nicio programare.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_doctors }}</div>
+            <div class="stat-label">🩺 Medici activi</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_appointments }}</div>
+            <div class="stat-label">📅 Total programări</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ revenue_total }} RON</div>
+            <div class="stat-label">💰 Venituri totale</div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-            <div class="card-title">🔍 Jurnal de audit</div>
-            <div style="display:flex;gap:0;background:var(--surface-2);border-radius:var(--radius-md);overflow:hidden;border:0.5px solid var(--border);">
-                <button onclick="filterAudit('all')" id="af-all"
-                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:var(--c-primary);color:#fff;font-family:inherit;">Toate</button>
-                <button onclick="filterAudit('login')" id="af-login"
-                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text-muted);font-family:inherit;">Login</button>
-                <button onclick="filterAudit('appt')" id="af-appt"
-                        style="padding:4px 12px;font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text-muted);font-family:inherit;">Programări</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">📋 Programări recente</div>
+            </div>
+            <div class="card-body" style="padding:0;">
+                {% for appt in recent_appointments %}
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);{% if forloop.last %}border-bottom:none;{% endif %}">
+                    <div style="flex:1;">
+                        <div style="font-size:13px;font-weight:600;color:var(--text);">{{ appt.patient.get_full_name|default:appt.patient.username }}</div>
+                        <div style="font-size:12px;color:var(--text-muted);">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }} · {{ appt.date_time|date:"d M Y, H:i" }}</div>
+                    </div>
+                    {% if appt.is_completed %}
+                        <span class="badge badge-success">Finalizat</span>
+                    {% elif appt.is_confirmed %}
+                        <span class="badge badge-primary">Confirmat</span>
+                    {% else %}
+                        <span class="badge badge-warning">Așteptare</span>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="empty-state">Nicio programare.</div>
+                {% endfor %}
             </div>
         </div>
-        <div style="overflow:hidden;border-radius:0 0 var(--radius-lg) var(--radius-lg);">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-                <thead>
-                    <tr style="background:var(--surface-2);">
-                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Data</th>
-                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Utilizator</th>
-                        <th style="padding:10px 16px;text-align:left;color:var(--text-muted);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-bottom:0.5px solid var(--border);">Acțiune</th>
-                    </tr>
-                </thead>
-                <tbody id="audit-body">
-                    {% for log in audit_logs %}
-                    <tr class="audit-row"
-                        data-type="{% if 'LOGIN' in log.action or 'LOGOUT' in log.action %}login{% elif 'APPT' in log.action %}appt{% else %}other{% endif %}"
-                        style="border-bottom:0.5px solid var(--border);transition:background .15s;"
-                        onmouseover="this.style.background='var(--surface-2)'"
-                        onmouseout="this.style.background=''">
-                        <td style="padding:10px 16px;color:var(--text-muted);font-size:12px;white-space:nowrap;">{{ log.timestamp|date:"d M, H:i" }}</td>
-                        <td style="padding:10px 16px;font-weight:500;color:var(--text);font-size:13px;">{{ log.user.username|default:"—" }}</td>
-                        <td style="padding:10px 16px;">
-                            <span class="badge {% if 'LOGIN' in log.action %}badge-primary{% elif 'LOGOUT' in log.action %}badge-primary{% elif 'DELETED' in log.action %}badge-danger{% elif 'COMPLETED' in log.action or 'APPROVED' in log.action %}badge-success{% else %}badge-warning{% endif %}" style="font-size:11px;">
-                                {{ log.get_action_display }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">🔍 Audit Log recent</div>
+            </div>
+            <div class="card-body" style="padding:0;max-height:480px;overflow-y:auto;">
+                {% for log in audit_logs %}
+                <div style="padding:10px 20px;border-bottom:1px solid var(--border);{% if forloop.last %}border-bottom:none;{% endif %}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div style="font-size:12px;font-weight:600;color:var(--text);">
+                            {% if log.user %}
+                                {{ log.user.username }}
+                            {% elif log.metadata.username %}
+                                {{ log.metadata.username }}
+                            {% else %}
+                                <span style="color:var(--text-muted);">anonim</span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);">{{ log.timestamp|date:"d M, H:i" }}</div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ log.get_action_display }}</div>
+                </div>
+                {% empty %}
+                <div class="empty-state">Nicio activitate.</div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
+    <div class="card" style="border:1.5px solid rgba(240,165,0,0.3);">
+        <div class="card-header" style="background:rgba(240,165,0,0.06);border-bottom:1px solid rgba(240,165,0,0.15);">
+            <div>
+                <div class="card-title" style="color:var(--c-warning);">🏧 Casă — Plăți Cash în Așteptare</div>
+                <div class="card-subtitle">Plăți care urmează să fie încasate la recepție</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:20px;font-weight:800;color:var(--c-warning);">{{ cash_pending|length }}</div>
+                <div style="font-size:10px;color:var(--text-muted);font-weight:600;">DE ÎNCASAT</div>
+            </div>
+        </div>
+
+        <div class="card-body" style="padding:0;">
+            {% for payment in cash_pending %}
+            {% with appt=payment.appointment %}
+            <div style="display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:1px solid var(--border);{% if forloop.last %}border-bottom:none;{% endif %}">
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(240,165,0,0.12);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">💵</div>
+                <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:600;color:var(--text);">
+                        {{ appt.get_patient_display_name }}
+                        {% if appt.is_for_other %}
+                        <span style="font-size:11px;color:var(--text-muted);font-weight:400;"> (aparținător: {{ appt.patient.get_full_name|default:appt.patient.username }})</span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                        Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}
+                        {% if appt.doctor.doctor_profile.specialization %} · {{ appt.doctor.doctor_profile.specialization }}{% endif %}
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                        📅 {{ appt.date_time|date:"d M Y, H:i" }}
+                        {% if appt.date_time < now %}
+                        <span style="color:var(--c-danger);font-weight:600;"> · Restantă</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:18px;font-weight:700;color:var(--c-warning);">{{ payment.amount }} RON</div>
+                    <div style="font-size:10px;color:var(--text-muted);">{{ payment.reference }}</div>
+                </div>
+                <form method="POST" action="{% url 'confirm_cash_payment' payment.id %}" style="margin:0;flex-shrink:0;">
+                    {% csrf_token %}
+                    <button type="submit"
+                        onclick="return confirm('Confirmați încasarea a {{ payment.amount }} RON cash de la {{ appt.get_patient_display_name }}?')"
+                        style="padding:8px 16px;background:var(--c-success);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+                        ✓ Confirmă plata
+                    </button>
+                </form>
+            </div>
+            {% endwith %}
+            {% empty %}
+            <div class="empty-state" style="padding:32px;">
+                <div style="font-size:32px;margin-bottom:8px;">✅</div>
+                <div>Nicio plată cash în așteptare.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card" style="border:1.5px solid rgba(220,53,69,0.3);">
+        <div class="card-header" style="background:rgba(220,53,69,0.06);border-bottom:1px solid rgba(220,53,69,0.15);">
+            <div>
+                <div class="card-title" style="color:var(--c-danger);">🔒 Security Center</div>
+                <div class="card-subtitle">Protecție Brute-Force · Progressive Throttling</div>
+            </div>
+            <div style="display:flex;gap:16px;">
+                <div style="text-align:center;">
+                    <div style="font-size:20px;font-weight:800;color:var(--c-danger);">{{ hard_bans|length }}</div>
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:600;">HARD BANS</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:20px;font-weight:800;color:var(--c-warning);">{{ soft_bans|length }}</div>
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:600;">SOFT BANS</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="padding:12px 24px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;gap:24px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c-warning);"></span>
+                <span style="color:var(--text-muted);"><strong style="color:var(--text);">Treapta 1 — Soft Ban:</strong> 5 încercări consecutive → blocat 10 minute</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c-danger);"></span>
+                <span style="color:var(--text-muted);"><strong style="color:var(--text);">Treapta 2 — Hard Ban:</strong> 30 încercări în 24h → blocat permanent</span>
+            </div>
+        </div>
+
+        {% if attempts_per_ip %}
+        <div style="padding:16px 24px 8px;">
+            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+                ⚠️ Încercări eșuate per cont (ultimele 24h)
+            </div>
+            {% for entry in attempts_per_ip %}
+            <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--surface-2);border-radius:8px;margin-bottom:6px;">
+                <div style="flex:1;">
+                    <span style="font-size:12px;font-family:monospace;color:var(--text);">{{ entry.ip_address }}</span>
+                    {% if entry.username %}
+                    <span style="font-size:12px;color:var(--text-muted);"> · {{ entry.username }}</span>
+                    {% endif %}
+                </div>
+                <span style="font-size:13px;font-weight:700;color:{% if entry.count >= 20 %}var(--c-danger){% elif entry.count >= 10 %}var(--c-warning){% else %}var(--text-muted){% endif %};">
+                    {{ entry.count }} încercări
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if hard_bans %}
+        <div style="padding:16px 24px 8px;">
+            <div style="font-size:12px;font-weight:700;color:var(--c-danger);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+                🚫 Hard Bans — Blocare Permanentă
+            </div>
+            {% for ban in hard_bans %}
+            <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:rgba(220,53,69,0.06);border:1px solid rgba(220,53,69,0.2);border-radius:10px;margin-bottom:8px;">
+                <div style="flex:1;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:13px;font-weight:700;color:var(--text);font-family:monospace;">{{ ban.ip_address }}</span>
+                        {% if ban.username %}
+                        <span style="font-size:12px;color:var(--text-muted);">· user: <strong>{{ ban.username }}</strong></span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+                        Blocat la {{ ban.timestamp|date:"d M Y, H:i" }}
+                        {% if ban.hard_ban_reason %} · {{ ban.hard_ban_reason }}{% endif %}
+                    </div>
+                </div>
+                <form method="POST" action="{% url 'revoke_ban' ban.id %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit"
+                        onclick="return confirm('Ești sigur că vrei să revoici banul pentru {{ ban.ip_address }}?')"
+                        style="padding:6px 14px;background:var(--c-success);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
+                        ✓ Revoke Ban
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:16px 24px 8px;">
+            <div style="font-size:12px;font-weight:700;color:var(--c-danger);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🚫 Hard Bans</div>
+            <div style="font-size:13px;color:var(--text-muted);padding:12px;background:var(--surface-2);border-radius:8px;">✅ Niciun hard ban activ.</div>
+        </div>
+        {% endif %}
+
+        {% if soft_bans %}
+        <div style="padding:8px 24px 16px;">
+            <div style="font-size:12px;font-weight:700;color:var(--c-warning);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+                ⏳ Soft Bans Active
+            </div>
+            {% for ban in soft_bans %}
+            <div style="display:flex;align-items:center;gap:16px;padding:10px 16px;background:rgba(240,165,0,0.06);border:1px solid rgba(240,165,0,0.25);border-radius:10px;margin-bottom:8px;">
+                <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:600;color:var(--text);font-family:monospace;">{{ ban.ip_address }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+                        Expiră la {{ ban.soft_ban_until|date:"H:i" }}
+                        {% if ban.username %} · user: {{ ban.username }}{% endif %}
+                    </div>
+                </div>
+                <form method="POST" action="{% url 'revoke_ban' ban.id %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit"
+                        style="padding:6px 14px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
+                        ✕ Ridică restricția
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+
 </div>
-
-<script>
-function filterAudit(type) {
-    document.querySelectorAll('.audit-row').forEach(row => {
-        row.style.display = (type === 'all' || row.dataset.type === type) ? '' : 'none';
-    });
-    ['all','login','appt'].forEach(t => {
-        const btn = document.getElementById('af-' + t);
-        btn.style.background = t === type ? 'var(--c-primary)' : 'transparent';
-        btn.style.color = t === type ? '#fff' : 'var(--text-muted)';
-    });
-}
-</script>
-
 {% endblock %}

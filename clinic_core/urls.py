@@ -10,7 +10,10 @@ from accounts.views import (
     doctor_dashboard, toggle_availability, doctor_profile_edit,
     approve_appointment, complete_appointment, delete_appointment,
     patient_history, add_prescription,
-    admin_reports, admin_stats, admin_profile_edit,
+    admin_reports, admin_stats, admin_profile_edit, revoke_ban, confirm_cash_payment,
+    payment_view, wallet_topup, mark_no_show,
+    wallet_checkout, wallet_topup_card, card_checkout,
+    receipt_view, receipt_pdf,
 )
 
 urlpatterns = [
@@ -27,6 +30,17 @@ urlpatterns = [
     path('patient/new-appointment/<int:doctor_id>/',    new_appointment,    name='new_appointment'),
     path('patient/rate/<int:appointment_id>/',          rate_doctor,        name='rate_doctor'),
     path('patient/gdpr-export/',                        gdpr_export,        name='gdpr_export'),
+    path('patient/payment/<int:appointment_id>/',       payment_view,       name='payment_view'),
+
+    # Plata card online (checkout simulat) + chitanta
+    path('patient/card-checkout/<int:appointment_id>/', card_checkout,      name='card_checkout'),
+    path('patient/receipt/<int:appointment_id>/',       receipt_view,       name='receipt_view'),
+    path('patient/receipt/<int:appointment_id>/pdf/',   receipt_pdf,        name='receipt_pdf'),
+
+    # Wallet MedApp
+    path('patient/wallet/topup/',                       wallet_topup,       name='wallet_topup'),
+    path('patient/wallet/topup/card/',                  wallet_topup_card,  name='wallet_topup_card'),
+    path('patient/wallet/checkout/<int:appointment_id>/', wallet_checkout,  name='wallet_checkout'),
 
     path('profile/edit/',     profile_edit,     name='profile_edit'),
     path('profile/security/', profile_security, name='profile_security'),
@@ -39,12 +53,13 @@ urlpatterns = [
     path('doctor/delete/<int:appointment_id>/',       delete_appointment,  name='delete_appointment'),
     path('doctor/patient/<int:patient_id>/',          patient_history,     name='patient_history'),
     path('doctor/prescription/<int:appointment_id>/', add_prescription,    name='add_prescription'),
+    path('doctor/no-show/<int:appointment_id>/',      mark_no_show,        name='mark_no_show'),
 
-    path('admin-reports/',      admin_reports,      name='admin_reports'),
-    path('admin-stats/',        admin_stats,        name='admin_stats'),
-    path('admin-profile/edit/', admin_profile_edit, name='admin_profile_edit'),
-    
+    path('admin-reports/',         admin_reports,      name='admin_reports'),
+    path('admin-stats/',           admin_stats,        name='admin_stats'),
+    path('admin-profile/edit/',    admin_profile_edit, name='admin_profile_edit'),
+    path('admin-security/revoke/<int:ban_id>/', revoke_ban, name='revoke_ban'),
+    path('admin-cash/confirm/<int:payment_id>/', confirm_cash_payment, name='confirm_cash_payment'),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
