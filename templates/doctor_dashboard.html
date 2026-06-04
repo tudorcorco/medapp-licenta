@@ -7,7 +7,7 @@
 
 {% block content %}
 
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;margin-bottom:20px;align-items:start;">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;margin-bottom:20px;align-items:start;">
     <div class="stat-card">
         <div class="stat-value">{{ appointments.count }}</div>
         <div class="stat-label">Total programări</div>
@@ -19,6 +19,10 @@
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-warning);">{{ pending_count }}</div>
         <div class="stat-label">În așteptare</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color:var(--c-danger);">{{ no_show_count }}</div>
+        <div class="stat-label">Neprezentări</div>
     </div>
     <div class="card" style="padding:14px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:140px;">
         {% if doctor_profile %}
@@ -35,6 +39,27 @@
     </div>
 </div>
 
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <div class="card-title">💰 Venituri — Luna curentă</div>
+        <div class="card-subtitle">Total all-time: {{ revenue_all_time }} RON</div>
+    </div>
+    <div class="card-body" style="padding:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div style="text-align:center;padding:16px;background:var(--surface-2);border-radius:var(--radius-md);">
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Privat (Cash/Card)</div>
+            <div style="font-size:26px;font-weight:700;color:var(--c-primary);">{{ revenue_private }} <span style="font-size:13px;">RON</span></div>
+        </div>
+        <div style="text-align:center;padding:16px;background:var(--surface-2);border-radius:var(--radius-md);">
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Decontări CNAS</div>
+            <div style="font-size:26px;font-weight:700;color:var(--c-teal);">{{ revenue_cnas }} <span style="font-size:13px;">RON</span></div>
+        </div>
+        <div style="text-align:center;padding:16px;background:var(--c-primary-lt);border-radius:var(--radius-md);">
+            <div style="font-size:11px;color:var(--c-primary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Total lunar</div>
+            <div style="font-size:26px;font-weight:700;color:var(--c-primary);">{{ revenue_total_month }} <span style="font-size:13px;">RON</span></div>
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <div class="card-title">🗓 Lista programărilor</div>
@@ -42,10 +67,10 @@
     </div>
     <div class="card-body" style="padding:12px;">
         {% for appt in appointments %}
-            <div class="appt-item" {% if appt.is_completed %}style="opacity:.65;"{% endif %}>
-                <div style="width:42px;height:42px;background:{% if appt.is_completed %}var(--surface-2){% else %}var(--c-primary-lt){% endif %};border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
-                    <div style="font-size:15px;font-weight:600;color:{% if appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};line-height:1;">{{ appt.date_time|date:"d" }}</div>
-                    <div style="font-size:9px;color:{% if appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
+            <div class="appt-item" {% if appt.is_completed or appt.is_no_show %}style="opacity:.65;"{% endif %}>
+                <div style="width:42px;height:42px;background:{% if appt.is_no_show %}rgba(220,53,69,0.1){% elif appt.is_completed %}var(--surface-2){% else %}var(--c-primary-lt){% endif %};border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+                    <div style="font-size:15px;font-weight:600;color:{% if appt.is_no_show %}var(--c-danger){% elif appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};line-height:1;">{{ appt.date_time|date:"d" }}</div>
+                    <div style="font-size:9px;color:{% if appt.is_no_show %}var(--c-danger){% elif appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
                 </div>
                 <div class="appt-info">
                     <a href="{% url 'patient_history' appt.patient.id %}" style="font-weight:600;font-size:15px;color:var(--text);text-decoration:none;">
@@ -54,18 +79,42 @@
                     </a>
                     <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
                     {% if appt.reason %}<div class="appt-reason">„{{ appt.reason|truncatechars:60 }}"</div>{% endif %}
-                    <div style="margin-top:5px;">
-                        {% if appt.is_completed %}
+                    <div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                        {% if appt.is_no_show %}
+                            <span class="badge badge-danger">✗ Neprezentare</span>
+                        {% elif appt.is_completed %}
                             <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ Finalizată</span>
                         {% elif appt.is_confirmed %}
                             <span class="badge badge-success">✓ Confirmată</span>
                         {% else %}
                             <span class="badge badge-warning">⏳ În așteptare</span>
                         {% endif %}
-                        {% if appt.prescription %}<span class="badge badge-primary" style="margin-left:4px;">💊 Rețetă</span>{% endif %}
+
+                        {% if appt.payment_method %}
+                            <span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:10px;">
+                                {% if appt.payment_method == 'CASH' %}💵 Cash
+                                {% elif appt.payment_method == 'CARD_ONLINE' %}💳 Card online
+                                {% elif appt.payment_method == 'CNAS' %}🏥 CNAS
+                                {% else %}{{ appt.payment_method }}
+                                {% endif %}
+                            </span>
+                        {% endif %}
+
+                        {% if appt.cnas_covered %}
+                            <span class="badge badge-primary" style="font-size:10px;">🏥 Decontat CNAS</span>
+                        {% endif %}
+                        {% if appt.referral_serial %}
+                            <span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:10px;">📋 Trimitere</span>
+                        {% endif %}
+                        {% if appt.prescription %}
+                            <span class="badge badge-primary" style="margin-left:2px;">💊 Rețetă</span>
+                        {% endif %}
                     </div>
+                    {% if appt.cnas_code %}
+                        <div style="font-size:11px;color:var(--c-teal);margin-top:4px;">Cod CNAS: {{ appt.cnas_code }}</div>
+                    {% endif %}
                 </div>
-                {% if not appt.is_completed %}
+                {% if not appt.is_completed and not appt.is_no_show %}
                 <div class="appt-actions">
                     {% if not appt.is_confirmed %}
                         <form method="POST" action="{% url 'approve_appointment' appt.id %}" style="margin:0;">
@@ -74,13 +123,17 @@
                         </form>
                     {% endif %}
                     {% if appt.is_confirmed %}
-                        <form method="POST" action="{% url 'complete_appointment' appt.id %}" style="margin:0;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-primary btn-sm">✔ Finalizează</button>
-                        </form>
+                        <button onclick="openCompleteModal({{ appt.id }})" class="btn btn-primary btn-sm">✔ Finalizează</button>
                     {% endif %}
                     {% if appt.is_confirmed and not appt.prescription %}
                         <a href="{% url 'add_prescription' appt.id %}" class="btn btn-ghost btn-sm">💊 Rețetă</a>
+                    {% endif %}
+                    {% if appt.is_confirmed %}
+                        <form method="POST" action="{% url 'mark_no_show' appt.id %}" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--c-danger);"
+                                    onclick="return confirm('Marchezi neprezentare?')">✗ No-Show</button>
+                        </form>
                     {% endif %}
                     <form method="POST" action="{% url 'delete_appointment' appt.id %}" style="margin:0;"
                           onsubmit="return confirm('Ștergi această programare?');">
@@ -98,4 +151,43 @@
         {% endfor %}
     </div>
 </div>
+
+<div id="completeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:420px;max-width:90vw;box-shadow:var(--shadow-lg);">
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">✔ Finalizare consultație</div>
+        <form method="POST" id="completeForm">
+            {% csrf_token %}
+            <div class="form-group" style="margin-bottom:16px;">
+                <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">
+                    Cod ICD-10 (opțional)
+                </label>
+                <input type="text" name="icd10_code" class="form-input"
+                       placeholder="Ex: J06, I10, E11, Z00"
+                       style="width:100%;">
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                    Dacă pacientul e asigurat CNAS și are bilet de trimitere, se va genera automat decontare.
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" onclick="closeCompleteModal()" class="btn btn-ghost btn-sm">Anulează</button>
+                <button type="submit" class="btn btn-primary btn-sm">Finalizează</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openCompleteModal(apptId) {
+    document.getElementById('completeForm').action = '/doctor/complete/' + apptId + '/';
+    const modal = document.getElementById('completeModal');
+    modal.style.display = 'flex';
+}
+function closeCompleteModal() {
+    document.getElementById('completeModal').style.display = 'none';
+}
+document.getElementById('completeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeCompleteModal();
+});
+</script>
+
 {% endblock %}

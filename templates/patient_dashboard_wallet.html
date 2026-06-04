@@ -52,7 +52,6 @@
                     <div style="height:100%;width:{{ profile_pct }}%;background:{% if profile_pct == 100 %}var(--c-success){% elif profile_pct >= 60 %}var(--c-primary){% else %}var(--c-warning){% endif %};border-radius:3px;transition:width .5s;"></div>
                 </div>
             </div>
-
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
                 <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;">
                     <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Grup sanguin</div>
@@ -63,54 +62,30 @@
                     <div style="font-size:13px;font-weight:500;color:var(--text);">{% if last_visit %}{{ last_visit.date_time|date:"d M Y" }}{% else %}—{% endif %}</div>
                 </div>
             </div>
-
             {% if profile.allergies and profile.allergies != "Niciuna" %}
             <div style="padding:10px 12px;background:var(--c-danger-lt);border-radius:var(--radius-md);margin-bottom:14px;">
                 <div style="font-size:11px;color:var(--c-danger);font-weight:600;margin-bottom:3px;">⚠ Alergii înregistrate</div>
                 <div style="font-size:13px;color:var(--c-danger);">{{ profile.allergies }}</div>
             </div>
             {% endif %}
-
             {% if profile.is_insured %}
             <div style="padding:10px 12px;background:rgba(13,158,138,0.08);border:1px solid rgba(13,158,138,0.3);border-radius:var(--radius-md);margin-bottom:14px;">
                 <div style="font-size:11px;color:var(--c-teal);font-weight:600;margin-bottom:2px;">✓ Asigurat CNAS</div>
                 {% if profile.health_card_serial %}<div style="font-size:12px;color:var(--text-muted);">Card: {{ profile.health_card_serial }}</div>{% endif %}
             </div>
             {% endif %}
-
             {% if next_appt %}
             <div style="padding:12px;background:var(--c-primary-lt);border-radius:var(--radius-md);margin-bottom:14px;">
                 <div style="font-size:11px;color:var(--c-primary);font-weight:600;margin-bottom:6px;">📅 Următoarea programare</div>
                 <div style="font-size:14px;font-weight:500;color:var(--text);">Dr. {{ next_appt.doctor.get_full_name|default:next_appt.doctor.username }}</div>
                 <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">{{ next_appt.date_time|date:"d M Y, H:i" }}</div>
-                {% if next_appt.is_confirmed %}
-                    <span class="badge badge-success" style="margin-top:6px;display:inline-block;">✓ Confirmată</span>
-                {% else %}
-                    <span class="badge badge-warning" style="margin-top:6px;display:inline-block;">⏳ În așteptare</span>
-                {% endif %}
+                {% if next_appt.is_confirmed %}<span class="badge badge-success" style="margin-top:6px;display:inline-block;">✓ Confirmată</span>
+                {% else %}<span class="badge badge-warning" style="margin-top:6px;display:inline-block;">⏳ În așteptare</span>{% endif %}
             </div>
             {% endif %}
-
             <a href="{% url 'doctors_list' %}" class="btn btn-teal btn-full">
                 {% if next_appt %}Programare nouă →{% else %}Caută un medic →{% endif %}
             </a>
-
-            {% if prescriptions %}
-            <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
-                <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;">💊 Ultima rețetă</div>
-                {% with prescriptions|first as rx %}
-                <div style="padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-md);border-left:3px solid var(--c-primary);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <div style="font-size:12px;font-weight:500;color:var(--text);">Dr. {{ rx.doctor.get_full_name|default:rx.doctor.username }}</div>
-                        <div style="font-size:11px;color:var(--text-muted);">{{ rx.created_at|date:"d M Y" }}</div>
-                    </div>
-                    {% if rx.diagnosis %}<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{{ rx.diagnosis }}</div>{% endif %}
-                    <div style="font-size:12px;color:var(--text);">{{ rx.medication|truncatechars:60 }}</div>
-                </div>
-                {% endwith %}
-            </div>
-            {% endif %}
-
         </div>
     </div>
 
@@ -133,9 +108,6 @@
                     <div class="appt-info">
                         <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
                         <div class="appt-meta">{{ appt.date_time|date:"H:i" }}{% if appt.reason %} · {{ appt.reason|truncatechars:28 }}{% endif %}</div>
-                        {% if appt.is_for_other and appt.beneficiary_name %}
-                        <div style="font-size:11px;color:var(--c-primary);margin-top:2px;">👤 Pentru: {{ appt.beneficiary_name }}</div>
-                        {% endif %}
                         {% if appt.payment_method %}
                         <div style="margin-top:4px;font-size:11px;color:var(--text-muted);">
                             {% if appt.payment_method == 'CASH' %}💵 Cash
@@ -166,7 +138,6 @@
                 </div>
                 {% endfor %}
             </div>
-
             <div id="tab-ist" style="display:none;">
                 {% for appt in past %}
                 <div class="appt-item" style="opacity:.8;">
@@ -177,30 +148,18 @@
                     <div class="appt-info">
                         <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
                         <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
-                        {% if appt.is_for_other and appt.beneficiary_name %}
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">👤 {{ appt.beneficiary_name }}</div>
-                        {% endif %}
                     </div>
                     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                        {% if appt.is_no_show %}
-                            <span class="badge badge-danger">✗ Neprezentare</span>
+                        {% if appt.is_no_show %}<span class="badge badge-danger">✗ Neprezentare</span>
                         {% elif appt.is_completed %}
                             <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ Finalizată</span>
-                            {% if not appt.rating %}
-                                <a href="{% url 'rate_doctor' appt.id %}" style="font-size:11px;color:var(--c-primary);">⭐ Evaluează</a>
-                            {% else %}
-                                <span style="font-size:11px;color:#F5A623;">{{ appt.rating.score }}★</span>
-                            {% endif %}
-                        {% else %}
-                            <span class="badge badge-success">✓ Confirmat</span>
-                        {% endif %}
+                            {% if not appt.rating %}<a href="{% url 'rate_doctor' appt.id %}" style="font-size:11px;color:var(--c-primary);">⭐ Evaluează</a>
+                            {% else %}<span style="font-size:11px;color:#F5A623;">{{ appt.rating.score }}★</span>{% endif %}
+                        {% else %}<span class="badge badge-success">✓ Confirmat</span>{% endif %}
                     </div>
                 </div>
                 {% empty %}
-                <div class="empty-state">
-                    <div class="empty-state-icon">🗂</div>
-                    <div class="empty-state-text">Niciun istoric.</div>
-                </div>
+                <div class="empty-state"><div class="empty-state-icon">🗂</div><div class="empty-state-text">Niciun istoric.</div></div>
                 {% endfor %}
             </div>
         </div>
@@ -273,25 +232,31 @@
             </div>
             <div class="card-body">
                 <div style="width:44px;height:44px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">{{ user.username|first|upper }}</div>
-                <div style="margin-bottom:9px;">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Nume complet</div>
-                    <div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{{ user.get_full_name|default:"—" }}</div>
-                </div>
-                <div style="margin-bottom:9px;">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Grup sanguin</div>
-                    <div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.blood_type %}{{ profile.blood_type }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div>
-                </div>
-                <div style="margin-bottom:9px;">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Telefon</div>
-                    <div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.phone %}{{ profile.phone }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div>
-                </div>
-                <div style="margin-bottom:14px;">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">CNP</div>
-                    <div style="font-size:12px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.cnp %}{{ profile.cnp|slice:":6" }}·······{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div>
-                </div>
+                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Nume complet</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{{ user.get_full_name|default:"—" }}</div></div>
+                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Grup sanguin</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.blood_type %}{{ profile.blood_type }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div></div>
+                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Telefon</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.phone %}{{ profile.phone }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div></div>
+                <div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">CNP</div><div style="font-size:12px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.cnp %}{{ profile.cnp|slice:":6" }}·······{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div></div>
                 <a href="{% url 'gdpr_export' %}" class="btn btn-ghost btn-full" style="font-size:12px;">📥 Descarcă datele mele</a>
             </div>
         </div>
+
+        {% if prescriptions %}
+        <div class="card">
+            <div class="card-header"><div class="card-title">💊 Ultimele rețete</div></div>
+            <div class="card-body" style="padding:10px 12px;">
+                {% for rx in prescriptions %}
+                <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md);margin-bottom:8px;border-left:3px solid var(--c-primary);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <div style="font-size:12px;font-weight:500;color:var(--text);">Dr. {{ rx.doctor.get_full_name|default:rx.doctor.username }}</div>
+                        <div style="font-size:11px;color:var(--text-muted);">{{ rx.created_at|date:"d M Y" }}</div>
+                    </div>
+                    {% if rx.diagnosis %}<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{{ rx.diagnosis }}</div>{% endif %}
+                    <div style="font-size:12px;color:var(--text);white-space:pre-line;">{{ rx.medication|truncatechars:80 }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
 
     </div>
 </div>
