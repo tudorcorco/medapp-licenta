@@ -279,6 +279,9 @@ class AuditLog(models.Model):
         SOFT_BAN              = 'SOFT_BAN',              'Blocare temporara 10 min'
         HARD_BAN              = 'HARD_BAN',              'Blocare permanenta cont/IP'
         BAN_REVOKED           = 'BAN_REVOKED',           'Ban revocat de admin'
+        TWO_FA_SENT           = 'TWO_FA_SENT',           'Cod 2FA trimis'
+        TWO_FA_SUCCESS        = 'TWO_FA_SUCCESS',        'Autentificare 2FA reusita'
+        TWO_FA_FAILED         = 'TWO_FA_FAILED',         'Cod 2FA gresit'
 
     user       = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
     action     = models.CharField(max_length=50, choices=Action.choices)
@@ -403,3 +406,33 @@ class LoginAttempt(models.Model):
             return True, False
 
         return False, False
+
+
+class TwoFactorCode(models.Model):
+    user       = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='two_factor_codes')
+    code       = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used       = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'2FA {self.user.username} — {self.code} ({"folosit" if self.used else "valid"})'
+
+    def is_valid(self):
+        from django.utils import timezone
+        return not self.used and self.expires_at > timezone.now()
+
+    @classmethod
+    def generate(cls, user):
+        import random
+        from django.utils import timezone
+        cls.objects.filter(user=user, used=False).update(used=True)
+        code = str(random.randint(100000, 999999))
+        return cls.objects.create(
+            user=user,
+            code=code,
+            expires_at=timezone.now() + timezone.timedelta(minutes=5),
+        )

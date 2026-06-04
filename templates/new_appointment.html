@@ -46,7 +46,33 @@
 
                 <div class="form-group">
                     <label class="form-label">Data și ora</label>
-                    {{ form.date_time }}
+                    <input type="hidden" name="date_time" id="date_time_hidden" value="">
+
+                    <div id="appt-calendar" style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                            <button type="button" id="cal-prev" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px;color:var(--text);">‹</button>
+                            <div id="cal-month" style="font-size:14px;font-weight:700;color:var(--text);"></div>
+                            <button type="button" id="cal-next" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px;color:var(--text);">›</button>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;">
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">L</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">Ma</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">Mi</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">J</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">V</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);opacity:.4;">S</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);opacity:.4;">D</div>
+                        </div>
+                        <div id="cal-days" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
+                    </div>
+
+                    <div id="time-slots-wrapper" style="margin-top:14px;display:none;">
+                        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">
+                            Ore disponibile pentru <span id="selected-date-label" style="color:var(--c-primary);font-weight:700;"></span>
+                        </div>
+                        <div id="time-slots" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+                    </div>
+
                     {% if form.date_time.errors %}<ul class="errorlist">{% for e in form.date_time.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
                 </div>
 
@@ -322,7 +348,11 @@ function showError(msg) {
 function validateAndSubmit() {
     document.getElementById('form-error').style.display = 'none';
 
-    // Re-citim radio-ul selectat chiar acum — indiferent dacă onchange s-a declanșat
+    if (!document.getElementById('date_time_hidden').value) {
+        showError('⚠ Selectați o dată și o oră pentru programare.');
+        return;
+    }
+
     const checkedRadio = document.querySelector('input[name="payment_method_radio"]:checked');
     if (checkedRadio) {
         document.getElementById('payment_method_hidden').value = checkedRadio.value;
@@ -369,6 +399,143 @@ document.addEventListener('DOMContentLoaded', function() {
     const checked = document.querySelector('input[name="payment_method_radio"]:checked');
     if (checked) selectPay(checked);
     selectFor('me');
+    initCalendar();
 });
+
+const bookedSlots = {{ booked_slots|safe }};
+const WORK_HOURS = [9, 10, 11, 12, 13, 14, 15, 16];
+const MONTH_NAMES = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+let calCurrent = new Date();
+let selectedDateStr = null;
+
+function initCalendar() {
+    calCurrent.setDate(1);
+    renderCalendar();
+    document.getElementById('cal-prev').onclick = function() {
+        calCurrent.setMonth(calCurrent.getMonth() - 1);
+        renderCalendar();
+    };
+    document.getElementById('cal-next').onclick = function() {
+        calCurrent.setMonth(calCurrent.getMonth() + 1);
+        renderCalendar();
+    };
+}
+
+function renderCalendar() {
+    const year = calCurrent.getFullYear();
+    const month = calCurrent.getMonth();
+    document.getElementById('cal-month').textContent = MONTH_NAMES[month] + ' ' + year;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const firstDay = new Date(year, month, 1);
+    let startWeekday = firstDay.getDay() - 1;
+    if (startWeekday < 0) startWeekday = 6;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const grid = document.getElementById('cal-days');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < startWeekday; i++) {
+        const empty = document.createElement('div');
+        grid.appendChild(empty);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month, d);
+        const weekday = date.getDay();
+        const isWeekend = (weekday === 0 || weekday === 6);
+        const isPast = date < today;
+        const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.textContent = d;
+        cell.style.cssText = 'aspect-ratio:1;border-radius:8px;border:1px solid var(--border);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;';
+
+        if (isWeekend || isPast) {
+            cell.disabled = true;
+            cell.style.background = 'transparent';
+            cell.style.color = 'var(--text-muted)';
+            cell.style.opacity = '0.3';
+            cell.style.cursor = 'not-allowed';
+        } else {
+            cell.style.background = 'var(--surface)';
+            cell.style.color = 'var(--text)';
+            cell.style.cursor = 'pointer';
+            cell.onclick = function() { selectDate(dateStr, cell); };
+        }
+
+        if (dateStr === selectedDateStr) {
+            cell.style.background = 'var(--c-primary)';
+            cell.style.color = 'white';
+            cell.style.borderColor = 'var(--c-primary)';
+        }
+
+        grid.appendChild(cell);
+    }
+}
+
+function selectDate(dateStr, cell) {
+    selectedDateStr = dateStr;
+    document.getElementById('date_time_hidden').value = '';
+    renderCalendar();
+
+    const parts = dateStr.split('-');
+    document.getElementById('selected-date-label').textContent =
+        parts[2] + ' ' + MONTH_NAMES[parseInt(parts[1]) - 1] + ' ' + parts[0];
+
+    const wrapper = document.getElementById('time-slots-wrapper');
+    const slotsDiv = document.getElementById('time-slots');
+    slotsDiv.innerHTML = '';
+    wrapper.style.display = 'block';
+
+    const now = new Date();
+    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
+    WORK_HOURS.forEach(function(h) {
+        const timeStr = String(h).padStart(2, '0') + ':00';
+        const fullStr = dateStr + ' ' + timeStr;
+        const isBooked = bookedSlots.includes(fullStr);
+        const isPastHour = (dateStr === todayStr && h <= now.getHours());
+
+        const slot = document.createElement('button');
+        slot.type = 'button';
+        slot.textContent = timeStr;
+        slot.style.cssText = 'padding:10px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid var(--border);';
+
+        if (isBooked || isPastHour) {
+            slot.disabled = true;
+            slot.style.background = 'var(--surface-2)';
+            slot.style.color = 'var(--text-muted)';
+            slot.style.opacity = '0.4';
+            slot.style.cursor = 'not-allowed';
+            slot.style.textDecoration = 'line-through';
+        } else {
+            slot.style.background = 'var(--surface)';
+            slot.style.color = 'var(--text)';
+            slot.style.cursor = 'pointer';
+            slot.onclick = function() { selectSlot(fullStr, slot); };
+        }
+
+        slotsDiv.appendChild(slot);
+    });
+}
+
+function selectSlot(fullStr, slot) {
+    document.querySelectorAll('#time-slots button').forEach(function(b) {
+        if (!b.disabled) {
+            b.style.background = 'var(--surface)';
+            b.style.color = 'var(--text)';
+            b.style.borderColor = 'var(--border)';
+        }
+    });
+    slot.style.background = 'var(--c-teal)';
+    slot.style.color = 'white';
+    slot.style.borderColor = 'var(--c-teal)';
+    document.getElementById('date_time_hidden').value = fullStr;
+}
 </script>
+
 {% endblock %}

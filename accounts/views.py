@@ -21,7 +21,7 @@ from .forms import (
 from .models import (
     CustomUser, Appointment, AuditLog,
     PatientProfile, DoctorProfile, Prescription, Rating,
-    Payment, Wallet, WalletTransaction, LoginAttempt,
+    Payment, Wallet, WalletTransaction, LoginAttempt, TwoFactorCode,
 )
 
 
@@ -239,11 +239,38 @@ def login_view(request):
             form = ClinicLoginForm(request, data=request.POST)
             if form.is_valid():
                 user = form.get_user()
-                login(request, user)
-                AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
-                return _redirect_by_role(user)
+                if user.is_patient:
+                    tfa = TwoFactorCode.generate(user)
+                    _send_email_safe(
+                        subject='Codul tau de verificare MedApp',
+                        message=(
+                            f'Buna {user.get_full_name() or user.username},
+
+'
+                            f'Codul tau de verificare este:
+
+'
+                            f'    {tfa.code}
+
+'
+                            f'Codul este valabil 5 minute.
+'
+                            f'Daca nu ai initiat aceasta autentificare, ignora acest email.
+
+'
+                            f'Echipa MedApp'
+                        ),
+                        recipient=user.email,
+                    )
+                    request.session['2fa_user_id'] = user.id
+                    request.session.modified = True
+                    AuditLog.log(request, AuditLog.Action.TWO_FA_SENT, metadata={'username': user.username})
+                    return redirect('verify_2fa')
+                else:
+                    login(request, user)
+                    AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
+                    return _redirect_by_role(user)
             else:
-                # Înregistrăm eșecul și verificăm dacă se aplică ban
                 soft_banned, hard_banned = LoginAttempt.record_failure(request, username)
                 AuditLog.log(request, AuditLog.Action.LOGIN_FAILED, metadata={'username': username})
 
@@ -251,15 +278,13 @@ def login_view(request):
                     AuditLog.log(request, AuditLog.Action.HARD_BAN, metadata={
                         'username': username, 'ip': LoginAttempt.get_ip(request)
                     })
-                    ban_error = f'Contul/IP-ul a fost blocat permanent din cauza activității suspecte. Contactați administratorul.'
+                    ban_error = 'Contul/IP-ul a fost blocat permanent din cauza activitatii suspecte. Contactati administratorul.'
                 elif soft_banned:
                     AuditLog.log(request, AuditLog.Action.SOFT_BAN, metadata={
                         'username': username, 'ip': LoginAttempt.get_ip(request)
                     })
-                    ban_error = 'Prea multe încercări eșuate. Cont blocat 10 minute.'
+                    ban_error = 'Prea multe incercari esuate. Cont blocat 10 minute.'
                 else:
-                    # Calculăm câte încercări mai are
-                    from django.utils import timezone
                     ip = LoginAttempt.get_ip(request)
                     recent_count = LoginAttempt.objects.filter(
                         ip_address=ip,
@@ -274,11 +299,47 @@ def login_view(request):
     return render(request, 'login.html', {'form': form, 'ban_error': ban_error})
 
 
-def register_view(request):
-    if request.user.is_authenticated:
-        return _redirect_by_role(request.user)
+
+def verify_2fa(request):
+    user_id = request.session.get('2fa_user_id')
+    if not user_id:
+        return redirect('login')
+    try:
+        user = CustomUser.objects.get(id=user_id)
+    except CustomUser.DoesNotExist:
+        return redirect('login')
+
+    error = ''
     if request.method == 'POST':
-        form = RegisterForm(request.POST)
+        code_input = request.POST.get('code', '').strip()
+        tfa = TwoFactorCode.objects.filter(user=user, used=False).order_by('-created_at').first()
+        if not tfa or not tfa.is_valid():
+            error = 'Codul a expirat. Incearca sa te autentifici din nou.'
+        elif tfa.code != code_input:
+            AuditLog.log(request, AuditLog.Action.TWO_FA_FAILED, metadata={'username': user.username})
+            error = 'Cod incorect. Verifica emailul si incearca din nou.'
+        else:
+            tfa.used = True
+            tfa.save()
+            del request.session['2fa_user_id']
+            login(request, user)
+            AuditLog.log(request, AuditLog.Action.TWO_FA_SUCCESS, metadata={'username': user.username})
+            AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
+            return _redirect_by_role(user)
+
+    masked_email = ''
+    if user.email:
+        parts = user.email.split('@')
+        masked_email = parts[0][:2] + '***@' + parts[1] if len(parts) == 2 else user.email
+
+    return render(request, 'verify_2fa.html', {
+        'masked_email': masked_email,
+        'error': error,
+        'username': user.username,
+    })
+
+
+def register_view(request):
         if form.is_valid():
             user = form.save()
             PatientProfile.objects.get_or_create(user=user)
@@ -1035,6 +1096,13 @@ def new_appointment(request, doctor_id):
 
     patient_wallet = _get_or_create_wallet(request.user)
 
+    booked = Appointment.objects.filter(
+        doctor=doctor,
+        date_time__gte=timezone.now(),
+        is_no_show=False,
+    ).exclude(is_completed=True).values_list('date_time', flat=True)
+    booked_slots = [timezone.localtime(d).strftime('%Y-%m-%d %H:%M') for d in booked]
+
     if request.method == 'POST':
         form           = AppointmentForm(request.POST)
         payment_method = request.POST.get('payment_method', 'CASH')
@@ -1174,6 +1242,7 @@ def new_appointment(request, doctor_id):
         'patient_profile': patient_profile,
         'patient_wallet':  patient_wallet,
         'doctor_fee':      doctor_fee,
+        'booked_slots':    json.dumps(booked_slots),
         'notif_list':      notif_list,
         'notif_count':     notif_count,
     })

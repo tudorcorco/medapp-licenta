@@ -3,7 +3,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts.views import (
-    home_view, login_view, logout_view, register_view,
+    home_view, login_view, logout_view, register_view, verify_2fa,
     patient_dashboard, cancel_appointment, profile_edit,
     profile_security, doctors_list, doctor_profile,
     new_appointment, rate_doctor, gdpr_export,
@@ -19,9 +19,10 @@ from accounts.views import (
 urlpatterns = [
     path('admin/',    admin.site.urls),
     path('',          home_view,     name='home'),
-    path('login/',    login_view,    name='login'),
-    path('logout/',   logout_view,   name='logout'),
-    path('register/', register_view, name='register'),
+    path('login/',          login_view,    name='login'),
+    path('login/verify/',   verify_2fa,    name='verify_2fa'),
+    path('logout/',         logout_view,   name='logout'),
+    path('register/',       register_view, name='register'),
 
     path('patient/dashboard/',                          patient_dashboard,  name='patient_dashboard'),
     path('patient/cancel/<int:appointment_id>/',        cancel_appointment, name='cancel_appointment'),
