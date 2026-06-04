@@ -163,24 +163,6 @@ def _get_admin_stats(now):
     patients_labels,    patients_data    = _monthly_patients(6)
     patients_labels_1y, patients_data_1y = _monthly_patients(12)
 
-    # Ranking complet medici după performance_score (pentru secțiunea dedicată din admin_stats)
-    all_doctors = DoctorProfile.objects.select_related('user').all()
-    performance_ranking = []
-    for dp in all_doctors:
-        score = dp.performance_score()
-        performance_ranking.append({
-            'profile':      dp,
-            'score':        score,
-            'score_int':    int(score),
-            'is_top':       score >= 90,
-            'avg_rating':   dp.average_rating(),
-            'rating_count': dp.rating_count(),
-            'completed':    dp.user.appointments_as_doctor.filter(is_completed=True).count(),
-            'no_show':      dp.user.appointments_as_doctor.filter(is_no_show=True).count(),
-            'total':        dp.user.appointments_as_doctor.count(),
-        })
-    performance_ranking.sort(key=lambda x: x['score'], reverse=True)
-
     return {
         'total_patients':      total_patients,
         'total_doctors':       total_doctors,
@@ -203,7 +185,6 @@ def _get_admin_stats(now):
         'patients_data':       patients_data,
         'patients_labels_1y':  patients_labels_1y,
         'patients_data_1y':    patients_data_1y,
-        'performance_ranking': performance_ranking,
     }
 
 
@@ -230,8 +211,6 @@ def login_view(request):
 
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
-
-        # Verificăm ban înainte de orice
         is_banned, ban_msg = LoginAttempt.check_ban(request, username)
         if is_banned:
             ban_error = ban_msg
@@ -241,26 +220,11 @@ def login_view(request):
                 user = form.get_user()
                 if user.is_patient:
                     tfa = TwoFactorCode.generate(user)
+                    name = user.get_full_name() or user.username
+                    code = tfa.code
                     _send_email_safe(
                         subject='Codul tau de verificare MedApp',
-                        message=(
-                            f'Buna {user.get_full_name() or user.username},
-
-'
-                            f'Codul tau de verificare este:
-
-'
-                            f'    {tfa.code}
-
-'
-                            f'Codul este valabil 5 minute.
-'
-                            f'Daca nu ai initiat aceasta autentificare, ignora acest email.
-
-'
-                            f'Echipa MedApp'
-                        ),
-                        recipient=user.email,
+                        message='Buna ' + name + ',\n\nCodul tau de verificare este:\n\n    ' + code + '\n\nCodul este valabil 5 minute.\nDaca nu ai initiat aceasta autentificare, ignora acest email.\n\nEchipa MedApp',
                     )
                     request.session['2fa_user_id'] = user.id
                     request.session.modified = True
@@ -273,31 +237,25 @@ def login_view(request):
             else:
                 soft_banned, hard_banned = LoginAttempt.record_failure(request, username)
                 AuditLog.log(request, AuditLog.Action.LOGIN_FAILED, metadata={'username': username})
-
                 if hard_banned:
-                    AuditLog.log(request, AuditLog.Action.HARD_BAN, metadata={
-                        'username': username, 'ip': LoginAttempt.get_ip(request)
-                    })
-                    ban_error = 'Contul/IP-ul a fost blocat permanent din cauza activitatii suspecte. Contactati administratorul.'
+                    AuditLog.log(request, AuditLog.Action.HARD_BAN, metadata={'username': username, 'ip': LoginAttempt.get_ip(request)})
+                    ban_error = 'Contul/IP-ul a fost blocat permanent. Contactati administratorul.'
                 elif soft_banned:
-                    AuditLog.log(request, AuditLog.Action.SOFT_BAN, metadata={
-                        'username': username, 'ip': LoginAttempt.get_ip(request)
-                    })
+                    AuditLog.log(request, AuditLog.Action.SOFT_BAN, metadata={'username': username, 'ip': LoginAttempt.get_ip(request)})
                     ban_error = 'Prea multe incercari esuate. Cont blocat 10 minute.'
                 else:
                     ip = LoginAttempt.get_ip(request)
                     recent_count = LoginAttempt.objects.filter(
-                        ip_address=ip,
-                        is_soft_banned=False, is_hard_banned=False,
+                        ip_address=ip, is_soft_banned=False, is_hard_banned=False,
                         timestamp__gte=timezone.now() - timezone.timedelta(hours=1),
                     ).count()
                     remaining = max(0, 5 - recent_count)
                     if remaining > 0:
-                        form.add_error(None, f'Date incorecte. Mai ai {remaining} încercări înainte de blocare temporară.')
+                        form.add_error(None, 'Date incorecte. Mai ai ' + str(remaining) + ' incercari inainte de blocare.')
                     else:
                         form.add_error(None, 'Date incorecte.')
-    return render(request, 'login.html', {'form': form, 'ban_error': ban_error})
 
+    return render(request, 'login.html', {'form': form, 'ban_error': ban_error})
 
 
 def verify_2fa(request):
@@ -340,6 +298,10 @@ def verify_2fa(request):
 
 
 def register_view(request):
+    if request.user.is_authenticated:
+        return _redirect_by_role(request.user)
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
             PatientProfile.objects.get_or_create(user=user)
@@ -450,10 +412,7 @@ def receipt_view(request, appointment_id):
     if not payment:
         messages.info(request, 'Nu exista o plata inregistrata pentru aceasta programare.')
         return redirect('patient_dashboard')
-
-    # Cashback transmis prin URL param (mai fiabil decât sesiunea)
     cashback_amount = request.GET.get('cashback', None)
-
     return render(request, 'receipt.html', {
         'appointment':     appt,
         'payment':         payment,
@@ -1097,16 +1056,13 @@ def new_appointment(request, doctor_id):
     patient_wallet = _get_or_create_wallet(request.user)
 
     booked = Appointment.objects.filter(
-        doctor=doctor,
-        date_time__gte=timezone.now(),
-        is_no_show=False,
+        doctor=doctor, date_time__gte=timezone.now(), is_no_show=False,
     ).exclude(is_completed=True).values_list('date_time', flat=True)
     booked_slots = [timezone.localtime(d).strftime('%Y-%m-%d %H:%M') for d in booked]
 
     if request.method == 'POST':
         form           = AppointmentForm(request.POST)
         payment_method = request.POST.get('payment_method', 'CASH')
-        # Fallback: dacă hidden input-ul nu a fost actualizat de JS, citim direct radio-ul
         radio_value = request.POST.get('payment_method_radio', '')
         if radio_value and radio_value != payment_method:
             payment_method = radio_value
@@ -1137,12 +1093,13 @@ def new_appointment(request, doctor_id):
 
             if payment_method == 'WALLET':
                 if patient_wallet.balance < fee_decimal:
-                    messages.error(request, f'Sold insuficient in Wallet. Ai {patient_wallet.balance} RON, necesari {doctor_fee} RON.')
+                    messages.error(request, 'Sold insuficient in Wallet.')
                     return render(request, 'new_appointment.html', {
                         'form': form, 'selected_doctor': doctor,
                         'patient_profile': patient_profile,
                         'patient_wallet': patient_wallet,
                         'doctor_fee': doctor_fee,
+                        'booked_slots': json.dumps(booked_slots),
                         'notif_list': [], 'notif_count': 0,
                     })
 
@@ -1152,36 +1109,22 @@ def new_appointment(request, doctor_id):
                     patient_wallet.save()
                     appt.amount_paid = fee_decimal
                     appt.save()
-
                     Payment.objects.create(
-                        appointment=appt,
-                        payer=request.user,
-                        beneficiary=request.user,
-                        amount=fee_decimal,
-                        method=Payment.Method.WALLET,
-                        status=Payment.Status.COMPLETED,
-                        note='Plata wallet la creare programare',
+                        appointment=appt, payer=request.user, beneficiary=request.user,
+                        amount=fee_decimal, method=Payment.Method.WALLET,
+                        status=Payment.Status.COMPLETED, note='Plata wallet la creare programare',
                     )
-
-                    # Cashback 5% la plata cu Wallet MedApp (ACID)
                     cashback_amount = (fee_decimal * Decimal('0.05')).quantize(Decimal('0.01'))
                     if cashback_amount > 0:
                         patient_wallet.balance += cashback_amount
                         patient_wallet.save()
-
                         WalletTransaction.objects.create(
-                            wallet=patient_wallet,
-                            tx_type=WalletTransaction.TxType.CASHBACK,
-                            amount=cashback_amount,
-                            balance_after=patient_wallet.balance,
-                            description=f'Cashback 5% Wallet — Dr. {appt.doctor.get_full_name() or appt.doctor.username}',
+                            wallet=patient_wallet, tx_type=WalletTransaction.TxType.CASHBACK,
+                            amount=cashback_amount, balance_after=patient_wallet.balance,
+                            description='Cashback 5% Wallet - Dr. ' + (appt.doctor.get_full_name() or appt.doctor.username),
                             appointment=appt,
                         )
-
-                        AuditLog.log(request, AuditLog.Action.CASHBACK_CREDIT, {
-                            'amount': str(cashback_amount),
-                            'appointment_id': appt.id,
-                        })
+                        AuditLog.log(request, AuditLog.Action.CASHBACK_CREDIT, {'amount': str(cashback_amount), 'appointment_id': appt.id})
 
             elif payment_method == 'CARD_ONLINE':
                 stripe_ref = f'PI-{uuid.uuid4().hex[:16].upper()}'
@@ -1225,12 +1168,9 @@ def new_appointment(request, doctor_id):
                 'payment': payment_method,
                 'for_other': is_for_other,
             })
-
-            # Cashback prin URL param pentru plata cu Wallet
             if payment_method == 'WALLET':
                 cashback_val = (Decimal(str(doctor_fee)) * Decimal('0.05')).quantize(Decimal('0.01'))
-                return redirect(f"/patient/receipt/{appt.id}/?cashback={cashback_val}")
-
+                return redirect('/patient/receipt/' + str(appt.id) + '/?cashback=' + str(cashback_val))
             return redirect('receipt_view', appointment_id=appt.id)
     else:
         form = AppointmentForm()
@@ -1500,23 +1440,13 @@ def admin_reports(request):
     ctx['recent_appointments'] = Appointment.objects.select_related('patient', 'doctor').order_by('-created_at')[:8]
     ctx['audit_logs'] = AuditLog.objects.select_related('user').order_by('-timestamp')[:50]
 
-    ctx['hard_bans'] = LoginAttempt.objects.filter(
-        is_hard_banned=True, revoked=False
-    ).order_by('-timestamp')
-
-    ctx['soft_bans'] = LoginAttempt.objects.filter(
-        is_soft_banned=True, revoked=False,
-        soft_ban_until__gt=now
-    ).order_by('-soft_ban_until')
+    ctx['hard_bans'] = LoginAttempt.objects.filter(is_hard_banned=True, revoked=False).order_by('-timestamp')
+    ctx['soft_bans'] = LoginAttempt.objects.filter(is_soft_banned=True, revoked=False, soft_ban_until__gt=now).order_by('-soft_ban_until')
 
     from django.db.models import Count as DbCount
     attempts_per_ip = (
         LoginAttempt.objects
-        .filter(
-            is_soft_banned=False, is_hard_banned=False,
-            revoked=False,
-            timestamp__gte=now - timezone.timedelta(hours=24),
-        )
+        .filter(is_soft_banned=False, is_hard_banned=False, revoked=False, timestamp__gte=now - timezone.timedelta(hours=24))
         .values('ip_address', 'username')
         .annotate(count=DbCount('id'))
         .order_by('-count')[:10]
@@ -1525,8 +1455,7 @@ def admin_reports(request):
     ctx['failed_attempts_24h'] = sum(a['count'] for a in attempts_per_ip)
 
     ctx['cash_pending'] = Payment.objects.filter(
-        method=Payment.Method.CASH,
-        status=Payment.Status.PENDING,
+        method=Payment.Method.CASH, status=Payment.Status.PENDING,
     ).select_related('appointment__patient', 'appointment__doctor').order_by('appointment__date_time')
 
     ctx['now'] = now
@@ -1540,7 +1469,7 @@ def confirm_cash_payment(request, payment_id):
     if request.method == 'POST':
         payment = get_object_or_404(Payment, id=payment_id, method=Payment.Method.CASH, status=Payment.Status.PENDING)
         payment.status = Payment.Status.COMPLETED
-        payment.note = f'Confirmat cash de {request.user.get_full_name() or request.user.username}'
+        payment.note = 'Confirmat cash de ' + (request.user.get_full_name() or request.user.username)
         payment.save()
         AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED, metadata={
             'payment_id': payment_id,
@@ -1548,7 +1477,7 @@ def confirm_cash_payment(request, payment_id):
             'amount': str(payment.amount),
             'confirmed_by': request.user.username,
         })
-        messages.success(request, f'Plata cash de {payment.amount} RON confirmata pentru {payment.appointment.get_patient_display_name()}.')
+        messages.success(request, 'Plata cash confirmata pentru ' + payment.appointment.get_patient_display_name() + '.')
     return redirect('admin_reports')
 
 
@@ -1559,21 +1488,11 @@ def revoke_ban(request, ban_id):
     if request.method == 'POST':
         ban = get_object_or_404(LoginAttempt, id=ban_id)
         now = timezone.now()
-
-        LoginAttempt.objects.filter(
-            ip_address=ban.ip_address, revoked=False
-        ).update(revoked=True, revoked_at=now)
-
+        LoginAttempt.objects.filter(ip_address=ban.ip_address, revoked=False).update(revoked=True, revoked_at=now)
         if ban.username:
-            LoginAttempt.objects.filter(
-                username=ban.username, revoked=False
-            ).update(revoked=True, revoked_at=now)
-
-        AuditLog.log(request, AuditLog.Action.BAN_REVOKED, metadata={
-            'username': ban.username,
-            'ip': ban.ip_address,
-        })
-        messages.success(request, f'Banul pentru {ban.username or ban.ip_address} a fost revocat.')
+            LoginAttempt.objects.filter(username=ban.username, revoked=False).update(revoked=True, revoked_at=now)
+        AuditLog.log(request, AuditLog.Action.BAN_REVOKED, metadata={'username': ban.username, 'ip': ban.ip_address})
+        messages.success(request, 'Banul pentru ' + (ban.username or ban.ip_address) + ' a fost revocat.')
     return redirect('admin_reports')
 
 

@@ -8,10 +8,10 @@
 {% block content %}
 <div style="display:flex;flex-direction:column;gap:24px;">
 
-    <!-- ═══ GRAFICE VENITURI ═══ -->
+    
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
 
-        <!-- Venituri lunare 6 luni -->
+        
         <div class="card">
             <div class="card-header">
                 <div>
@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <!-- Pacienți noi -->
+        
         <div class="card">
             <div class="card-header">
                 <div>
@@ -46,10 +46,10 @@
         </div>
     </div>
 
-    <!-- ═══ PROGRAMĂRI ═══ -->
+    
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
 
-        <!-- Programări pe luni -->
+        >
         <div class="card">
             <div class="card-header">
                 <div class="card-title">📅 Programări pe luni</div>
@@ -60,7 +60,7 @@
             </div>
         </div>
 
-        <!-- Status programări -->
+        
         <div class="card">
             <div class="card-header">
                 <div class="card-title">🔵 Status programări</div>
@@ -79,7 +79,7 @@
         </div>
     </div>
 
-    <!-- ═══ TOP MEDICI DUPĂ VENITURI ═══ -->
+    
     <div class="card">
         <div class="card-header">
             <div>
@@ -105,7 +105,7 @@
         </div>
     </div>
 
-    <!-- ═══ PERFORMANCE SCORE ═══ -->
+    
     <div class="card">
         <div class="card-header">
             <div>
@@ -119,7 +119,7 @@
             </div>
         </div>
 
-        <!-- Legenda scor -->
+        
         <div style="padding:0 24px 16px;display:flex;gap:12px;flex-wrap:wrap;">
             <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
                 <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:linear-gradient(90deg,#0D9E8A,#07c4a8);"></span>
@@ -145,7 +145,7 @@
             <div style="padding:18px 24px;border-bottom:1px solid var(--border);{% if forloop.last %}border-bottom:none;{% endif %}">
                 <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
 
-                    <!-- Rank badge -->
+                   
                     <div style="width:32px;height:32px;border-radius:50%;
                         {% if forloop.counter == 1 %}background:linear-gradient(135deg,#FFD700,#FFA500);
                         {% elif forloop.counter == 2 %}background:linear-gradient(135deg,#C0C0C0,#A8A8A8);
@@ -156,7 +156,7 @@
                         {{ forloop.counter }}
                     </div>
 
-                    <!-- Nume + Specializare -->
+                   
                     <div style="flex:1;">
                         <div style="display:flex;align-items:center;gap:8px;">
                             <span style="font-size:14px;font-weight:600;color:var(--text);">
@@ -176,7 +176,7 @@
                         </div>
                     </div>
 
-                    <!-- Scor -->
+                    
                     <div style="text-align:right;flex-shrink:0;">
                         <div style="font-size:26px;font-weight:800;
                             color:{% if score >= 90 %}var(--c-teal){% elif score >= 70 %}var(--c-primary){% elif score >= 50 %}var(--c-warning){% else %}var(--text-muted){% endif %};">
@@ -186,7 +186,7 @@
                     </div>
                 </div>
 
-                <!-- Progress bar -->
+                
                 <div style="background:var(--surface-2);border-radius:6px;height:8px;overflow:hidden;position:relative;">
                     <div style="
                         height:100%;
@@ -197,7 +197,7 @@
                     "></div>
                 </div>
 
-                <!-- Detalii factori -->
+                
                 <div style="display:flex;gap:20px;margin-top:8px;">
                     <span style="font-size:11px;color:var(--text-muted);">
                         ⭐ Rating:
@@ -223,7 +223,7 @@
         </div>
     </div>
 
-</div><!-- end flex column -->
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
@@ -236,7 +236,7 @@ Chart.defaults.borderColor = gridColor;
 Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
 Chart.defaults.font.size = 11;
 
-// ── Date din Django ─────────────────────────────────────────────────────
+
 const rev6mLabels  = {{ revenue_labels|safe }};
 const rev6mData    = {{ revenue_data|safe }};
 const rev1yLabels  = {{ revenue_labels_1y|safe }};
@@ -249,7 +249,7 @@ const apptLabels   = {{ monthly_labels|safe }};
 const apptCounts   = {{ monthly_counts|safe }};
 const statusData   = {{ status_counts|safe }};
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+
 function lineOpts(labels, data, color) {
     return {
         type: 'line',
@@ -278,7 +278,7 @@ function lineOpts(labels, data, color) {
     };
 }
 
-// ── Revenue chart ────────────────────────────────────────────────────────
+
 let revChart = new Chart(document.getElementById('revenueChart'),
     lineOpts(rev6mLabels, rev6mData, 'rgb(20, 100, 165)'));
 
@@ -290,7 +290,7 @@ function switchRevChart(period) {
     document.getElementById('rev-btn-1y').className = 'btn btn-sm ' + (period==='1y'?'btn-primary':'btn-ghost');
 }
 
-// ── Patients chart ───────────────────────────────────────────────────────
+
 let patChart = new Chart(document.getElementById('patientsChart'),
     lineOpts(pat6mLabels, pat6mData, 'rgb(13, 158, 138)'));
 
@@ -302,7 +302,7 @@ function switchPatientsChart(period) {
     document.getElementById('pat-btn-1y').className = 'btn btn-sm ' + (period==='1y'?'btn-primary':'btn-ghost');
 }
 
-// ── Appointments bar chart ───────────────────────────────────────────────
+
 new Chart(document.getElementById('appointmentsChart'), {
     type: 'bar',
     data: {
@@ -326,7 +326,7 @@ new Chart(document.getElementById('appointmentsChart'), {
     }
 });
 
-// ── Status donut chart ───────────────────────────────────────────────────
+
 new Chart(document.getElementById('statusChart'), {
     type: 'doughnut',
     data: {
