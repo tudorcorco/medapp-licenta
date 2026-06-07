@@ -79,18 +79,26 @@
                     </button>
                     <div class="notif-dropdown" id="notifDropdown">
                         <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text);">Notificări</div>
+                        <div id="notif-list-container">
                         {% if notif_list %}
                             {% for appt in notif_list %}
-                            <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;">
+                            <div class="notif-item" data-id="{{ appt.id }}" style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='var(--surface-2)'" onmouseleave="this.style.background=''" onclick="dismissNotif(this, {{ appt.id }})">
                                 <div style="width:8px;height:8px;background:var(--c-success);border-radius:50%;margin-top:5px;flex-shrink:0;"></div>
-                                <div>
+                                <div style="flex:1;">
                                     <div style="font-size:13px;color:var(--text);font-weight:500;">Programare confirmată</div>
                                     <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }} · {{ appt.date_time|date:"d M, H:i" }}</div>
                                 </div>
+                                <div style="font-size:16px;color:var(--text-muted);padding-left:4px;">×</div>
                             </div>
                             {% endfor %}
                         {% else %}
-                            <div style="padding:24px 14px;text-align:center;font-size:13px;color:var(--text-muted);">Nicio notificare nouă</div>
+                            <div id="notif-empty" style="padding:24px 14px;text-align:center;font-size:13px;color:var(--text-muted);">Nicio notificare nouă</div>
+                        {% endif %}
+                        </div>
+                        {% if notif_list %}
+                        <div style="padding:8px 14px;border-top:1px solid var(--border);">
+                            <button onclick="dismissAll()" style="font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;width:100%;text-align:center;">Șterge toate</button>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -188,6 +196,91 @@ document.addEventListener('DOMContentLoaded',function(){
     const theme=document.documentElement.getAttribute('data-theme');
     if(btn)btn.textContent=theme==='dark'?'☀️':'🌙';
 });
+
+function updateBadge(){
+    const items=document.querySelectorAll('.notif-item');
+    const dot=document.querySelector('.notif-dot');
+    const count=items.length;
+    if(dot){
+        if(count===0)dot.remove();
+        else dot.textContent=count;
+    }
+    if(count===0){
+        const container=document.getElementById('notif-list-container');
+        if(container&&!document.getElementById('notif-empty')){
+            container.innerHTML='<div id="notif-empty" style="padding:24px 14px;text-align:center;font-size:13px;color:var(--text-muted);">Nicio notificare nouă</div>';
+        }
+    }
+}
+
+function getCookie(name){
+    let cookieValue=null;
+    if(document.cookie&&document.cookie!==''){
+        const cookies=document.cookie.split(';');
+        for(let i=0;i<cookies.length;i++){
+            const cookie=cookies[i].trim();
+            if(cookie.startsWith(name+'=')){
+                cookieValue=decodeURIComponent(cookie.substring(name.length+1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function dismissNotif(el,id){
+    fetch('/patient/notification/dismiss/'+id+'/',{
+        method:'POST',
+        headers:{'X-CSRFToken':getCookie('csrftoken')},
+    }).catch(()=>{});
+    el.style.transition='opacity .2s, max-height .3s';
+    el.style.opacity='0';
+    el.style.maxHeight='0';
+    el.style.overflow='hidden';
+    el.style.padding='0';
+    setTimeout(()=>{el.remove();updateBadge();},300);
+}
+
+function dismissAll(){
+    const csrf=getCookie('csrftoken');
+    document.querySelectorAll('.notif-item').forEach(el=>{
+        const id=el.getAttribute('data-id');
+        if(id){
+            fetch('/patient/notification/dismiss/'+id+'/',{
+                method:'POST',
+                headers:{'X-CSRFToken':csrf},
+            }).catch(()=>{});
+        }
+        el.remove();
+    });
+    updateBadge();
+}
+
+setInterval(function(){
+    const dot=document.querySelector('.notif-dot');
+    const currentCount=dot?parseInt(dot.textContent)||0:0;
+    fetch(window.location.href,{headers:{'X-Requested-With':'XMLHttpRequest'}})
+        .then(r=>r.text())
+        .then(html=>{
+            const parser=new DOMParser();
+            const doc=parser.parseFromString(html,'text/html');
+            const newDot=doc.querySelector('.notif-dot');
+            const newCount=newDot?parseInt(newDot.textContent)||0:0;
+            if(newCount>currentCount){
+                const dotEl=document.querySelector('.notif-dot');
+                if(dotEl)dotEl.textContent=newCount;
+                else{
+                    const btn=document.getElementById('notifBtn');
+                    if(btn){
+                        const span=document.createElement('span');
+                        span.className='notif-dot';
+                        span.textContent=newCount;
+                        btn.appendChild(span);
+                    }
+                }
+            }
+        }).catch(()=>{});
+},30000);
 </script>
 </body>
 </html>

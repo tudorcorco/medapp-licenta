@@ -61,13 +61,32 @@
 </div>
 
 <div class="card">
-    <div class="card-header">
-        <div class="card-title">🗓 Lista programărilor</div>
-        <div class="card-subtitle">Dr. {{ user.get_full_name|default:user.username }}</div>
+    <div class="card-header" style="flex-wrap:wrap;gap:12px;">
+        <div>
+            <div class="card-title">🗓 Lista programărilor</div>
+            <div class="card-subtitle">Dr. {{ user.get_full_name|default:user.username }}</div>
+        </div>
+        <input type="text" id="search-input" placeholder="🔍 Caută pacient..." class="form-input"
+               style="width:200px;font-size:13px;padding:6px 12px;"
+               oninput="applyFilters()">
     </div>
-    <div class="card-body" style="padding:12px;">
+
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:12px;color:var(--text-muted);margin-right:4px;">Filtrează:</span>
+        <button class="filter-btn active" onclick="setFilter('all', this)">Toate</button>
+        <button class="filter-btn" onclick="setFilter('pending', this)">⏳ Așteptare</button>
+        <button class="filter-btn" onclick="setFilter('confirmed', this)">✓ Confirmate</button>
+        <button class="filter-btn" onclick="setFilter('completed', this)">✔ Finalizate</button>
+        <button class="filter-btn" onclick="setFilter('noshow', this)">✗ Neprezentare</button>
+        <span style="margin-left:auto;font-size:12px;color:var(--text-muted);" id="results-count"></span>
+    </div>
+
+    <div class="card-body" style="padding:12px;" id="appt-container">
         {% for appt in appointments %}
-            <div class="appt-item" {% if appt.is_completed or appt.is_no_show %}style="opacity:.65;"{% endif %}>
+            <div class="appt-item"
+                 data-status="{% if appt.is_no_show %}noshow{% elif appt.is_completed %}completed{% elif appt.is_confirmed %}confirmed{% else %}pending{% endif %}"
+                 data-patient="{{ appt.patient.get_full_name|default:appt.patient.username|lower }}"
+                 {% if appt.is_completed or appt.is_no_show %}style="opacity:.65;"{% endif %}>
                 <div style="width:42px;height:42px;background:{% if appt.is_no_show %}rgba(220,53,69,0.1){% elif appt.is_completed %}var(--surface-2){% else %}var(--c-primary-lt){% endif %};border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
                     <div style="font-size:15px;font-weight:600;color:{% if appt.is_no_show %}var(--c-danger){% elif appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};line-height:1;">{{ appt.date_time|date:"d" }}</div>
                     <div style="font-size:9px;color:{% if appt.is_no_show %}var(--c-danger){% elif appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
@@ -89,26 +108,17 @@
                         {% else %}
                             <span class="badge badge-warning">⏳ În așteptare</span>
                         {% endif %}
-
                         {% if appt.payment_method %}
                             <span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:10px;">
                                 {% if appt.payment_method == 'CASH' %}💵 Cash
                                 {% elif appt.payment_method == 'CARD_ONLINE' %}💳 Card online
                                 {% elif appt.payment_method == 'CNAS' %}🏥 CNAS
-                                {% else %}{{ appt.payment_method }}
-                                {% endif %}
+                                {% else %}{{ appt.payment_method }}{% endif %}
                             </span>
                         {% endif %}
-
-                        {% if appt.cnas_covered %}
-                            <span class="badge badge-primary" style="font-size:10px;">🏥 Decontat CNAS</span>
-                        {% endif %}
-                        {% if appt.referral_serial %}
-                            <span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:10px;">📋 Trimitere</span>
-                        {% endif %}
-                        {% if appt.prescription %}
-                            <span class="badge badge-primary" style="margin-left:2px;">💊 Rețetă</span>
-                        {% endif %}
+                        {% if appt.cnas_covered %}<span class="badge badge-primary" style="font-size:10px;">🏥 Decontat CNAS</span>{% endif %}
+                        {% if appt.referral_serial %}<span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:10px;">📋 Trimitere</span>{% endif %}
+                        {% if appt.prescription %}<span class="badge badge-primary" style="margin-left:2px;">💊 Rețetă</span>{% endif %}
                     </div>
                     {% if appt.cnas_code %}
                         <div style="font-size:11px;color:var(--c-teal);margin-top:4px;">Cod CNAS: {{ appt.cnas_code }}</div>
@@ -150,6 +160,17 @@
             </div>
         {% endfor %}
     </div>
+
+    <div id="empty-filter" style="display:none;padding:32px;text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;">🔍</div>
+        <div style="font-size:14px;color:var(--text-muted);">Nicio programare găsită pentru filtrele selectate.</div>
+    </div>
+
+    <div style="padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;" id="pagination-bar">
+        <button id="btn-prev" onclick="changePage(-1)" class="btn btn-ghost btn-sm">← Anterior</button>
+        <div id="page-info" style="font-size:13px;color:var(--text-muted);display:flex;gap:6px;"></div>
+        <button id="btn-next" onclick="changePage(1)" class="btn btn-ghost btn-sm">Următor →</button>
+    </div>
 </div>
 
 <div id="completeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center;">
@@ -158,15 +179,9 @@
         <form method="POST" id="completeForm">
             {% csrf_token %}
             <div class="form-group" style="margin-bottom:16px;">
-                <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">
-                    Cod ICD-10 (opțional)
-                </label>
-                <input type="text" name="icd10_code" class="form-input"
-                       placeholder="Ex: J06, I10, E11, Z00"
-                       style="width:100%;">
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-                    Dacă pacientul e asigurat CNAS și are bilet de trimitere, se va genera automat decontare.
-                </div>
+                <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">Cod ICD-10 (opțional)</label>
+                <input type="text" name="icd10_code" class="form-input" placeholder="Ex: J06, I10, E11, Z00" style="width:100%;">
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Dacă pacientul e asigurat CNAS și are bilet de trimitere, se va genera automat decontare.</div>
             </div>
             <div style="display:flex;gap:10px;justify-content:flex-end;">
                 <button type="button" onclick="closeCompleteModal()" class="btn btn-ghost btn-sm">Anulează</button>
@@ -176,11 +191,91 @@
     </div>
 </div>
 
+<style>
+.filter-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .15s;
+}
+.filter-btn:hover { background: var(--surface-2); color: var(--text); }
+.filter-btn.active { background: var(--c-primary); color: white; border-color: var(--c-primary); }
+</style>
+
 <script>
+const PER_PAGE = 10;
+let currentPage = 1;
+let activeFilter = 'all';
+let filtered = [];
+
+function getAllItems() {
+    return Array.from(document.querySelectorAll('#appt-container .appt-item'));
+}
+
+function applyFilters() {
+    const search = document.getElementById('search-input').value.toLowerCase().trim();
+    const all = getAllItems();
+
+    filtered = all.filter(item => {
+        const status = item.dataset.status;
+        const patient = item.dataset.patient || '';
+        const matchFilter = activeFilter === 'all' || status === activeFilter;
+        const matchSearch = !search || patient.includes(search);
+        return matchFilter && matchSearch;
+    });
+
+    currentPage = 1;
+    renderPage();
+}
+
+function setFilter(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+}
+
+function renderPage() {
+    const all = getAllItems();
+    all.forEach(item => item.style.display = 'none');
+
+    const start = (currentPage - 1) * PER_PAGE;
+    const pageItems = filtered.slice(start, start + PER_PAGE);
+    pageItems.forEach(item => item.style.display = '');
+
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+
+    document.getElementById('results-count').textContent = total + ' programări';
+    document.getElementById('empty-filter').style.display = total === 0 ? 'block' : 'none';
+    document.getElementById('pagination-bar').style.display = total === 0 ? 'none' : 'flex';
+
+    document.getElementById('btn-prev').disabled = currentPage === 1;
+    document.getElementById('btn-next').disabled = currentPage === totalPages;
+
+    const pageInfo = document.getElementById('page-info');
+    pageInfo.innerHTML = Array.from({length: totalPages}, (_, i) => {
+        const p = i + 1;
+        return '<button onclick="goPage(' + p + ')" class="btn btn-sm ' + (p === currentPage ? 'btn-primary' : 'btn-ghost') + '" style="min-width:32px;padding:4px 8px;font-size:12px;">' + p + '</button>';
+    }).join('');
+}
+
+function changePage(dir) {
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+    const next = currentPage + dir;
+    if (next >= 1 && next <= totalPages) { currentPage = next; renderPage(); }
+}
+
+function goPage(p) { currentPage = p; renderPage(); }
+
 function openCompleteModal(apptId) {
     document.getElementById('completeForm').action = '/doctor/complete/' + apptId + '/';
-    const modal = document.getElementById('completeModal');
-    modal.style.display = 'flex';
+    document.getElementById('completeModal').style.display = 'flex';
 }
 function closeCompleteModal() {
     document.getElementById('completeModal').style.display = 'none';
@@ -188,6 +283,8 @@ function closeCompleteModal() {
 document.getElementById('completeModal').addEventListener('click', function(e) {
     if (e.target === this) closeCompleteModal();
 });
+
+document.addEventListener('DOMContentLoaded', function() { applyFilters(); });
 </script>
 
 {% endblock %}

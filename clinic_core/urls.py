@@ -13,7 +13,7 @@ from accounts.views import (
     admin_reports, admin_stats, admin_profile_edit, revoke_ban, confirm_cash_payment,
     payment_view, wallet_topup, mark_no_show,
     wallet_checkout, wallet_topup_card, card_checkout,
-    receipt_view, receipt_pdf,
+    receipt_view, receipt_pdf, dismiss_notification,
 )
 
 urlpatterns = [
@@ -33,12 +33,12 @@ urlpatterns = [
     path('patient/gdpr-export/',                        gdpr_export,        name='gdpr_export'),
     path('patient/payment/<int:appointment_id>/',       payment_view,       name='payment_view'),
 
-    # Plata card online (checkout simulat) + chitanta
+    
     path('patient/card-checkout/<int:appointment_id>/', card_checkout,      name='card_checkout'),
     path('patient/receipt/<int:appointment_id>/',       receipt_view,       name='receipt_view'),
     path('patient/receipt/<int:appointment_id>/pdf/',   receipt_pdf,        name='receipt_pdf'),
 
-    # Wallet MedApp
+    
     path('patient/wallet/topup/',                       wallet_topup,       name='wallet_topup'),
     path('patient/wallet/topup/card/',                  wallet_topup_card,  name='wallet_topup_card'),
     path('patient/wallet/checkout/<int:appointment_id>/', wallet_checkout,  name='wallet_checkout'),
@@ -61,6 +61,9 @@ urlpatterns = [
     path('admin-profile/edit/',    admin_profile_edit, name='admin_profile_edit'),
     path('admin-security/revoke/<int:ban_id>/', revoke_ban, name='revoke_ban'),
     path('admin-cash/confirm/<int:payment_id>/', confirm_cash_payment, name='confirm_cash_payment'),
+    path('patient/notification/dismiss/<int:appointment_id>/', 
+     dismiss_notification, 
+     name='dismiss_notification'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

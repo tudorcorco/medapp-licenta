@@ -59,29 +59,20 @@ class DoctorProfile(models.Model):
         return self.user.ratings_received.count()
 
     def performance_score(self):
-        """
-        Scor de performanță ponderat (0-100):
-          50% - Calitate: media recenziilor (1-5 stele -> 0-100)
-          30% - Fiabilitate: rata consultatii finalizate vs. total (fara no-show)
-          20% - Volum: consultatiile acestui medic / max consultatii din clinica
-        """
         appts     = self.user.appointments_as_doctor.all()
         total     = appts.count()
         completed = appts.filter(is_completed=True).count()
         no_show   = appts.filter(is_no_show=True).count()
 
-        # 50% — Calitate (rating mediu -> 0-100)
         avg           = self.average_rating() or 0.0
         quality_score = (avg / 5.0) * 100
 
-        # 30% — Fiabilitate (completed / (total - no_show))
         effective_total = total - no_show
         if effective_total > 0:
             reliability_score = (completed / effective_total) * 100
         else:
             reliability_score = 0.0
 
-        # 20% — Volum relativ (fata de cel mai activ medic din clinica)
         max_completed = (
             self.__class__.objects.annotate(
                 comp=Count('user__appointments_as_doctor',
@@ -109,6 +100,9 @@ class Appointment(models.Model):
     is_completed = models.BooleanField(default=False)
     is_no_show   = models.BooleanField(default=False, verbose_name='Neprezentare')
     created_at   = models.DateTimeField(auto_now_add=True)
+
+    # FIX: camp nou pentru dismiss notificari
+    notification_seen = models.BooleanField(default=False, verbose_name='Notificare vazuta')
 
     is_for_other           = models.BooleanField(default=False, verbose_name='Programare pentru altcineva')
     beneficiary_name       = models.CharField(max_length=100, blank=True, default='', verbose_name='Nume beneficiar')
@@ -223,8 +217,6 @@ class Payment(models.Model):
 
 
 class WalletTransaction(models.Model):
-    """Istoric detaliat al tuturor miscarilor din wallet (credit/debit)."""
-
     class TxType(models.TextChoices):
         TOPUP    = 'TOPUP',    'Reincarcare card'
         PAYMENT  = 'PAYMENT',  'Plata consultatie'
@@ -282,6 +274,7 @@ class AuditLog(models.Model):
         TWO_FA_SENT           = 'TWO_FA_SENT',           'Cod 2FA trimis'
         TWO_FA_SUCCESS        = 'TWO_FA_SUCCESS',        'Autentificare 2FA reusita'
         TWO_FA_FAILED         = 'TWO_FA_FAILED',         'Cod 2FA gresit'
+        NOTIF_DISMISSED       = 'NOTIF_DISMISSED',       'Notificare inchisa'
 
     user       = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
     action     = models.CharField(max_length=50, choices=Action.choices)
@@ -309,11 +302,6 @@ class AuditLog(models.Model):
 
 
 class LoginAttempt(models.Model):
-    """
-    Tracker pentru brute-force protection.
-    Treapta 1 (Soft Ban): 5 încercări consecutive → blocat 10 minute.
-    Treapta 2 (Hard Ban): 30 încercări în 24h → blocat permanent.
-    """
     username        = models.CharField(max_length=150, blank=True, default='')
     ip_address      = models.GenericIPAddressField()
     timestamp       = models.DateTimeField(auto_now_add=True)
@@ -342,23 +330,16 @@ class LoginAttempt(models.Model):
 
     @classmethod
     def check_ban(cls, request, username=''):
-        """
-        Returnează (is_banned, message) pentru request-ul curent.
-        Verifică soft ban activ și hard ban pentru username sau IP.
-        """
         from django.utils import timezone
         ip  = cls.get_ip(request)
         now = timezone.now()
 
-        # Hard ban IP
         if cls.objects.filter(ip_address=ip, is_hard_banned=True, revoked=False).exists():
             return True, 'Acest IP a fost blocat permanent din cauza activității suspecte. Contactați administratorul.'
 
-        # Hard ban username
         if username and cls.objects.filter(username=username, is_hard_banned=True, revoked=False).exists():
             return True, f'Contul "{username}" a fost blocat permanent. Contactați administratorul.'
 
-        # Soft ban IP
         soft = cls.objects.filter(ip_address=ip, is_soft_banned=True, revoked=False).order_by('-soft_ban_until').first()
         if soft and soft.soft_ban_until and soft.soft_ban_until > now:
             minutes_left = max(1, int((soft.soft_ban_until - now).total_seconds() / 60))

@@ -77,7 +77,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'ro'
 TIME_ZONE     = 'Europe/Bucharest'
 USE_I18N      = True
-USE_L10N      = False   # <-- FIX: oprește formatarea numerelor cu virgulă română
+USE_L10N      = False
 USE_TZ        = True
 
 STATIC_URL       = 'static/'
@@ -94,6 +94,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 AUTH_USER_MODEL     = 'accounts.CustomUser'
 LOGOUT_REDIRECT_URL = 'login'
 DEFAULT_AUTO_FIELD  = 'django.db.models.BigAutoField'
+
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
 
 EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST          = 'smtp.mail.yahoo.com'

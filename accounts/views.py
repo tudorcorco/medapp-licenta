@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models.functions import TruncMonth
 from django.core.mail import send_mail
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from decimal import Decimal
 import json
 import uuid
@@ -32,10 +32,14 @@ def _profile_pct(profile, user):
     return round((filled / len(fields)) * 100)
 
 
+# FIX: filtreaza notificarile deja vazute
 def _get_notifications(user):
     confirmed = Appointment.objects.filter(
-        patient=user, is_confirmed=True,
-        is_completed=False, date_time__gte=timezone.now(),
+        patient=user,
+        is_confirmed=True,
+        is_completed=False,
+        date_time__gte=timezone.now(),
+        notification_seen=False,  # <-- FIX: nu mai apar dupa dismiss
     ).select_related('doctor').order_by('date_time')[:5]
     return confirmed, confirmed.count()
 
@@ -202,6 +206,7 @@ def home_view(request):
     })
 
 
+# FIX: login() INAINTE de set_expiry() + session.modified = True
 def login_view(request):
     if request.user.is_authenticated:
         return _redirect_by_role(request.user)
@@ -224,14 +229,22 @@ def login_view(request):
                     code = tfa.code
                     _send_email_safe(
                         subject='Codul tau de verificare MedApp',
+                        recipient=user.email,
                         message='Buna ' + name + ',\n\nCodul tau de verificare este:\n\n    ' + code + '\n\nCodul este valabil 5 minute.\nDaca nu ai initiat aceasta autentificare, ignora acest email.\n\nEchipa MedApp',
                     )
                     request.session['2fa_user_id'] = user.id
+                    request.session['2fa_remember'] = bool(request.POST.get('remember_me'))
                     request.session.modified = True
                     AuditLog.log(request, AuditLog.Action.TWO_FA_SENT, metadata={'username': user.username})
                     return redirect('verify_2fa')
                 else:
+                    # FIX: login() primul, apoi set_expiry
                     login(request, user)
+                    if not request.POST.get('remember_me'):
+                        request.session.set_expiry(0)
+                    else:
+                        request.session.set_expiry(60 * 60 * 24 * 30)
+                    request.session.modified = True
                     AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
                     return _redirect_by_role(user)
             else:
@@ -258,6 +271,7 @@ def login_view(request):
     return render(request, 'login.html', {'form': form, 'ban_error': ban_error})
 
 
+# FIX: login() INAINTE de set_expiry() + session.modified = True
 def verify_2fa(request):
     user_id = request.session.get('2fa_user_id')
     if not user_id:
@@ -279,8 +293,17 @@ def verify_2fa(request):
         else:
             tfa.used = True
             tfa.save()
+            remember = request.session.get('2fa_remember', False)
             del request.session['2fa_user_id']
+            if '2fa_remember' in request.session:
+                del request.session['2fa_remember']
+            # FIX: login() primul, then set_expiry
             login(request, user)
+            if not remember:
+                request.session.set_expiry(0)
+            else:
+                request.session.set_expiry(60 * 60 * 24 * 30)
+            request.session.modified = True
             AuditLog.log(request, AuditLog.Action.TWO_FA_SUCCESS, metadata={'username': user.username})
             AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
             return _redirect_by_role(user)
@@ -318,6 +341,18 @@ def logout_view(request):
     AuditLog.log(request, AuditLog.Action.LOGOUT)
     logout(request)
     return redirect('login')
+
+
+# FIX: view nou pentru dismiss notificari — salveaza in DB
+@login_required(login_url='login')
+def dismiss_notification(request, appointment_id):
+    if request.method == 'POST':
+        appt = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
+        appt.notification_seen = True
+        appt.save()
+        AuditLog.log(request, AuditLog.Action.NOTIF_DISMISSED, metadata={'appointment_id': appointment_id})
+        return JsonResponse({'status': 'ok'})
+    return redirect('patient_dashboard')
 
 
 @login_required(login_url='login')
@@ -480,7 +515,6 @@ def receipt_pdf(request, appointment_id):
                          else appt.patient.get_full_name() or appt.patient.username)
 
     story = []
-
     story.append(Paragraph('MedApp', title_style))
     story.append(Paragraph('Chitanta digitala de plata', sub_style))
     story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#E2E8F0')))
@@ -608,13 +642,9 @@ def wallet_checkout(request, appointment_id):
             my_wallet.balance -= fee_decimal
             my_wallet.save()
             payment = Payment.objects.create(
-                appointment=appt,
-                payer=request.user,
-                beneficiary=request.user,
-                amount=fee_decimal,
-                method=Payment.Method.WALLET,
-                status=Payment.Status.COMPLETED,
-                note='Plata din wallet propriu',
+                appointment=appt, payer=request.user, beneficiary=request.user,
+                amount=fee_decimal, method=Payment.Method.WALLET,
+                status=Payment.Status.COMPLETED, note='Plata din wallet propriu',
             )
             appt.payment_method = 'WALLET'
             appt.amount_paid    = fee_decimal
@@ -655,11 +685,8 @@ def wallet_checkout(request, appointment_id):
                 )
 
                 payment = Payment.objects.create(
-                    appointment=appt,
-                    payer=other_wallet.user,
-                    beneficiary=request.user,
-                    amount=fee_decimal,
-                    method=Payment.Method.WALLET,
+                    appointment=appt, payer=other_wallet.user, beneficiary=request.user,
+                    amount=fee_decimal, method=Payment.Method.WALLET,
                     status=Payment.Status.COMPLETED,
                     note=f'Plata de la {other_wallet.user.get_full_name() or other_wallet.user.username}',
                 )
@@ -675,10 +702,8 @@ def wallet_checkout(request, appointment_id):
                 return redirect('wallet_checkout', appointment_id=appointment_id)
 
     return render(request, 'wallet_checkout.html', {
-        'appointment': appt,
-        'fee': fee,
-        'fee_decimal': fee_decimal,
-        'my_wallet': my_wallet,
+        'appointment': appt, 'fee': fee,
+        'fee_decimal': fee_decimal, 'my_wallet': my_wallet,
     })
 
 
@@ -719,10 +744,7 @@ def wallet_topup_card(request):
     except (ValueError, TypeError):
         amount = 100
 
-    return render(request, 'wallet_topup_card.html', {
-        'wallet': wallet,
-        'amount': amount,
-    })
+    return render(request, 'wallet_topup_card.html', {'wallet': wallet, 'amount': amount})
 
 
 @login_required(login_url='login')
@@ -1131,42 +1153,29 @@ def new_appointment(request, doctor_id):
                 appt.amount_paid = fee_decimal
                 appt.save()
                 Payment.objects.create(
-                    appointment=appt,
-                    payer=request.user,
-                    beneficiary=request.user,
-                    amount=fee_decimal,
-                    method=Payment.Method.ONLINE,
-                    status=Payment.Status.COMPLETED,
-                    stripe_id=stripe_ref,
+                    appointment=appt, payer=request.user, beneficiary=request.user,
+                    amount=fee_decimal, method=Payment.Method.ONLINE,
+                    status=Payment.Status.COMPLETED, stripe_id=stripe_ref,
                 )
 
             elif payment_method == 'CNAS':
                 appt.save()
                 Payment.objects.create(
-                    appointment=appt,
-                    payer=request.user,
-                    beneficiary=request.user,
-                    amount=Decimal('0'),
-                    method=Payment.Method.CNAS,
+                    appointment=appt, payer=request.user, beneficiary=request.user,
+                    amount=Decimal('0'), method=Payment.Method.CNAS,
                     status=Payment.Status.COMPLETED,
                 )
 
-            else:
+            else:  # CASH
                 appt.save()
                 Payment.objects.create(
-                    appointment=appt,
-                    payer=request.user,
-                    beneficiary=request.user,
-                    amount=fee_decimal,
-                    method=Payment.Method.CASH,
-                    status=Payment.Status.PENDING,
-                    note='De achitat la receptie',
+                    appointment=appt, payer=request.user, beneficiary=request.user,
+                    amount=fee_decimal, method=Payment.Method.CASH,
+                    status=Payment.Status.PENDING, note='De achitat la receptie',
                 )
 
             AuditLog.log(request, AuditLog.Action.APPT_CREATED, metadata={
-                'doctor': doctor.username,
-                'payment': payment_method,
-                'for_other': is_for_other,
+                'doctor': doctor.username, 'payment': payment_method, 'for_other': is_for_other,
             })
             if payment_method == 'WALLET':
                 cashback_val = (Decimal(str(doctor_fee)) * Decimal('0.05')).quantize(Decimal('0.01'))
@@ -1177,14 +1186,10 @@ def new_appointment(request, doctor_id):
 
     notif_list, notif_count = _get_notifications(request.user)
     return render(request, 'new_appointment.html', {
-        'form':            form,
-        'selected_doctor': doctor,
-        'patient_profile': patient_profile,
-        'patient_wallet':  patient_wallet,
-        'doctor_fee':      doctor_fee,
-        'booked_slots':    json.dumps(booked_slots),
-        'notif_list':      notif_list,
-        'notif_count':     notif_count,
+        'form': form, 'selected_doctor': doctor,
+        'patient_profile': patient_profile, 'patient_wallet': patient_wallet,
+        'doctor_fee': doctor_fee, 'booked_slots': json.dumps(booked_slots),
+        'notif_list': notif_list, 'notif_count': notif_count,
     })
 
 
@@ -1202,13 +1207,9 @@ def card_checkout(request, appointment_id):
     if request.method == 'POST' and request.POST.get('confirmed') == '1':
         stripe_ref = request.POST.get('stripe_ref', '')
         Payment.objects.create(
-            appointment=appt,
-            payer=request.user,
-            beneficiary=request.user,
-            amount=fee,
-            method=Payment.Method.ONLINE,
-            status=Payment.Status.COMPLETED,
-            stripe_id=stripe_ref,
+            appointment=appt, payer=request.user, beneficiary=request.user,
+            amount=fee, method=Payment.Method.ONLINE,
+            status=Payment.Status.COMPLETED, stripe_id=stripe_ref,
         )
         appt.payment_method = 'CARD_ONLINE'
         appt.amount_paid    = fee
@@ -1217,10 +1218,7 @@ def card_checkout(request, appointment_id):
                      metadata={'method': 'CARD_ONLINE', 'amount': fee, 'ref': stripe_ref})
         return redirect('receipt_view', appointment_id=appt.id)
 
-    return render(request, 'card_checkout.html', {
-        'appointment': appt,
-        'fee': fee,
-    })
+    return render(request, 'card_checkout.html', {'appointment': appt, 'fee': fee})
 
 
 @login_required(login_url='login')
@@ -1243,9 +1241,7 @@ def doctor_dashboard(request):
     revenue_private  = 0
     revenue_cnas     = 0
     appts_this_month = appointments.filter(
-        is_completed=True,
-        date_time__month=now.month,
-        date_time__year=now.year,
+        is_completed=True, date_time__month=now.month, date_time__year=now.year,
     )
     for a in appts_this_month:
         if a.cnas_covered:
@@ -1439,7 +1435,6 @@ def admin_reports(request):
     ctx = _get_admin_stats(now)
     ctx['recent_appointments'] = Appointment.objects.select_related('patient', 'doctor').order_by('-created_at')[:8]
     ctx['audit_logs'] = AuditLog.objects.select_related('user').order_by('-timestamp')[:50]
-
     ctx['hard_bans'] = LoginAttempt.objects.filter(is_hard_banned=True, revoked=False).order_by('-timestamp')
     ctx['soft_bans'] = LoginAttempt.objects.filter(is_soft_banned=True, revoked=False, soft_ban_until__gt=now).order_by('-soft_ban_until')
 
@@ -1453,11 +1448,9 @@ def admin_reports(request):
     )
     ctx['attempts_per_ip'] = attempts_per_ip
     ctx['failed_attempts_24h'] = sum(a['count'] for a in attempts_per_ip)
-
     ctx['cash_pending'] = Payment.objects.filter(
         method=Payment.Method.CASH, status=Payment.Status.PENDING,
     ).select_related('appointment__patient', 'appointment__doctor').order_by('appointment__date_time')
-
     ctx['now'] = now
     return render(request, 'admin_dashboard.html', ctx)
 
