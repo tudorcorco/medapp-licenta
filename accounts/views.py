@@ -110,6 +110,7 @@ def _get_admin_stats(now):
         Appointment.objects.filter(is_completed=True).count(),
         Appointment.objects.filter(is_confirmed=True, is_completed=False).count(),
         Appointment.objects.filter(is_confirmed=False, is_completed=False).count(),
+        Appointment.objects.filter(is_no_show=True).count(),
     ]
 
     top_doctors_raw = CustomUser.objects.filter(is_doctor=True).annotate(
