@@ -12,6 +12,7 @@ from django.http import HttpResponse, JsonResponse
 from decimal import Decimal
 import json
 import uuid
+from datetime import date, timedelta
 
 from .forms import (
     ClinicLoginForm, RegisterForm, AppointmentForm,
@@ -32,14 +33,14 @@ def _profile_pct(profile, user):
     return round((filled / len(fields)) * 100)
 
 
-# FIX: filtreaza notificarile deja vazute
+
 def _get_notifications(user):
     confirmed = Appointment.objects.filter(
         patient=user,
         is_confirmed=True,
         is_completed=False,
         date_time__gte=timezone.now(),
-        notification_seen=False,  # <-- FIX: nu mai apar dupa dismiss
+        notification_seen=False,  
     ).select_related('doctor').order_by('date_time')[:5]
     return confirmed, confirmed.count()
 
@@ -206,7 +207,7 @@ def home_view(request):
     })
 
 
-# FIX: login() INAINTE de set_expiry() + session.modified = True
+
 def login_view(request):
     if request.user.is_authenticated:
         return _redirect_by_role(request.user)
@@ -238,7 +239,7 @@ def login_view(request):
                     AuditLog.log(request, AuditLog.Action.TWO_FA_SENT, metadata={'username': user.username})
                     return redirect('verify_2fa')
                 else:
-                    # FIX: login() primul, apoi set_expiry
+                    
                     login(request, user)
                     if not request.POST.get('remember_me'):
                         request.session.set_expiry(0)
@@ -271,7 +272,7 @@ def login_view(request):
     return render(request, 'login.html', {'form': form, 'ban_error': ban_error})
 
 
-# FIX: login() INAINTE de set_expiry() + session.modified = True
+
 def verify_2fa(request):
     user_id = request.session.get('2fa_user_id')
     if not user_id:
@@ -297,7 +298,7 @@ def verify_2fa(request):
             del request.session['2fa_user_id']
             if '2fa_remember' in request.session:
                 del request.session['2fa_remember']
-            # FIX: login() primul, then set_expiry
+            
             login(request, user)
             if not remember:
                 request.session.set_expiry(0)
@@ -343,7 +344,7 @@ def logout_view(request):
     return redirect('login')
 
 
-# FIX: view nou pentru dismiss notificari — salveaza in DB
+
 @login_required(login_url='login')
 def dismiss_notification(request, appointment_id):
     if request.method == 'POST':
@@ -1495,6 +1496,28 @@ def admin_stats(request):
         return redirect('home')
     now = timezone.now()
     ctx = _get_admin_stats(now)
+
+    performance_ranking = []
+    for dp in DoctorProfile.objects.select_related('user').all():
+        completed = Appointment.objects.filter(doctor=dp.user, is_completed=True).count()
+        no_show   = Appointment.objects.filter(doctor=dp.user, is_no_show=True).count()
+        total     = Appointment.objects.filter(doctor=dp.user).count()
+        avg_r     = dp.average_rating()
+        r_count   = dp.rating_count()
+        score     = dp.performance_score()
+        performance_ranking.append({
+            'profile':      dp,
+            'score_int':    int(score),
+            'is_top':       score >= 90,
+            'avg_rating':   round(avg_r, 1) if avg_r else None,
+            'rating_count': r_count,
+            'completed':    completed,
+            'no_show':      no_show,
+            'total':        total,
+        })
+    performance_ranking.sort(key=lambda x: x['score_int'], reverse=True)
+    ctx['performance_ranking'] = performance_ranking
+
     return render(request, 'admin_stats.html', ctx)
 
 
@@ -1511,3 +1534,132 @@ def admin_profile_edit(request):
         messages.success(request, 'Profilul a fost actualizat!')
         return redirect('admin_reports')
     return render(request, 'admin_profile_edit.html', {'user': request.user})
+
+
+@login_required
+def doctor_calendar(request):
+    if not request.user.is_doctor:
+        return redirect('home')
+
+    today = date.today()
+
+    week_param = request.GET.get('week')
+    if week_param:
+        try:
+            week_start = date.fromisoformat(week_param)
+            week_start -= timedelta(days=week_start.weekday())
+        except (ValueError, TypeError):
+            week_start = today - timedelta(days=today.weekday())
+    else:
+        week_start = today - timedelta(days=today.weekday())
+
+    week_end = week_start + timedelta(days=6)
+
+    appointments = Appointment.objects.filter(
+        doctor=request.user,
+        date_time__date__gte=week_start,
+        date_time__date__lte=week_end,
+    ).select_related('patient').order_by('date_time')
+
+    today_total     = Appointment.objects.filter(doctor=request.user, date_time__date=today).count()
+    today_confirmed = Appointment.objects.filter(doctor=request.user, date_time__date=today, is_confirmed=True).count()
+    donut_pct       = round((today_confirmed / today_total * 176) if today_total > 0 else 0)
+
+    month_start = week_start.replace(day=1)
+    if month_start.month == 12:
+        next_month = month_start.replace(year=month_start.year + 1, month=1)
+    else:
+        next_month = month_start.replace(month=month_start.month + 1)
+
+    month_counts = Appointment.objects.filter(
+        doctor=request.user,
+        date_time__date__gte=month_start,
+        date_time__date__lt=next_month,
+    ).values('date_time__date').annotate(count=Count('id'))
+    month_data = {str(item['date_time__date']): item['count'] for item in month_counts}
+
+    serialized = []
+    for appt in appointments:
+        try:
+            beneficiary = getattr(appt, 'beneficiary_name', None)
+            if beneficiary and str(beneficiary).strip():
+                patient_name = str(beneficiary).strip()
+            else:
+                u = appt.patient
+                patient_name = f"{u.first_name} {u.last_name}".strip() or u.username
+        except Exception:
+            patient_name = "Pacient"
+
+        if getattr(appt, 'is_completed', False):
+            status = 'completed'
+        elif getattr(appt, 'is_no_show', False):
+            status = 'no_show'
+        elif getattr(appt, 'is_confirmed', False):
+            status = 'confirmed'
+        else:
+            status = 'pending'
+
+        serialized.append({
+            'id':             appt.id,
+            'patient_name':   patient_name,
+            'date':           appt.date_time.date().isoformat(),
+            'hour':           appt.date_time.hour,
+            'minute':         appt.date_time.minute,
+            'status':         status,
+            'reason':         getattr(appt, 'reason', '') or '',
+            'payment_method': getattr(appt, 'payment_method', '') or '',
+        })
+
+    day_names = ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm', 'Dum']
+    days_data = []
+    for i in range(7):
+        d = week_start + timedelta(days=i)
+        days_data.append({
+            'label':    day_names[i],
+            'date':     d.isoformat(),
+            'day':      d.day,
+            'is_today': d == today,
+        })
+
+    context = {
+        'days':               days_data,
+        'week_start':         week_start,
+        'week_end':           week_end,
+        'prev_week':          (week_start - timedelta(days=7)).isoformat(),
+        'next_week':          (week_start + timedelta(days=7)).isoformat(),
+        'today':              today.isoformat(),
+        'today_total':        today_total,
+        'today_confirmed':    today_confirmed,
+        'donut_pct':          donut_pct,
+        'appointments_json':  json.dumps(serialized, ensure_ascii=False),
+        'month_data_json':    json.dumps(month_data, ensure_ascii=False),
+        'month_start':        month_start.isoformat(),
+    }
+    return render(request, 'doctor_calendar.html', context)
+
+@login_required(login_url='login')
+def beneficiary_view(request, appointment_id):
+    if not getattr(request.user, 'is_doctor', False):
+        return redirect('home')
+    appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
+    if not appt.is_for_other:
+        return redirect('patient_history', patient_id=appt.patient.id)
+
+    other_appts = Appointment.objects.filter(
+        doctor=request.user,
+        is_for_other=True,
+        beneficiary_cnp=appt.beneficiary_cnp,
+    ).order_by('-date_time') if appt.beneficiary_cnp else [appt]
+
+    prescriptions = Prescription.objects.filter(
+        appointment__in=other_appts
+    ).order_by('-created_at')
+
+    AuditLog.log(request, AuditLog.Action.PATIENT_RECORD_VIEWED,
+                 metadata={'beneficiary': appt.beneficiary_name, 'paid_by': appt.patient.username})
+
+    return render(request, 'beneficiary_history.html', {
+        'appt': appt,
+        'other_appts': other_appts,
+        'prescriptions': prescriptions,
+    })

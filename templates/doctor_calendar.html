@@ -1,0 +1,499 @@
+{% extends 'base.html' %}
+{% block title %}Calendar Programări — MedApp{% endblock %}
+{% block page_title %}Calendar Programări{% endblock %}
+{% block nav_calendar %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.pg-cal { padding: 1.25rem 1.5rem; height: calc(100vh - 70px); box-sizing: border-box; display: flex; flex-direction: column; gap: 1rem; }
+.cal-layout { display: flex; gap: 1.125rem; flex: 1; min-height: 0; }
+
+.c-sidebar { width: 210px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.875rem; }
+.c-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+.c-card-label { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem; }
+.c-count { font-size: 1.6rem; font-weight: 800; color: var(--text); line-height: 1; }
+.c-count-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem; margin-bottom: 0.875rem; }
+.donut-wrap { display: flex; justify-content: center; }
+.donut-track { stroke: var(--border); }
+.donut-fill { stroke: #0d9488; stroke-linecap: round; }
+
+.mini-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.625rem; }
+.mini-month-lbl { font-size: 0.78rem; font-weight: 700; color: var(--text); }
+.mini-nav { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 0.1rem 0.3rem; border-radius: 4px; }
+.mini-nav:hover { color: var(--text); background: var(--hover); }
+.mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; text-align: center; }
+.mini-dow { font-size: 0.58rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding-bottom: 0.3rem; }
+.mini-d { font-size: 0.68rem; height: 22px; width: 22px; margin: 1px auto; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: background 0.1s, color 0.1s; }
+.mini-d:not(.empty):hover { background: var(--hover); color: var(--text); }
+.mini-d.today-d { background: #0d9488; color: #fff; font-weight: 700; }
+.mini-d.in-wk { background: rgba(13,148,136,0.16); color: #5eead4; border-radius: 0; }
+.mini-d.wk-first { border-radius: 50% 0 0 50% !important; }
+.mini-d.wk-last  { border-radius: 0 50% 50% 0 !important; }
+.mini-d.wk-solo  { border-radius: 50% !important; }
+.mini-d.empty { cursor: default; }
+
+.c-main { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+.c-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.125rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.c-nav-grp { display: flex; align-items: center; gap: 0.45rem; }
+.c-arr { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-size: 1.05rem; background: transparent; cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s; }
+.c-arr:hover { background: #0d9488; border-color: #0d9488; color: #fff; }
+.c-week-lbl { font-size: 0.9rem; font-weight: 700; color: var(--text); min-width: 220px; text-align: center; }
+.c-azi-btn { padding: 0.3rem 0.75rem; border: 1px solid var(--border); border-radius: 7px; font-size: 0.75rem; font-weight: 600; color: var(--text); background: transparent; cursor: pointer; transition: background 0.12s; }
+.c-azi-btn:hover { background: var(--hover); }
+
+.view-toggle { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.view-btn { padding: 0.3rem 0.85rem; border: none; background: transparent; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: background 0.12s, color 0.12s; border-right: 1px solid var(--border); }
+.view-btn:last-child { border-right: none; }
+.view-btn:hover:not(.v-active) { background: var(--hover); color: var(--text); }
+.view-btn.v-active { background: #0d9488; color: #fff; }
+
+.c-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.c-grid { display: grid; grid-template-columns: 46px repeat(7, 1fr); min-width: 500px; }
+.c-corner { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 20; }
+.c-day-hdr { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 0.45rem 0; text-align: center; position: sticky; top: 0; background: var(--surface); z-index: 20; cursor: pointer; transition: background 0.12s; user-select: none; }
+.c-day-hdr:last-child { border-right: none; }
+.c-day-hdr:hover { background: var(--hover); }
+.c-day-hdr.weekend-hdr .hdr-name { opacity: 0.45; }
+.c-day-hdr.weekend-hdr .hdr-num:not(.is-today) { opacity: 0.5; }
+.c-day-hdr.day-active { background: rgba(13,148,136,0.08) !important; }
+.c-day-hdr.day-active .hdr-num:not(.is-today) { background: rgba(13,148,136,0.3); color: #5eead4; border-radius: 50%; }
+.hdr-name { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+.hdr-num { width: 28px; height: 28px; margin: 0.15rem auto 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.95rem; font-weight: 700; color: var(--text); transition: background 0.12s, color 0.12s; }
+.hdr-num.is-today { background: #0d9488; color: #fff; }
+
+.c-time-lbl { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); height: 60px; box-sizing: border-box; padding: 3px 5px 0; font-size: 0.6rem; color: var(--text-muted); display: flex; align-items: flex-start; }
+.c-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); height: 60px; box-sizing: border-box; position: relative; }
+.c-cell:last-child { border-right: none; }
+.c-cell.today-col { background: rgba(13,148,136,0.04); }
+.c-cell.weekend-col { background: rgba(0,0,0,0.025); }
+
+.appt { position: absolute; border-radius: 6px; padding: 3px 7px 3px 6px; overflow: hidden; cursor: pointer; z-index: 5; border-left: 3px solid; box-sizing: border-box; transition: filter 0.12s; text-decoration: none; display: block; }
+.appt:hover { filter: brightness(1.15); z-index: 15; }
+.appt.s-confirmed { background: rgba(13,148,136,0.22); border-color: #0d9488; }
+.appt.s-pending   { background: rgba(245,158,11,0.22);  border-color: #f59e0b; }
+.appt.s-completed { background: rgba(100,116,139,0.22); border-color: #64748b; }
+.appt.s-no_show   { background: rgba(239,68,68,0.18);   border-color: #ef4444; }
+.a-name   { font-size: 0.7rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.25; }
+.a-detail { font-size: 0.6rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.a-badge  { font-size: 0.57rem; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-top: 2px; display: inline-block; text-transform: uppercase; letter-spacing: 0.04em; }
+.b-confirmed { background: rgba(13,148,136,0.35); color: #5eead4; }
+.b-pending   { background: rgba(245,158,11,0.35);  color: #fcd34d; }
+.b-completed { background: rgba(100,116,139,0.35); color: #94a3b8; }
+.b-no_show   { background: rgba(239,68,68,0.32);   color: #fca5a5; }
+
+.month-view { flex: 1; overflow-y: auto; padding: 1rem; display: none; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.m-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.m-hdr { text-align: center; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); padding: 0.2rem 0 0.5rem; }
+.m-day { min-height: 78px; padding: 0.45rem; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; transition: background 0.12s; box-sizing: border-box; }
+.m-day:hover { background: var(--hover); }
+.m-day.today-cell { border-color: #0d9488; border-width: 2px; }
+.m-day.faded { opacity: 0.3; cursor: default; pointer-events: none; }
+.m-day.weekend-cell { background: rgba(0,0,0,0.02); }
+.m-num { font-size: 0.78rem; font-weight: 600; color: var(--text); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.m-num.today-num { background: #0d9488; color: #fff; }
+.m-badge { font-size: 0.62rem; font-weight: 700; padding: 1px 7px; border-radius: 3px; margin-top: 4px; display: inline-block; background: rgba(13,148,136,0.2); color: #5eead4; }
+
+.c-legend { display: flex; gap: 1rem; padding: 0.5rem 1.125rem; border-top: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+.legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; color: var(--text-muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pg-cal">
+    <div class="cal-layout">
+        <aside class="c-sidebar">
+            <div class="c-card">
+                <div class="c-card-label" id="statsLabel">Azi</div>
+                <div class="c-count" id="statsCount">{{ today_total }}</div>
+                <div class="c-count-sub" id="statsSub">programări</div>
+                <div class="donut-wrap">
+                    <svg width="70" height="70" viewBox="0 0 70 70">
+                        <circle class="donut-track" cx="35" cy="35" r="28" fill="none" stroke-width="7"/>
+                        <circle class="donut-fill" cx="35" cy="35" r="28" fill="none" stroke-width="7"
+                            stroke-dasharray="{{ donut_pct }},176" transform="rotate(-90 35 35)"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="c-card">
+                <div class="mini-hdr">
+                    <button class="mini-nav" id="miniPrev">&#8249;</button>
+                    <span class="mini-month-lbl" id="miniTitle"></span>
+                    <button class="mini-nav" id="miniNext">&#8250;</button>
+                </div>
+                <div class="mini-grid" id="miniGrid"></div>
+            </div>
+        </aside>
+
+        <div class="c-main">
+            <div class="c-toolbar">
+                <div class="c-nav-grp">
+                    <button class="c-arr" id="navPrev">&#8249;</button>
+                    <span class="c-week-lbl" id="weekLbl"></span>
+                    <button class="c-arr" id="navNext">&#8250;</button>
+                    <button class="c-azi-btn" id="aziBtn">Azi</button>
+                </div>
+                <div class="view-toggle">
+                    <button class="view-btn" id="btnZi" onclick="setView('day')">Zi</button>
+                    <button class="view-btn v-active" id="btnSapt" onclick="setView('week')">S&#259;pt&#259;m&#226;n&#259;</button>
+                    <button class="view-btn" id="btnLuna" onclick="setView('month')">Lun&#259;</button>
+                </div>
+            </div>
+
+            <div class="c-scroll" id="weekScroll">
+                <div class="c-grid" id="calGrid">
+                    <div class="c-corner"></div>
+                    {% for day in days %}
+                    <div class="c-day-hdr {% if forloop.counter0 >= 5 %}weekend-hdr{% endif %}"
+                         id="hdr-{{ day.date }}" data-day="{{ day.date }}"
+                         onclick="handleDayClick('{{ day.date }}')">
+                        <div class="hdr-name">{{ day.label }}</div>
+                        <div class="hdr-num {% if day.is_today %}is-today{% endif %}">{{ day.day }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="month-view" id="monthView">
+                <div class="m-grid" id="monthGrid"></div>
+            </div>
+
+            <div class="c-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#0d9488;"></div>Confirmat</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>&#206;n a&#351;teptare</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#64748b;"></div>Finalizat</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>Absent</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    var APPTS       = {{ appointments_json|safe }};
+    var MONTH_DATA  = {{ month_data_json|safe }};
+    var TODAY_STR   = '{{ today }}';
+    var WEEK_START  = '{{ week_start|date:"Y-m-d" }}';
+    var MONTH_START = '{{ month_start }}';
+    var PREV_WEEK   = '{{ prev_week }}';
+    var NEXT_WEEK   = '{{ next_week }}';
+    var DAYS        = [{% for d in days %}'{{ d.date }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+    var H_START = 8, H_END = 18, CELL_H = 60;
+    var WEEKEND = new Set([DAYS[5], DAYS[6]]);
+
+    var RO_MONTHS_SHORT = ['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Nov','Dec'];
+    var RO_MONTHS_FULL  = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+    var RO_DAYS_FULL    = ['Duminica','Luni','Marti','Miercuri','Joi','Vineri','Sambata'];
+    var STATUS_LABELS   = { confirmed:'Confirmat', pending:'In asteptare', completed:'Finalizat', no_show:'Absent' };
+
+    var urlParams   = new URLSearchParams(window.location.search);
+    var currentView = urlParams.get('view') || 'week';
+    var selectedDay = urlParams.get('day') || (DAYS.includes(TODAY_STR) ? TODAY_STR : DAYS[0]);
+    var cellMap = {};
+
+    function isoDate(d) {
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function pushState(view, day) {
+        var url = new URL(window.location.href);
+        if (view === 'week') { url.searchParams.delete('view'); url.searchParams.delete('day'); }
+        else if (view === 'day') { url.searchParams.set('view','day'); if (day) url.searchParams.set('day',day); else url.searchParams.delete('day'); }
+        else { url.searchParams.set('view','month'); url.searchParams.delete('day'); }
+        history.replaceState({}, '', url.toString());
+    }
+
+    function buildOverlapLayout() {
+        var groups = {};
+        APPTS.forEach(function(a) {
+            var k = a.date + '_' + a.hour;
+            if (!groups[k]) groups[k] = [];
+            groups[k].push(a);
+        });
+        var layout = {};
+        Object.keys(groups).forEach(function(k) {
+            var grp = groups[k];
+            grp.forEach(function(a, i) {
+                layout[a.id] = { left: i * (100 / grp.length), width: 100 / grp.length };
+            });
+        });
+        return layout;
+    }
+
+    var grid = document.getElementById('calGrid');
+    for (var h = H_START; h < H_END; h++) {
+        var lbl = document.createElement('div');
+        lbl.className = 'c-time-lbl';
+        lbl.textContent = String(h).padStart(2,'0') + ':00';
+        grid.appendChild(lbl);
+        DAYS.forEach(function(dateStr) {
+            var cell = document.createElement('div');
+            var cls = 'c-cell';
+            if (dateStr === TODAY_STR) cls += ' today-col';
+            if (WEEKEND.has(dateStr))  cls += ' weekend-col';
+            cell.className = cls;
+            cell.dataset.date = dateStr;
+            cell.dataset.hour = h;
+            cellMap[dateStr + '_' + h] = cell;
+            grid.appendChild(cell);
+        });
+    }
+
+    var overlapLayout = buildOverlapLayout();
+    APPTS.forEach(function(a) {
+        if (a.hour < H_START || a.hour >= H_END) return;
+        var cell = cellMap[a.date + '_' + a.hour];
+        if (!cell) return;
+        var lo     = overlapLayout[a.id] || { left: 0, width: 100 };
+        var detail = a.reason || a.payment_method || '';
+        var label  = STATUS_LABELS[a.status] || a.status;
+        var card   = document.createElement('a');
+        card.className = 'appt s-' + a.status;
+        card.href      = '/doctor/dashboard/#appt-' + a.id;
+        card.style.top    = Math.round((a.minute / 60) * CELL_H) + 'px';
+        card.style.height = (CELL_H - 5) + 'px';
+        card.style.left   = 'calc(' + lo.left + '% + 2px)';
+        card.style.width  = 'calc(' + lo.width + '% - 4px)';
+        card.innerHTML =
+            '<div class="a-name">' + esc(a.patient_name) + '</div>' +
+            (detail ? '<div class="a-detail">' + esc(detail) + '</div>' : '') +
+            '<span class="a-badge b-' + a.status + '">' + esc(label) + '</span>';
+        card.title = a.patient_name + ' \u2014 ' + String(a.hour).padStart(2,'0') + ':' + String(a.minute).padStart(2,'0');
+        cell.appendChild(card);
+    });
+
+    function applyWeekView() {
+        document.getElementById('weekScroll').style.display = '';
+        document.getElementById('monthView').style.display  = 'none';
+        grid.style.gridTemplateColumns = '46px repeat(7, 1fr)';
+        DAYS.forEach(function(d) {
+            var hdr = document.getElementById('hdr-' + d);
+            if (hdr) { hdr.style.display = ''; hdr.classList.remove('day-active'); }
+            for (var h = H_START; h < H_END; h++) { var c = cellMap[d+'_'+h]; if(c) c.style.display=''; }
+        });
+        updateWeekLabel(); updateNav(); updateStats(); pushState('week', null);
+    }
+
+    function applyDayView(dayStr) {
+        selectedDay = dayStr;
+        document.getElementById('weekScroll').style.display = '';
+        document.getElementById('monthView').style.display  = 'none';
+        grid.style.gridTemplateColumns = '46px 1fr';
+        DAYS.forEach(function(d) {
+            var visible = d === dayStr;
+            var hdr = document.getElementById('hdr-' + d);
+            if (hdr) { hdr.style.display = visible?'':'none'; hdr.classList.toggle('day-active', visible); }
+            for (var h = H_START; h < H_END; h++) { var c = cellMap[d+'_'+h]; if(c) c.style.display=visible?'':'none'; }
+        });
+        updateDayLabel(dayStr); updateNav(); updateStats(); pushState('day', dayStr);
+    }
+
+    function applyMonthView() {
+        document.getElementById('weekScroll').style.display = 'none';
+        document.getElementById('monthView').style.display  = 'block';
+        renderMonthGrid(); updateMonthLabel(); updateNav(); updateStats(); pushState('month', null);
+    }
+
+    function renderMonthGrid() {
+        var g = document.getElementById('monthGrid');
+        g.innerHTML = '';
+        var ms = new Date(MONTH_START + 'T00:00:00');
+        var year = ms.getFullYear(); var month = ms.getMonth();
+        ['Lun','Mar','Mie','Joi','Vin','Sam','Dum'].forEach(function(n) {
+            var h = document.createElement('div'); h.className = 'm-hdr'; h.textContent = n; g.appendChild(h);
+        });
+        var firstDOW = new Date(year, month, 1).getDay();
+        var offset   = firstDOW === 0 ? 6 : firstDOW - 1;
+        var lastDate = new Date(year, month + 1, 0).getDate();
+        for (var i = 0; i < offset; i++) {
+            var el = document.createElement('div'); el.className = 'm-day faded'; g.appendChild(el);
+        }
+        for (var d = 1; d <= lastDate; d++) {
+            (function(day) {
+                var thisDate = new Date(year, month, day);
+                var dateStr  = isoDate(thisDate);
+                var dow = thisDate.getDay();
+                var el = document.createElement('div');
+                el.className = 'm-day' + (dateStr===TODAY_STR?' today-cell':'') + (dow===0||dow===6?' weekend-cell':'');
+                var numEl = document.createElement('div');
+                numEl.className = 'm-num' + (dateStr===TODAY_STR?' today-num':'');
+                numEl.textContent = day;
+                el.appendChild(numEl);
+                var count = MONTH_DATA[dateStr] || 0;
+                if (count > 0) {
+                    var badge = document.createElement('div');
+                    badge.className = 'm-badge';
+                    badge.textContent = count + ' prog.';
+                    el.appendChild(badge);
+                }
+                el.addEventListener('click', function() {
+                    var mon = new Date(thisDate); var dw = mon.getDay();
+                    mon.setDate(mon.getDate() - (dw===0?6:dw-1));
+                    var weekStr = isoDate(mon);
+                    if (weekStr === WEEK_START) {
+                        currentView = 'day';
+                        document.getElementById('btnZi').classList.add('v-active');
+                        document.getElementById('btnSapt').classList.remove('v-active');
+                        document.getElementById('btnLuna').classList.remove('v-active');
+                        applyDayView(dateStr);
+                    } else {
+                        window.location.href = '?week=' + weekStr + '&view=day&day=' + dateStr;
+                    }
+                });
+                g.appendChild(el);
+            })(d);
+        }
+    }
+
+    window.setView = function(view) {
+        currentView = view;
+        document.getElementById('btnZi').classList.toggle('v-active', view==='day');
+        document.getElementById('btnSapt').classList.toggle('v-active', view==='week');
+        document.getElementById('btnLuna').classList.toggle('v-active', view==='month');
+        if (view==='week')  applyWeekView();
+        if (view==='day')   applyDayView(selectedDay);
+        if (view==='month') applyMonthView();
+    };
+
+    window.handleDayClick = function(dayStr) {
+        if (currentView==='month') return;
+        currentView = 'day';
+        document.getElementById('btnZi').classList.add('v-active');
+        document.getElementById('btnSapt').classList.remove('v-active');
+        document.getElementById('btnLuna').classList.remove('v-active');
+        applyDayView(dayStr);
+    };
+
+    function updateNav() {
+        var prev = document.getElementById('navPrev');
+        var next = document.getElementById('navNext');
+        prev.onclick = null; next.onclick = null;
+        if (currentView==='week') {
+            prev.onclick = function() { window.location.href='?week='+PREV_WEEK; };
+            next.onclick = function() { window.location.href='?week='+NEXT_WEEK; };
+        } else if (currentView==='day') {
+            var idx = DAYS.indexOf(selectedDay);
+            prev.onclick = function() { if(idx>0) applyDayView(DAYS[idx-1]); else window.location.href='?week='+PREV_WEEK+'&view=day'; };
+            next.onclick = function() { if(idx<DAYS.length-1) applyDayView(DAYS[idx+1]); else window.location.href='?week='+NEXT_WEEK+'&view=day'; };
+        } else {
+            var ms = new Date(MONTH_START+'T00:00:00');
+            var pmDate = new Date(ms.getFullYear(), ms.getMonth()-1, 15);
+            var nmDate = new Date(ms.getFullYear(), ms.getMonth()+1, 15);
+            prev.onclick = function() { window.location.href='?week='+isoDate(pmDate)+'&view=month'; };
+            next.onclick = function() { window.location.href='?week='+isoDate(nmDate)+'&view=month'; };
+        }
+    }
+
+    document.getElementById('aziBtn').onclick = function() {
+        if (currentView==='day' && DAYS.includes(TODAY_STR)) applyDayView(TODAY_STR);
+        else if (currentView==='month') window.location.href='?week={{ week_start|date:"Y-m-d" }}&view=month';
+        else window.location.href='{% url "doctor_calendar" %}';
+    };
+
+    function updateStats() {
+        var label, count;
+        if (currentView==='day') {
+            label = selectedDay===TODAY_STR?'Azi':'Zi selectata';
+            count = APPTS.filter(function(a){ return a.date===selectedDay; }).length;
+        } else if (currentView==='week') {
+            label = 'Saptamana'; count = APPTS.length;
+        } else {
+            label = 'Luna';
+            count = Object.values(MONTH_DATA).reduce(function(a,b){ return a+b; }, 0);
+        }
+        document.getElementById('statsLabel').textContent = label;
+        document.getElementById('statsCount').textContent = count;
+        document.getElementById('statsSub').textContent   = 'programari';
+    }
+
+    function updateWeekLabel() {
+        var ws = new Date(WEEK_START+'T00:00:00');
+        var we = new Date(ws); we.setDate(we.getDate()+6);
+        document.getElementById('weekLbl').textContent =
+            ws.getDate()+' '+RO_MONTHS_SHORT[ws.getMonth()]+' \u2013 '+we.getDate()+' '+RO_MONTHS_SHORT[we.getMonth()]+' '+we.getFullYear();
+    }
+    function updateDayLabel(dayStr) {
+        var d = new Date(dayStr+'T00:00:00');
+        document.getElementById('weekLbl').textContent =
+            RO_DAYS_FULL[d.getDay()]+', '+d.getDate()+' '+RO_MONTHS_FULL[d.getMonth()]+' '+d.getFullYear();
+    }
+    function updateMonthLabel() {
+        var ms = new Date(MONTH_START+'T00:00:00');
+        document.getElementById('weekLbl').textContent = RO_MONTHS_FULL[ms.getMonth()]+' '+ms.getFullYear();
+    }
+
+    var weekSet = new Set(DAYS);
+    var miniRef = new Date(WEEK_START+'T00:00:00');
+    var todayD  = new Date(TODAY_STR+'T00:00:00');
+
+    function renderMini() {
+        document.getElementById('miniTitle').textContent = RO_MONTHS_FULL[miniRef.getMonth()]+' '+miniRef.getFullYear();
+        var g = document.getElementById('miniGrid');
+        g.innerHTML = '';
+        ['D','L','M','M','J','V','S'].forEach(function(n){ var el=document.createElement('div'); el.className='mini-dow'; el.textContent=n; g.appendChild(el); });
+        var firstDOW = new Date(miniRef.getFullYear(), miniRef.getMonth(), 1).getDay();
+        var lastDate = new Date(miniRef.getFullYear(), miniRef.getMonth()+1, 0).getDate();
+        for (var i=0; i<firstDOW; i++) { var el=document.createElement('div'); el.className='mini-d empty'; g.appendChild(el); }
+        for (var d=1; d<=lastDate; d++) {
+            (function(day) {
+                var thisDate = new Date(miniRef.getFullYear(), miniRef.getMonth(), day);
+                var dateStr  = isoDate(thisDate);
+                var el = document.createElement('div');
+                el.className = 'mini-d'; el.textContent = day;
+                if (thisDate.toDateString()===todayD.toDateString()) el.classList.add('today-d');
+                else if (weekSet.has(dateStr)) {
+                    el.classList.add('in-wk');
+                    var prev=isoDate(new Date(thisDate.getFullYear(),thisDate.getMonth(),day-1));
+                    var next=isoDate(new Date(thisDate.getFullYear(),thisDate.getMonth(),day+1));
+                    if (!weekSet.has(prev)&&!weekSet.has(next)) el.classList.add('wk-solo');
+                    else if (!weekSet.has(prev)) el.classList.add('wk-first');
+                    else if (!weekSet.has(next)) el.classList.add('wk-last');
+                }
+                el.addEventListener('click', function() {
+                    var mon=new Date(thisDate); var dw=mon.getDay();
+                    mon.setDate(mon.getDate()-(dw===0?6:dw-1));
+                    var weekStr=isoDate(mon);
+                    if (weekStr===WEEK_START) {
+                        currentView='day';
+                        document.getElementById('btnZi').classList.add('v-active');
+                        document.getElementById('btnSapt').classList.remove('v-active');
+                        document.getElementById('btnLuna').classList.remove('v-active');
+                        applyDayView(dateStr);
+                    } else {
+                        window.location.href='?week='+weekStr+'&view=day&day='+dateStr;
+                    }
+                });
+                g.appendChild(el);
+            })(d);
+        }
+    }
+
+    document.getElementById('miniPrev').addEventListener('click', function(){ miniRef.setMonth(miniRef.getMonth()-1); renderMini(); });
+    document.getElementById('miniNext').addEventListener('click', function(){ miniRef.setMonth(miniRef.getMonth()+1); renderMini(); });
+    renderMini();
+
+    if (currentView==='day') {
+        document.getElementById('btnZi').classList.add('v-active');
+        document.getElementById('btnSapt').classList.remove('v-active');
+        applyDayView(selectedDay);
+    } else if (currentView==='month') {
+        document.getElementById('btnLuna').classList.add('v-active');
+        document.getElementById('btnSapt').classList.remove('v-active');
+        applyMonthView();
+    } else {
+        applyWeekView();
+    }
+
+    var nowH = new Date().getHours();
+    if (currentView!=='month' && DAYS.includes(TODAY_STR) && nowH>=H_START) {
+        document.querySelector('.c-scroll').scrollTop = Math.max(0, (nowH-H_START-1)*CELL_H);
+    }
+})();
+</script>
+{% endblock %}

@@ -84,18 +84,32 @@
     <div class="card-body" style="padding:12px;" id="appt-container">
         {% for appt in appointments %}
             <div class="appt-item"
+                 id="appt-{{ appt.id }}"
                  data-status="{% if appt.is_no_show %}noshow{% elif appt.is_completed %}completed{% elif appt.is_confirmed %}confirmed{% else %}pending{% endif %}"
-                 data-patient="{{ appt.patient.get_full_name|default:appt.patient.username|lower }}"
+                 data-patient="{% if appt.is_for_other and appt.beneficiary_name %}{{ appt.beneficiary_name|lower }}{% else %}{{ appt.patient.get_full_name|default:appt.patient.username|lower }}{% endif %}"
                  {% if appt.is_completed or appt.is_no_show %}style="opacity:.65;"{% endif %}>
                 <div style="width:42px;height:42px;background:{% if appt.is_no_show %}rgba(220,53,69,0.1){% elif appt.is_completed %}var(--surface-2){% else %}var(--c-primary-lt){% endif %};border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
                     <div style="font-size:15px;font-weight:600;color:{% if appt.is_no_show %}var(--c-danger){% elif appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};line-height:1;">{{ appt.date_time|date:"d" }}</div>
                     <div style="font-size:9px;color:{% if appt.is_no_show %}var(--c-danger){% elif appt.is_completed %}var(--text-muted){% else %}var(--c-primary){% endif %};text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
                 </div>
                 <div class="appt-info">
-                    <a href="{% url 'patient_history' appt.patient.id %}" style="font-weight:600;font-size:15px;color:var(--text);text-decoration:none;">
-                        {{ appt.patient.get_full_name|default:appt.patient.username }}
-                        <span style="font-size:11px;color:var(--c-primary);margin-left:4px;">→ fișă</span>
-                    </a>
+                    {% if appt.is_for_other and appt.beneficiary_name %}
+                        <a href="{% url 'beneficiary_view' appt.id %}" style="font-weight:600;font-size:15px;color:var(--text);text-decoration:none;">
+                            {{ appt.beneficiary_name }}
+                             <span style="font-size:11px;color:var(--c-primary);margin-left:4px;">→ fișă</span>
+                        </a>
+                         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
+                            plătit de
+                            <a href="{% url 'patient_history' appt.patient.id %}" style="color:var(--c-primary);text-decoration:none;">
+                                {{ appt.patient.get_full_name|default:appt.patient.username }}
+                             </a>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'patient_history' appt.patient.id %}" style="font-weight:600;font-size:15px;color:var(--text);text-decoration:none;">
+                            {{ appt.patient.get_full_name|default:appt.patient.username }}
+                            <span style="font-size:11px;color:var(--c-primary);margin-left:4px;">→ fișă</span>
+                        </a>
+                    {% endif %}
                     <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
                     {% if appt.reason %}<div class="appt-reason">„{{ appt.reason|truncatechars:60 }}"</div>{% endif %}
                     <div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
@@ -205,6 +219,16 @@
 }
 .filter-btn:hover { background: var(--surface-2); color: var(--text); }
 .filter-btn.active { background: var(--c-primary); color: white; border-color: var(--c-primary); }
+
+@keyframes appt-flash {
+    0%   { box-shadow: 0 0 0 3px rgba(13,148,136,0.7), 0 0 20px rgba(13,148,136,0.3); background: rgba(13,148,136,0.08); }
+    100% { box-shadow: none; background: transparent; }
+}
+.appt-item:target {
+    animation: appt-flash 2.5s ease-out forwards;
+    border-radius: var(--radius-md);
+    scroll-margin-top: 80px;
+}
 </style>
 
 <script>
@@ -220,7 +244,6 @@ function getAllItems() {
 function applyFilters() {
     const search = document.getElementById('search-input').value.toLowerCase().trim();
     const all = getAllItems();
-
     filtered = all.filter(item => {
         const status = item.dataset.status;
         const patient = item.dataset.patient || '';
@@ -228,7 +251,6 @@ function applyFilters() {
         const matchSearch = !search || patient.includes(search);
         return matchFilter && matchSearch;
     });
-
     currentPage = 1;
     renderPage();
 }
@@ -243,21 +265,16 @@ function setFilter(filter, btn) {
 function renderPage() {
     const all = getAllItems();
     all.forEach(item => item.style.display = 'none');
-
     const start = (currentPage - 1) * PER_PAGE;
     const pageItems = filtered.slice(start, start + PER_PAGE);
     pageItems.forEach(item => item.style.display = '');
-
     const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-
     document.getElementById('results-count').textContent = total + ' programări';
     document.getElementById('empty-filter').style.display = total === 0 ? 'block' : 'none';
     document.getElementById('pagination-bar').style.display = total === 0 ? 'none' : 'flex';
-
     document.getElementById('btn-prev').disabled = currentPage === 1;
     document.getElementById('btn-next').disabled = currentPage === totalPages;
-
     const pageInfo = document.getElementById('page-info');
     pageInfo.innerHTML = Array.from({length: totalPages}, (_, i) => {
         const p = i + 1;
@@ -284,7 +301,24 @@ document.getElementById('completeModal').addEventListener('click', function(e) {
     if (e.target === this) closeCompleteModal();
 });
 
-document.addEventListener('DOMContentLoaded', function() { applyFilters(); });
-</script>
+document.addEventListener('DOMContentLoaded', function() {
+    applyFilters();
 
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#appt-')) {
+        const target = document.querySelector(hash);
+        if (target) {
+            const allItems = getAllItems();
+            const idx = allItems.indexOf(target);
+            if (idx !== -1) {
+                currentPage = Math.floor(idx / PER_PAGE) + 1;
+                renderPage();
+                setTimeout(function() {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 150);
+            }
+        }
+    }
+});
+</script>
 {% endblock %}

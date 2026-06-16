@@ -15,7 +15,11 @@
             </div>
             <div>
                 <div style="font-size:15px;font-weight:600;color:var(--text);">
+                    {% if appointment.is_for_other and appointment.beneficiary_name %}
+                     {{ appointment.beneficiary_name }}
+                    {% else %}
                     {{ appointment.patient.get_full_name|default:appointment.patient.username }}
+                    {% endif %}
                 </div>
                 <div style="font-size:13px;color:var(--text-muted);">
                     Consultație: {{ appointment.date_time|date:"d M Y, H:i" }}

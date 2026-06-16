@@ -91,13 +91,19 @@
             <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
                 <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;">💊 Ultimele rețete</div>
                 {% for rx in prescriptions %}
-                <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md);margin-bottom:8px;border-left:3px solid var(--c-primary);">
+                <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md);margin-bottom:8px;border-left:3px solid var(--c-primary);cursor:pointer;transition:background .15s;"
+                     onmouseenter="this.style.background='var(--hover)'"
+                     onmouseleave="this.style.background='var(--surface-2)'"
+                     onclick="openRxModal({{ rx.id }})">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                         <div style="font-size:12px;font-weight:500;color:var(--text);">Dr. {{ rx.doctor.get_full_name|default:rx.doctor.username }}</div>
-                        <div style="font-size:11px;color:var(--text-muted);">{{ rx.created_at|date:"d M Y" }}</div>
+                        <div style="font-size:11px;color:var(--text-muted);">{{ rx.created_at|date:"d M Y" }} <span style="color:var(--c-primary);">→</span></div>
                     </div>
-                    {% if rx.diagnosis %}<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{{ rx.diagnosis }}</div>{% endif %}
-                    <div style="font-size:12px;color:var(--text);white-space:pre-line;">{{ rx.medication|truncatechars:80 }}</div>
+                    {% if rx.diagnosis %}<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{{ rx.diagnosis|truncatechars:60 }}</div>{% endif %}
+                    <div style="font-size:12px;color:var(--text);">{{ rx.medication|truncatechars:60 }}</div>
+                    {% if rx.appointment.is_for_other and rx.appointment.beneficiary_name %}
+                    <div style="font-size:11px;color:var(--c-teal);margin-top:3px;">pentru {{ rx.appointment.beneficiary_name }}</div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -126,6 +132,9 @@
                         <div class="appt-info">
                             <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
                             <div class="appt-meta">{{ appt.date_time|date:"H:i" }}{% if appt.reason %} · {{ appt.reason|truncatechars:28 }}{% endif %}</div>
+                            {% if appt.is_for_other and appt.beneficiary_name %}
+                            <div style="font-size:11px;color:var(--c-teal);margin-top:2px;">👤 pentru {{ appt.beneficiary_name }}</div>
+                            {% endif %}
                             {% if appt.payment_method %}
                             <div style="margin-top:4px;font-size:11px;color:var(--text-muted);">
                                 {% if appt.payment_method == 'CASH' %}💵 Cash
@@ -174,6 +183,9 @@
                         <div class="appt-info">
                             <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
                             <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
+                            {% if appt.is_for_other and appt.beneficiary_name %}
+                            <div style="font-size:11px;color:var(--c-teal);margin-top:2px;">👤 pentru {{ appt.beneficiary_name }}</div>
+                            {% endif %}
                         </div>
                         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
                             {% if appt.is_no_show %}<span class="badge badge-danger">✗ Neprezentare</span>
@@ -275,6 +287,16 @@
     </div>
 </div>
 
+<div id="rxModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:500px;max-width:92vw;box-shadow:var(--shadow-lg);max-height:85vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-size:16px;font-weight:700;color:var(--text);">💊 Rețetă medicală</div>
+            <button onclick="closeRxModal()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-muted);line-height:1;">×</button>
+        </div>
+        <div id="rx-content"></div>
+    </div>
+</div>
+
 <style>
 .dash-tab{padding:4px 12px;font-size:12px;border-radius:var(--radius-md);border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:var(--transition);}
 .dash-tab.active{background:var(--c-primary-lt);color:var(--c-primary);font-weight:500;}
@@ -282,6 +304,58 @@
 </style>
 
 <script>
+var RX_DATA = {
+    {% for rx in prescriptions %}
+    {{ rx.id }}: {
+        doctor: "{{ rx.doctor.get_full_name|default:rx.doctor.username|escapejs }}",
+        date: "{{ rx.created_at|date:'d M Y' }}",
+        apptDate: "{{ rx.appointment.date_time|date:'d M Y, H:i' }}",
+        diagnosis: "{{ rx.diagnosis|default:''|escapejs }}",
+        medication: "{{ rx.medication|default:''|escapejs }}",
+        instructions: "{{ rx.instructions|default:''|escapejs }}",
+        beneficiary: "{% if rx.appointment.is_for_other and rx.appointment.beneficiary_name %}{{ rx.appointment.beneficiary_name|escapejs }}{% endif %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
+function openRxModal(id) {
+    var rx = RX_DATA[id];
+    if (!rx) return;
+    var html = '';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">';
+    html += '<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">MEDIC</div><div style="font-size:13px;font-weight:600;color:var(--text);">Dr. ' + rx.doctor + '</div></div>';
+    html += '<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">DATA EMITERII</div><div style="font-size:13px;font-weight:600;color:var(--text);">' + rx.date + '</div></div>';
+    html += '</div>';
+    if (rx.apptDate) {
+        html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Consultație din ' + rx.apptDate + '</div>';
+    }
+    if (rx.beneficiary) {
+        html += '<div style="background:rgba(13,158,138,0.1);border:1px solid rgba(13,158,138,0.3);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--c-teal);">👤 Prescrisă pentru: <strong>' + rx.beneficiary + '</strong></div>';
+    }
+    if (rx.diagnosis) {
+        html += '<div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Diagnostic</div>';
+        html += '<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;font-size:14px;font-weight:600;color:var(--text);">' + rx.diagnosis + '</div></div>';
+    }
+    if (rx.medication) {
+        html += '<div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Medicație prescrisă</div>';
+        html += '<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:14px;font-size:13px;color:var(--text);white-space:pre-line;line-height:1.6;">' + rx.medication + '</div></div>';
+    }
+    if (rx.instructions) {
+        html += '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Instrucțiuni suplimentare</div>';
+        html += '<div style="background:rgba(13,148,136,0.08);border:1px solid rgba(13,148,136,0.25);border-radius:var(--radius-md);padding:14px;font-size:13px;color:var(--text);white-space:pre-line;line-height:1.6;">' + rx.instructions + '</div></div>';
+    }
+    document.getElementById('rx-content').innerHTML = html;
+    document.getElementById('rxModal').style.display = 'flex';
+}
+
+function closeRxModal() {
+    document.getElementById('rxModal').style.display = 'none';
+}
+
+document.getElementById('rxModal').addEventListener('click', function(e) {
+    if (e.target === this) closeRxModal();
+});
+
 const PER_PAGE = 5;
 const pages = { viit: 1, ist: 1 };
 
@@ -297,14 +371,11 @@ function renderPg(tab, items, totalPages) {
     if (!totalPages) totalPages = Math.max(1, Math.ceil(items.length / PER_PAGE));
     const pg = pages[tab];
     const start = (pg - 1) * PER_PAGE;
-
     items.forEach((el, i) => {
         el.style.display = (i >= start && i < start + PER_PAGE) ? 'flex' : 'none';
     });
-
     const pgBar = document.getElementById(tab + '-pagination');
     pgBar.style.display = items.length <= PER_PAGE ? 'none' : 'flex';
-
     document.getElementById(tab + '-prev').disabled = pg === 1;
     document.getElementById(tab + '-next').disabled = pg === totalPages;
     document.getElementById(tab + '-info').textContent = 'Pagina ' + pg + ' din ' + totalPages;

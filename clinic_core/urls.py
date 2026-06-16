@@ -13,7 +13,7 @@ from accounts.views import (
     admin_reports, admin_stats, admin_profile_edit, revoke_ban, confirm_cash_payment,
     payment_view, wallet_topup, mark_no_show,
     wallet_checkout, wallet_topup_card, card_checkout,
-    receipt_view, receipt_pdf, dismiss_notification,
+    receipt_view, receipt_pdf, dismiss_notification,doctor_calendar, beneficiary_view
 )
 
 urlpatterns = [
@@ -64,6 +64,9 @@ urlpatterns = [
     path('patient/notification/dismiss/<int:appointment_id>/', 
      dismiss_notification, 
      name='dismiss_notification'),
+     
+    path('doctor/calendar/', doctor_calendar, name='doctor_calendar'),
+    path('doctor/beneficiary/<int:appointment_id>/', beneficiary_view, name='beneficiary_view'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
