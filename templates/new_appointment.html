@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Programare nouă{% endblock %}
-{% block page_title %}Programare nouă{% endblock %}
+{% block title %}{% trans "Programare nouă" %}{% endblock %}
+{% block page_title %}{% trans "Programare nouă" %}{% endblock %}
 {% block nav_doctors %}active{% endblock %}
 
 {% block content %}
@@ -11,7 +12,7 @@
     <a href="{% url 'doctors_list' %}" class="btn btn-ghost btn-sm"
        style="margin-bottom:20px;display:inline-flex;align-items:center;gap:6px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        Înapoi la medici
+        {% trans "Înapoi la medici" %}
     </a>
 
     {% if selected_doctor %}
@@ -27,7 +28,7 @@
             <div>
                 <div style="font-size:16px;font-weight:600;color:var(--text);">Dr. {{ selected_doctor.get_full_name|default:selected_doctor.username }}</div>
                 <div style="font-size:13px;color:var(--c-primary);margin-top:2px;">{{ selected_doctor.doctor_profile.specialization }}</div>
-                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Tarif: <strong>{{ selected_doctor.doctor_profile.consultation_fee }} RON</strong></div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">{% trans "Tarif:" %} <strong>{{ selected_doctor.doctor_profile.consultation_fee }} RON</strong></div>
             </div>
         </div>
     </div>
@@ -35,8 +36,8 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">📅 Detalii programare</div>
-            <div class="card-subtitle">Completează toate informațiile</div>
+            <div class="card-title">📅 {% trans "Detalii programare" %}</div>
+            <div class="card-subtitle">{% trans "Completează toate informațiile" %}</div>
         </div>
         <div class="card-body">
             <form method="POST" action="" novalidate id="appt-form">
@@ -45,7 +46,7 @@
                 <input type="hidden" name="is_for_other" id="is_for_other_hidden" value="0">
 
                 <div class="form-group">
-                    <label class="form-label">Data și ora</label>
+                    <label class="form-label">{% trans "Data și ora" %}</label>
                     <input type="hidden" name="date_time" id="date_time_hidden" value="">
 
                     <div id="appt-calendar" style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px;">
@@ -55,20 +56,20 @@
                             <button type="button" id="cal-next" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:16px;color:var(--text);">›</button>
                         </div>
                         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;">
-                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">L</div>
-                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">Ma</div>
-                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">Mi</div>
-                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">J</div>
-                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">V</div>
-                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);opacity:.4;">S</div>
-                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);opacity:.4;">D</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">{% trans "L" %}</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">{% trans "Ma" %}</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">{% trans "Mi" %}</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">{% trans "J" %}</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);">{% trans "V" %}</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);opacity:.4;">{% trans "S" %}</div>
+                            <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);opacity:.4;">{% trans "D" %}</div>
                         </div>
                         <div id="cal-days" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"></div>
                     </div>
 
                     <div id="time-slots-wrapper" style="margin-top:14px;display:none;">
                         <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">
-                            Ore disponibile pentru <span id="selected-date-label" style="color:var(--c-primary);font-weight:700;"></span>
+                            {% trans "Ore disponibile pentru" %} <span id="selected-date-label" style="color:var(--c-primary);font-weight:700;"></span>
                         </div>
                         <div id="time-slots" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
                     </div>
@@ -77,18 +78,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Motivul vizitei</label>
+                    <label class="form-label">{% trans "Motivul vizitei" %}</label>
                     {{ form.reason }}
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" style="margin-bottom:10px;display:block;">Programarea este pentru</label>
+                    <label class="form-label" style="margin-bottom:10px;display:block;">{% trans "Programarea este pentru" %}</label>
                     <div style="display:flex;flex-direction:column;gap:8px;">
                         <label id="for-me-opt" onclick="selectFor('me')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--c-primary);background:var(--c-primary-lt);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
                             <input type="radio" name="for_who" value="me" checked style="accent-color:var(--c-primary);">
                             <span style="font-size:20px;">🙋</span>
                             <div>
-                                <div style="font-size:14px;font-weight:600;color:var(--text);">Pentru mine</div>
+                                <div style="font-size:14px;font-weight:600;color:var(--text);">{% trans "Pentru mine" %}</div>
                                 <div style="font-size:12px;color:var(--text-muted);">{{ user.get_full_name|default:user.username }}</div>
                             </div>
                         </label>
@@ -96,8 +97,8 @@
                             <input type="radio" name="for_who" value="other" style="accent-color:var(--c-primary);">
                             <span style="font-size:20px;">👨‍👩‍👧</span>
                             <div>
-                                <div style="font-size:14px;font-weight:600;color:var(--text);">Pentru altcineva</div>
-                                <div style="font-size:12px;color:var(--text-muted);">Copil, părinte, persoană vârstnică</div>
+                                <div style="font-size:14px;font-weight:600;color:var(--text);">{% trans "Pentru altcineva" %}</div>
+                                <div style="font-size:12px;color:var(--text-muted);">{% trans "Copil, părinte, persoană vârstnică" %}</div>
                             </div>
                         </label>
                     </div>
@@ -105,35 +106,35 @@
 
                 <div id="beneficiary-section" style="display:none;margin-bottom:16px;">
                     <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:16px;border-left:3px solid var(--c-primary);">
-                        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;">👤 Datele persoanei pentru care faci programarea</div>
+                        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;">👤 {% trans "Datele persoanei pentru care faci programarea" %}</div>
                         <div class="form-group" style="margin-bottom:12px;">
-                            <label class="form-label">Nume complet *</label>
+                            <label class="form-label">{% trans "Nume complet *" %}</label>
                             <input type="text" name="beneficiary_name" class="form-input" placeholder="Ex: Maria Ionescu" style="width:100%;">
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
                             <div>
                                 <label class="form-label">CNP</label>
-                                <input type="text" name="beneficiary_cnp" class="form-input" placeholder="13 cifre" maxlength="13" style="width:100%;">
+                                <input type="text" name="beneficiary_cnp" class="form-input" placeholder="{% trans "13 cifre" %}" maxlength="13" style="width:100%;">
                             </div>
                             <div>
-                                <label class="form-label">Data nașterii</label>
+                                <label class="form-label">{% trans "Data nașterii" %}</label>
                                 <input type="date" name="beneficiary_birth_date" class="form-input" style="width:100%;">
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                             <div>
-                                <label class="form-label">Telefon</label>
+                                <label class="form-label">{% trans "Telefon" %}</label>
                                 <input type="text" name="beneficiary_phone" class="form-input" placeholder="07xx xxx xxx" style="width:100%;">
                             </div>
                             <div>
-                                <label class="form-label">Relație</label>
+                                <label class="form-label">{% trans "Relație" %}</label>
                                 <select name="beneficiary_relation" class="form-input" style="width:100%;">
-                                    <option value="">— Selectează —</option>
-                                    <option value="Copil">Copil</option>
-                                    <option value="Parinte">Părinte</option>
-                                    <option value="Sot/Sotie">Soț/Soție</option>
-                                    <option value="Bunic/Bunica">Bunic/Bunică</option>
-                                    <option value="Alta">Altă relație</option>
+                                    <option value="">{% trans "— Selectează —" %}</option>
+                                    <option value="Copil">{% trans "Copil" %}</option>
+                                    <option value="Parinte">{% trans "Părinte" %}</option>
+                                    <option value="Sot/Sotie">{% trans "Soț/Soție" %}</option>
+                                    <option value="Bunic/Bunica">{% trans "Bunic/Bunică" %}</option>
+                                    <option value="Alta">{% trans "Altă relație" %}</option>
                                 </select>
                             </div>
                         </div>
@@ -141,16 +142,16 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" style="margin-bottom:10px;display:block;">Metodă de plată</label>
+                    <label class="form-label" style="margin-bottom:10px;display:block;">{% trans "Metodă de plată" %}</label>
 
-                    <!-- Banner promoțional cashback -->
                     <div style="background:linear-gradient(135deg,rgba(13,158,138,0.12) 0%,rgba(13,158,138,0.04) 100%);border:1px solid rgba(13,158,138,0.35);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
                         <span style="font-size:20px;flex-shrink:0;">🎁</span>
                         <div>
-                            <div style="font-size:13px;font-weight:700;color:var(--c-teal);">Plătește cu Wallet MedApp și primești 5% cashback!</div>
-                            <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">Suma se adaugă automat înapoi în Wallet-ul tău după confirmare.</div>
+                            <div style="font-size:13px;font-weight:700;color:var(--c-teal);">{% trans "Plătește cu Wallet MedApp și primești 5% cashback!" %}</div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">{% trans "Suma se adaugă automat înapoi în Wallet-ul tău după confirmare." %}</div>
                         </div>
                     </div>
+
                     <div style="display:flex;flex-direction:column;gap:8px;">
 
                         <label class="pay-option" id="pay-cash" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
@@ -158,7 +159,7 @@
                             <span style="font-size:20px;">💵</span>
                             <div>
                                 <div style="font-size:14px;font-weight:600;color:var(--text);">Cash</div>
-                                <div style="font-size:12px;color:var(--text-muted);">Plată în numerar la recepție</div>
+                                <div style="font-size:12px;color:var(--text-muted);">{% trans "Plată în numerar la recepție" %}</div>
                             </div>
                         </label>
 
@@ -167,18 +168,18 @@
                                 <input type="radio" name="payment_method_radio" value="CARD_ONLINE" style="accent-color:var(--c-primary);" onchange="selectPay(this)">
                                 <span style="font-size:20px;">💳</span>
                                 <div style="flex:1;">
-                                    <div style="font-size:14px;font-weight:600;color:var(--text);">Card online</div>
-                                    <div style="font-size:12px;color:var(--text-muted);">Completează datele cardului mai jos</div>
+                                    <div style="font-size:14px;font-weight:600;color:var(--text);">{% trans "Card online" %}</div>
+                                    <div style="font-size:12px;color:var(--text-muted);">{% trans "Completează datele cardului mai jos" %}</div>
                                 </div>
                             </div>
                             <div id="card-fields" style="display:none;padding:0 16px 16px;border-top:1px solid var(--border);margin-top:0;">
                                 <div style="margin-top:12px;">
-                                    <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Număr card</label>
+                                    <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">{% trans "Număr card" %}</label>
                                     <input type="text" id="card-number" name="card_number" class="form-input" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)" style="width:100%;font-size:15px;letter-spacing:2px;">
                                 </div>
                                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
                                     <div>
-                                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Expirare</label>
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">{% trans "Expirare" %}</label>
                                         <input type="text" id="card-expiry" name="card_expiry" class="form-input" placeholder="MM / YY" maxlength="7" oninput="formatExpiry(this)" style="width:100%;">
                                     </div>
                                     <div>
@@ -186,11 +187,11 @@
                                         <input type="text" id="card-cvv" name="card_cvv" class="form-input" placeholder="•••" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'')" style="width:100%;letter-spacing:3px;">
                                     </div>
                                     <div>
-                                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">Titular</label>
+                                        <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">{% trans "Titular" %}</label>
                                         <input type="text" id="card-name" name="card_name" class="form-input" placeholder="ION POP" style="width:100%;text-transform:uppercase;">
                                     </div>
                                 </div>
-                                <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">🔒 Datele cardului nu sunt stocate · Tranzacție securizată</div>
+                                <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">🔒 {% trans "Datele cardului nu sunt stocate · Tranzacție securizată" %}</div>
                             </div>
                         </label>
 
@@ -208,7 +209,7 @@
                                     </div>
                                 </div>
                                 <div style="text-align:right;">
-                                    <div style="font-size:11px;color:var(--text-muted);">Sold</div>
+                                    <div style="font-size:11px;color:var(--text-muted);">{% trans "Sold" %}</div>
                                     <div style="font-size:16px;font-weight:700;color:{% if patient_wallet and patient_wallet.balance >= doctor_fee %}var(--c-success){% else %}var(--c-danger){% endif %};">
                                         {% if patient_wallet %}{{ patient_wallet.balance }}{% else %}0{% endif %} RON
                                     </div>
@@ -216,115 +217,111 @@
                             </div>
                             <div id="wallet-warning" style="display:none;padding:10px 16px;background:rgba(220,53,69,0.08);border-top:1px solid rgba(220,53,69,0.2);">
                                 <div style="font-size:12px;color:var(--c-danger);">
-                                    ⚠ Sold insuficient — ai {% if patient_wallet %}{{ patient_wallet.balance }}{% else %}0{% endif %} RON, necesari {{ doctor_fee }} RON.
-                                    <a href="{% url 'wallet_topup_card' %}?amount={{ doctor_fee }}" style="color:var(--c-primary);font-weight:600;">Reîncarcă acum →</a>
+                                    ⚠ {% trans "Sold insuficient —" %} {% if patient_wallet %}{{ patient_wallet.balance }}{% else %}0{% endif %} RON, {% trans "necesari" %} {{ doctor_fee }} RON.
+                                    <a href="{% url 'wallet_topup_card' %}?amount={{ doctor_fee }}" style="color:var(--c-primary);font-weight:600;">{% trans "Reîncarcă acum →" %}</a>
                                 </div>
                             </div>
                             <div id="wallet-ok" style="display:none;padding:10px 16px;background:rgba(13,158,138,0.08);border-top:1px solid rgba(13,158,138,0.2);">
-                                <div style="font-size:12px;color:var(--c-teal);">✓ Sold suficient — vor fi debitați {{ doctor_fee }} RON la confirmare</div>
+                                <div style="font-size:12px;color:var(--c-teal);">
+                                    ✅ {% trans "Sold suficient · Vei primi cashback după confirmare." %}
+                                </div>
                             </div>
                         </label>
 
-                        <label class="pay-option" id="pay-cnas" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
-                            <input type="radio" name="payment_method_radio" value="CNAS" style="accent-color:var(--c-primary);" onchange="selectPay(this)">
-                            <span style="font-size:20px;">🏥</span>
-                            <div>
-                                <div style="font-size:14px;font-weight:600;color:var(--text);">Asigurare sănătate (CNAS)</div>
-                                <div style="font-size:12px;color:var(--text-muted);">Cost 0 RON dacă ești asigurat cu bilet de trimitere</div>
+                        <label class="pay-option" id="pay-cnas" style="display:flex;flex-direction:column;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;overflow:hidden;">
+                            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;">
+                                <input type="radio" name="payment_method_radio" value="CNAS" style="accent-color:var(--c-primary);" onchange="selectPay(this)">
+                                <span style="font-size:20px;">🏥</span>
+                                <div>
+                                    <div style="font-size:14px;font-weight:600;color:var(--text);">CNAS</div>
+                                    <div style="font-size:12px;color:var(--text-muted);">{% trans "Decontare prin asigurare medicală" %}</div>
+                                </div>
+                            </div>
+                            <div id="cnas-fields" style="display:none;padding:0 16px 16px;border-top:1px solid var(--border);">
+                                <div style="margin-top:12px;">
+                                    <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:4px;">{% trans "Serie bilet trimitere" %}</label>
+                                    <input type="text" name="referral_serial" class="form-input" placeholder="Ex: BT-123456" style="width:100%;">
+                                </div>
                             </div>
                         </label>
 
                     </div>
                 </div>
 
-                <div id="cnas-section" style="display:none;margin-bottom:16px;">
-                    {% if patient_profile and patient_profile.is_insured and patient_profile.health_card_serial %}
-                    <div style="background:rgba(13,158,138,0.08);border:1px solid rgba(13,158,138,0.3);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;">
-                        <span style="font-size:18px;">✓</span>
-                        <div>
-                            <div style="font-size:13px;font-weight:600;color:var(--c-teal);">Asigurat CNAS confirmat</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Card sănătate: <strong>{{ patient_profile.health_card_serial }}</strong></div>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div style="background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.3);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:14px;">
-                        <div style="font-size:13px;font-weight:600;color:var(--c-danger);">⚠ Nu ești marcat ca asigurat CNAS</div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Actualizează-ți <a href="{% url 'profile_edit' %}" style="color:var(--c-primary);">profilul</a> înainte de programare.</div>
-                    </div>
-                    {% endif %}
-                    <div class="form-group">
-                        <label class="form-label">Serie bilet trimitere *</label>
-                        {{ form.referral_serial }}
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Obligatoriu pentru decontare CNAS.</div>
-                    </div>
-                </div>
+                <div id="form-error" style="display:none;background:rgba(220,53,69,0.1);border:1px solid rgba(220,53,69,0.3);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--c-danger);margin-bottom:12px;"></div>
 
-                <div id="form-error" style="display:none;background:rgba(220,53,69,0.1);border:1px solid rgba(220,53,69,0.4);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--c-danger);margin-bottom:14px;"></div>
-
-                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
-                    <a href="{% url 'doctors_list' %}" class="btn btn-ghost">Anulează</a>
-                    <button type="button" onclick="validateAndSubmit()" class="btn btn-teal" style="padding:10px 28px;">
-                        Confirmă programarea →
-                    </button>
-                </div>
+                <button type="button" onclick="validateAndSubmit()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;">
+                    {% trans "Confirmă programarea →" %}
+                </button>
             </form>
         </div>
     </div>
 </div>
 
 <script>
-const walletBalance = parseFloat("{{ patient_wallet.balance|default:0 }}".replace(',', '.'));
-const doctorFee     = parseFloat("{{ doctor_fee|default:0 }}".replace(',', '.'));
+const walletBalance = parseFloat("{% if patient_wallet %}{{ patient_wallet.balance }}{% else %}0{% endif %}".replace(',', '.')) || 0;
+const doctorFee     = parseFloat("{{ doctor_fee }}".replace(',', '.')) || 0;
 
-function selectFor(type) {
-    const optMe    = document.getElementById('for-me-opt');
-    const optOther = document.getElementById('for-other-opt');
-    const section  = document.getElementById('beneficiary-section');
-    if (type === 'me') {
-        optMe.style.borderColor    = 'var(--c-primary)';
-        optMe.style.background     = 'var(--c-primary-lt)';
-        optOther.style.borderColor = 'var(--border)';
-        optOther.style.background  = 'transparent';
-        section.style.display      = 'none';
-        document.getElementById('is_for_other_hidden').value = '0';
-        optMe.querySelector('input').checked = true;
+const ERR_DATETIME  = '{% trans "⚠ Te rog selectează data și ora programării." %}';
+const ERR_CARDNUM   = '{% trans "⚠ Introduceți numărul cardului." %}';
+const ERR_EXPIRY    = '{% trans "⚠ Introduceți data de expirare a cardului." %}';
+const ERR_CVV       = '{% trans "⚠ Introduceți CVV-ul cardului." %}';
+const ERR_CARDNAME  = '{% trans "⚠ Introduceți numele titularului cardului." %}';
+const ERR_CNAS_INS  = '{% trans "⚠ Nu ești marcat ca asigurat CNAS. Actualizează-ți profilul înainte de programare." %}';
+const ERR_CNAS_REF  = '{% trans "⚠ Introduceți seria biletului de trimitere pentru CNAS." %}';
+const ERR_WALLET    = '{% trans "⚠ Sold insuficient în Wallet." %}';
+const TXT_NEEDED    = '{% trans "necesari" %}';
+
+function selectPay(radio) {
+    const method = radio.value;
+    document.getElementById('payment_method_hidden').value = method;
+    document.querySelectorAll('.pay-option').forEach(function(el) {
+        el.style.borderColor = 'var(--border)';
+        el.style.background = 'transparent';
+    });
+    radio.closest('.pay-option').style.borderColor = 'var(--c-primary)';
+    radio.closest('.pay-option').style.background = 'var(--c-primary-lt)';
+    document.getElementById('card-fields').style.display   = method === 'CARD_ONLINE' ? 'block' : 'none';
+    document.getElementById('cnas-fields').style.display   = method === 'CNAS'        ? 'block' : 'none';
+    const walletWarning = document.getElementById('wallet-warning');
+    const walletOk      = document.getElementById('wallet-ok');
+    if (method === 'WALLET') {
+        walletWarning.style.display = walletBalance < doctorFee ? 'block' : 'none';
+        walletOk.style.display      = walletBalance >= doctorFee ? 'block' : 'none';
     } else {
-        optOther.style.borderColor = 'var(--c-primary)';
-        optOther.style.background  = 'var(--c-primary-lt)';
-        optMe.style.borderColor    = 'var(--border)';
-        optMe.style.background     = 'transparent';
-        section.style.display      = 'block';
-        document.getElementById('is_for_other_hidden').value = '1';
-        optOther.querySelector('input').checked = true;
+        walletWarning.style.display = 'none';
+        walletOk.style.display      = 'none';
     }
 }
 
-function selectPay(radio) {
-    document.getElementById('payment_method_hidden').value = radio.value;
-    document.querySelectorAll('.pay-option').forEach(el => {
-        el.style.borderColor = 'var(--border)';
-        el.style.background  = 'transparent';
-    });
-    radio.closest('.pay-option').style.borderColor = 'var(--c-primary)';
-    radio.closest('.pay-option').style.background  = 'var(--c-primary-lt)';
-
-    document.getElementById('card-fields').style.display   = radio.value === 'CARD_ONLINE' ? 'block' : 'none';
-    document.getElementById('cnas-section').style.display  = radio.value === 'CNAS' ? 'block' : 'none';
-
-    const walletWarn = document.getElementById('wallet-warning');
-    const walletOk   = document.getElementById('wallet-ok');
-    if (radio.value === 'WALLET') {
-        if (walletBalance < doctorFee) {
-            walletWarn.style.display = 'block';
-            walletOk.style.display   = 'none';
-        } else {
-            walletOk.style.display   = 'block';
-            walletWarn.style.display = 'none';
-        }
+function selectFor(who) {
+    const benSection   = document.getElementById('beneficiary-section');
+    const isOtherHidden = document.getElementById('is_for_other_hidden');
+    const forMeOpt     = document.getElementById('for-me-opt');
+    const forOtherOpt  = document.getElementById('for-other-opt');
+    if (who === 'me') {
+        benSection.style.display    = 'none';
+        isOtherHidden.value         = '0';
+        forMeOpt.style.borderColor  = 'var(--c-primary)';
+        forMeOpt.style.background   = 'var(--c-primary-lt)';
+        forOtherOpt.style.borderColor = 'var(--border)';
+        forOtherOpt.style.background  = 'transparent';
     } else {
-        walletWarn.style.display = 'none';
-        walletOk.style.display   = 'none';
+        benSection.style.display    = 'block';
+        isOtherHidden.value         = '1';
+        forOtherOpt.style.borderColor = 'var(--c-primary)';
+        forOtherOpt.style.background  = 'var(--c-primary-lt)';
+        forMeOpt.style.borderColor  = 'var(--border)';
+        forMeOpt.style.background   = 'transparent';
     }
+}
+
+function showError(msg) {
+    const el = document.getElementById('form-error');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
 function formatCard(input) {
@@ -338,58 +335,37 @@ function formatExpiry(input) {
     input.value = v;
 }
 
-function showError(msg) {
-    const el = document.getElementById('form-error');
-    el.textContent = msg;
-    el.style.display = 'block';
-    el.scrollIntoView({behavior:'smooth', block:'center'});
-}
-
 function validateAndSubmit() {
+    const method   = document.getElementById('payment_method_hidden').value;
+    const dateTime = document.getElementById('date_time_hidden').value;
     document.getElementById('form-error').style.display = 'none';
 
-    if (!document.getElementById('date_time_hidden').value) {
-        showError('⚠ Selectați o dată și o oră pentru programare.');
-        return;
-    }
-
-    const checkedRadio = document.querySelector('input[name="payment_method_radio"]:checked');
-    if (checkedRadio) {
-        document.getElementById('payment_method_hidden').value = checkedRadio.value;
-    }
-    const method = document.getElementById('payment_method_hidden').value;
-    const isOther = document.getElementById('is_for_other_hidden').value === '1';
-
-    if (isOther) {
-        const name = document.querySelector('input[name="beneficiary_name"]').value.trim();
-        if (!name) { showError('⚠ Introduceți numele persoanei pentru care faceți programarea.'); return; }
-    }
+    if (!dateTime) { showError(ERR_DATETIME); return; }
 
     if (method === 'CARD_ONLINE') {
-        const num  = document.getElementById('card-number').value.replace(/\s/g,'');
-        const exp  = document.getElementById('card-expiry').value;
-        const cvv  = document.getElementById('card-cvv').value;
-        const name = document.getElementById('card-name').value.trim();
-        if (num.length < 16)  { showError('⚠ Numărul de card este invalid — trebuie să aibă 16 cifre.'); return; }
-        if (exp.length < 7)   { showError('⚠ Data de expirare este invalidă.'); return; }
-        if (cvv.length < 3)   { showError('⚠ CVV-ul este invalid.'); return; }
-        if (!name)            { showError('⚠ Introduceți numele titularului cardului.'); return; }
+        const number = document.getElementById('card-number').value.replace(/\s/g,'');
+        const expiry = document.getElementById('card-expiry').value;
+        const cvv    = document.getElementById('card-cvv').value;
+        const name   = document.getElementById('card-name').value.trim();
+        if (number.length < 16) { showError(ERR_CARDNUM);  return; }
+        if (expiry.length < 7)  { showError(ERR_EXPIRY);   return; }
+        if (cvv.length < 3)     { showError(ERR_CVV);      return; }
+        if (!name)               { showError(ERR_CARDNAME); return; }
     }
 
     if (method === 'WALLET') {
         if (walletBalance < doctorFee) {
-            showError(`⚠ Sold insuficient în Wallet. Ai ${walletBalance} RON, necesari ${doctorFee} RON.`);
+            showError(ERR_WALLET + ' ' + walletBalance + ' RON, ' + TXT_NEEDED + ' ' + doctorFee + ' RON.');
             return;
         }
     }
 
     if (method === 'CNAS') {
         {% if not patient_profile or not patient_profile.is_insured %}
-        showError('⚠ Nu ești marcat ca asigurat CNAS. Actualizează-ți profilul înainte de programare.');
-        return;
+        showError(ERR_CNAS_INS); return;
         {% endif %}
         const ref = document.querySelector('input[name="referral_serial"]');
-        if (!ref || !ref.value.trim()) { showError('⚠ Introduceți seria biletului de trimitere pentru CNAS.'); return; }
+        if (!ref || !ref.value.trim()) { showError(ERR_CNAS_REF); return; }
     }
 
     document.getElementById('appt-form').submit();
@@ -402,9 +378,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initCalendar();
 });
 
-const bookedSlots = {{ booked_slots|safe }};
-const WORK_HOURS = [9, 10, 11, 12, 13, 14, 15, 16];
-const MONTH_NAMES = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+const bookedSlots  = {{ booked_slots|safe }};
+const WORK_HOURS   = [9, 10, 11, 12, 13, 14, 15, 16];
+const MONTH_NAMES  = [
+    '{% trans "Ianuarie" %}','{% trans "Februarie" %}','{% trans "Martie" %}',
+    '{% trans "Aprilie" %}','{% trans "Mai" %}','{% trans "Iunie" %}',
+    '{% trans "Iulie" %}','{% trans "August" %}','{% trans "Septembrie" %}',
+    '{% trans "Octombrie" %}','{% trans "Noiembrie" %}','{% trans "Decembrie" %}'
+];
 let calCurrent = new Date();
 let selectedDateStr = null;
 
@@ -422,32 +403,29 @@ function initCalendar() {
 }
 
 function renderCalendar() {
-    const year = calCurrent.getFullYear();
+    const year  = calCurrent.getFullYear();
     const month = calCurrent.getMonth();
     document.getElementById('cal-month').textContent = MONTH_NAMES[month] + ' ' + year;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const firstDay = new Date(year, month, 1);
     let startWeekday = firstDay.getDay() - 1;
     if (startWeekday < 0) startWeekday = 6;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-
     const grid = document.getElementById('cal-days');
     grid.innerHTML = '';
 
     for (let i = 0; i < startWeekday; i++) {
-        const empty = document.createElement('div');
-        grid.appendChild(empty);
+        grid.appendChild(document.createElement('div'));
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(year, month, d);
+        const date    = new Date(year, month, d);
         const weekday = date.getDay();
         const isWeekend = (weekday === 0 || weekday === 6);
-        const isPast = date < today;
-        const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        const isPast    = date < today;
+        const dateStr   = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
 
         const cell = document.createElement('button');
         cell.type = 'button';
@@ -468,11 +446,10 @@ function renderCalendar() {
         }
 
         if (dateStr === selectedDateStr) {
-            cell.style.background = 'var(--c-primary)';
-            cell.style.color = 'white';
-            cell.style.borderColor = 'var(--c-primary)';
+            cell.style.background   = 'var(--c-primary)';
+            cell.style.color        = 'white';
+            cell.style.borderColor  = 'var(--c-primary)';
         }
-
         grid.appendChild(cell);
     }
 }
@@ -486,18 +463,18 @@ function selectDate(dateStr, cell) {
     document.getElementById('selected-date-label').textContent =
         parts[2] + ' ' + MONTH_NAMES[parseInt(parts[1]) - 1] + ' ' + parts[0];
 
-    const wrapper = document.getElementById('time-slots-wrapper');
+    const wrapper  = document.getElementById('time-slots-wrapper');
     const slotsDiv = document.getElementById('time-slots');
     slotsDiv.innerHTML = '';
     wrapper.style.display = 'block';
 
-    const now = new Date();
+    const now      = new Date();
     const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
     WORK_HOURS.forEach(function(h) {
         const timeStr = String(h).padStart(2, '0') + ':00';
         const fullStr = dateStr + ' ' + timeStr;
-        const isBooked = bookedSlots.includes(fullStr);
+        const isBooked   = bookedSlots.includes(fullStr);
         const isPastHour = (dateStr === todayStr && h <= now.getHours());
 
         const slot = document.createElement('button');
@@ -518,7 +495,6 @@ function selectDate(dateStr, cell) {
             slot.style.cursor = 'pointer';
             slot.onclick = function() { selectSlot(fullStr, slot); };
         }
-
         slotsDiv.appendChild(slot);
     });
 }
@@ -526,13 +502,13 @@ function selectDate(dateStr, cell) {
 function selectSlot(fullStr, slot) {
     document.querySelectorAll('#time-slots button').forEach(function(b) {
         if (!b.disabled) {
-            b.style.background = 'var(--surface)';
-            b.style.color = 'var(--text)';
+            b.style.background  = 'var(--surface)';
+            b.style.color       = 'var(--text)';
             b.style.borderColor = 'var(--border)';
         }
     });
-    slot.style.background = 'var(--c-teal)';
-    slot.style.color = 'white';
+    slot.style.background  = 'var(--c-teal)';
+    slot.style.color       = 'white';
     slot.style.borderColor = 'var(--c-teal)';
     document.getElementById('date_time_hidden').value = fullStr;
 }

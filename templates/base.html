@@ -1,13 +1,28 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="ro" data-theme="light">
+<html lang="{{ request.LANGUAGE_CODE }}" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Clinica Medicală{% endblock %}</title>
+    <title>{% block title %}{% trans "Clinică Medicală" %}{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="{% static 'js/theme.js' %}"></script>
     {% block extra_css %}{% endblock %}
+    <style>
+    .lang-toggle { display:flex; align-items:center; gap:4px; }
+    .lang-flag-btn {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 4px 10px; border-radius: 7px;
+        border: 1.5px solid var(--border);
+        background: transparent; color: var(--text-muted);
+        font-size: 11px; font-weight: 700; cursor: pointer;
+        transition: all 0.12s; letter-spacing: 0.03em;
+        text-decoration: none;
+    }
+    .lang-flag-btn:hover { border-color: var(--c-primary); color: var(--c-primary); background: var(--c-primary-lt); }
+    .lang-flag-btn.active { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+    </style>
 </head>
 <body>
 <div class="page-wrapper">
@@ -15,51 +30,51 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="sidebar-logo">M</div>
-            <div class="sidebar-brand-text">MedApp<span>Clinica Medicală</span></div>
+            <div class="sidebar-brand-text">MedApp<span>{% trans "Clinică Medicală" %}</span></div>
         </div>
         <nav class="sidebar-nav">
-            <div class="sidebar-section-label">Navigare</div>
+            <div class="sidebar-section-label">{% trans "Navigare" %}</div>
 
             {% if user.is_patient %}
                 <a href="{% url 'patient_dashboard' %}" class="sidebar-link {% block nav_dashboard %}{% endblock %}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    Dashboard
+                    {% trans "Dashboard" %}
                 </a>
                 <a href="{% url 'doctors_list' %}" class="sidebar-link {% block nav_doctors %}{% endblock %}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Echipa Medicală
+                    {% trans "Echipa Medicală" %}
                 </a>
             {% endif %}
 
             {% if user.is_doctor %}
                 <a href="{% url 'doctor_dashboard' %}" class="sidebar-link {% block nav_doctor %}{% endblock %}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    Programări
+                    {% trans "Programări" %}
                 </a>
                 <a href="{% url 'doctor_calendar' %}" class="sidebar-link {% block nav_calendar %}{% endblock %}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    Calendar
+                    {% trans "Calendar" %}
                 </a>
             {% endif %}
 
             {% if user.is_staff or user.is_superuser %}
                 <a href="{% url 'admin_reports' %}" class="sidebar-link {% block nav_reports %}{% endblock %}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-                    Panou administrare
+                    {% trans "Panou administrare" %}
                 </a>
                 <a href="{% url 'admin_stats' %}" class="sidebar-link {% block nav_stats %}{% endblock %}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 21H4.6A1.6 1.6 0 0 1 3 19.4V3"/><path d="m7 14 4-4 4 4 4-4"/></svg>
-                    Statistici
+                    {% trans "Statistici" %}
                 </a>
                 <a href="/admin/" class="sidebar-link">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-                    Admin Panel
+                    {% trans "Admin Panel" %}
                 </a>
             {% endif %}
 
             <a href="{% url 'home' %}" class="sidebar-link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                Acasă
+                {% trans "Acasă" %}
             </a>
 
         </nav>
@@ -74,35 +89,45 @@
             <span class="topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
             <div class="topbar-actions">
 
+                <div class="lang-toggle">
+                    <form id="langForm" action="{% url 'set_language' %}" method="post" style="display:none;">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.path }}">
+                        <input id="langInput" name="language" type="hidden" value="">
+                    </form>
+                    <button type="button" onclick="setLang('ro')" class="lang-flag-btn {% if request.LANGUAGE_CODE == 'ro' %}active{% endif %}">🇷🇴 RO</button>
+                    <button type="button" onclick="setLang('en')" class="lang-flag-btn {% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">🇬🇧 EN</button>
+                </div>
+
                 <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Comută tema">🌙</button>
 
                 {% if user.is_patient %}
                 <div class="notif-wrapper" id="notifWrapper">
-                    <button class="notif-btn" id="notifBtn" onclick="toggleNotif(event)" aria-label="Notificări">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <button class="notif-btn" id="notifBtn" onclick="toggleNotif(event)" aria-label="{% trans 'Notificări' %}">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         {% if notif_count > 0 %}<span class="notif-dot">{{ notif_count }}</span>{% endif %}
                     </button>
                     <div class="notif-dropdown" id="notifDropdown">
-                        <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text);">Notificări</div>
+                        <div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text);">{% trans "Notificări" %}</div>
                         <div id="notif-list-container">
                         {% if notif_list %}
                             {% for appt in notif_list %}
                             <div class="notif-item" data-id="{{ appt.id }}" style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='var(--surface-2)'" onmouseleave="this.style.background=''" onclick="dismissNotif(this, {{ appt.id }})">
                                 <div style="width:8px;height:8px;background:var(--c-success);border-radius:50%;margin-top:5px;flex-shrink:0;"></div>
                                 <div style="flex:1;">
-                                    <div style="font-size:13px;color:var(--text);font-weight:500;">Programare confirmată</div>
+                                    <div style="font-size:13px;color:var(--text);font-weight:500;">{% trans "Programare confirmată" %}</div>
                                     <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }} · {{ appt.date_time|date:"d M, H:i" }}</div>
                                 </div>
                                 <div style="font-size:16px;color:var(--text-muted);padding-left:4px;">×</div>
                             </div>
                             {% endfor %}
                         {% else %}
-                            <div id="notif-empty" style="padding:24px 14px;text-align:center;font-size:13px;color:var(--text-muted);">Nicio notificare nouă</div>
+                            <div id="notif-empty" style="padding:24px 14px;text-align:center;font-size:13px;color:var(--text-muted);">{% trans "Nicio notificare nouă" %}</div>
                         {% endif %}
                         </div>
                         {% if notif_list %}
                         <div style="padding:8px 14px;border-top:1px solid var(--border);">
-                            <button onclick="dismissAll()" style="font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;width:100%;text-align:center;">Șterge toate</button>
+                            <button onclick="dismissAll()" style="font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;width:100%;text-align:center;">{% trans "Șterge toate" %}</button>
                         </div>
                         {% endif %}
                     </div>
@@ -118,42 +143,35 @@
                             <div style="font-weight:600;font-size:14px;color:var(--text);">{{ user.get_full_name|default:user.username }}</div>
                             <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{{ user.email }}</div>
                         </div>
-
                         {% if user.is_patient %}
                         <a href="{% url 'profile_edit' %}" class="avatar-dropdown-item" role="menuitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            Profilul Meu
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            {% trans "Profilul Meu" %}
                         </a>
                         {% endif %}
-
                         {% if user.is_doctor %}
                         <a href="{% url 'doctor_profile_edit' %}" class="avatar-dropdown-item" role="menuitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            Profilul Meu
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            {% trans "Profilul Meu" %}
                         </a>
                         {% endif %}
-
                         {% if user.is_staff or user.is_superuser %}
                         <a href="{% url 'admin_profile_edit' %}" class="avatar-dropdown-item" role="menuitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            Profilul Meu
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            {% trans "Profilul Meu" %}
                         </a>
                         {% endif %}
-
                         <a href="{% url 'profile_security' %}" class="avatar-dropdown-item" role="menuitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                            Schimbă parola
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            {% trans "Schimbă parola" %}
                         </a>
-
                         <div class="avatar-dropdown-divider"></div>
-
                         <a href="{% url 'logout' %}" class="avatar-dropdown-item avatar-dropdown-item--danger" role="menuitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                            Deconectare
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            {% trans "Deconectare" %}
                         </a>
                     </div>
                 </div>
-
             </div>
         </header>
 
@@ -178,6 +196,10 @@
 </style>
 
 <script>
+function setLang(lang) {
+    document.getElementById('langInput').value = lang;
+    document.getElementById('langForm').submit();
+}
 function toggleAvatarMenu(e){
     e.stopPropagation();
     document.getElementById('notifDropdown')?.classList.remove('open');
@@ -201,90 +223,30 @@ document.addEventListener('DOMContentLoaded',function(){
     const theme=document.documentElement.getAttribute('data-theme');
     if(btn)btn.textContent=theme==='dark'?'☀️':'🌙';
 });
-
 function updateBadge(){
     const items=document.querySelectorAll('.notif-item');
     const dot=document.querySelector('.notif-dot');
     const count=items.length;
-    if(dot){
-        if(count===0)dot.remove();
-        else dot.textContent=count;
-    }
-    if(count===0){
-        const container=document.getElementById('notif-list-container');
-        if(container&&!document.getElementById('notif-empty')){
-            container.innerHTML='<div id="notif-empty" style="padding:24px 14px;text-align:center;font-size:13px;color:var(--text-muted);">Nicio notificare nouă</div>';
-        }
-    }
+    if(dot){if(count===0)dot.remove();else dot.textContent=count;}
+    if(count===0){const container=document.getElementById('notif-list-container');if(container&&!document.getElementById('notif-empty')){container.innerHTML='<div id="notif-empty" style="padding:24px 14px;text-align:center;font-size:13px;color:var(--text-muted);">Nicio notificare</div>';}}
 }
-
-function getCookie(name){
-    let cookieValue=null;
-    if(document.cookie&&document.cookie!==''){
-        const cookies=document.cookie.split(';');
-        for(let i=0;i<cookies.length;i++){
-            const cookie=cookies[i].trim();
-            if(cookie.startsWith(name+'=')){
-                cookieValue=decodeURIComponent(cookie.substring(name.length+1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
+function getCookie(name){let v=null;if(document.cookie){document.cookie.split(';').forEach(c=>{c=c.trim();if(c.startsWith(name+'='))v=decodeURIComponent(c.substring(name.length+1));});}return v;}
 function dismissNotif(el,id){
-    fetch('/patient/notification/dismiss/'+id+'/',{
-        method:'POST',
-        headers:{'X-CSRFToken':getCookie('csrftoken')},
-    }).catch(()=>{});
-    el.style.transition='opacity .2s, max-height .3s';
-    el.style.opacity='0';
-    el.style.maxHeight='0';
-    el.style.overflow='hidden';
-    el.style.padding='0';
+    fetch('/patient/notification/dismiss/'+id+'/',{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')}}).catch(()=>{});
+    el.style.transition='opacity .2s, max-height .3s';el.style.opacity='0';el.style.maxHeight='0';el.style.overflow='hidden';el.style.padding='0';
     setTimeout(()=>{el.remove();updateBadge();},300);
 }
-
 function dismissAll(){
     const csrf=getCookie('csrftoken');
-    document.querySelectorAll('.notif-item').forEach(el=>{
-        const id=el.getAttribute('data-id');
-        if(id){
-            fetch('/patient/notification/dismiss/'+id+'/',{
-                method:'POST',
-                headers:{'X-CSRFToken':csrf},
-            }).catch(()=>{});
-        }
-        el.remove();
-    });
+    document.querySelectorAll('.notif-item').forEach(el=>{const id=el.getAttribute('data-id');if(id)fetch('/patient/notification/dismiss/'+id+'/',{method:'POST',headers:{'X-CSRFToken':csrf}}).catch(()=>{});el.remove();});
     updateBadge();
 }
-
 setInterval(function(){
-    const dot=document.querySelector('.notif-dot');
-    const currentCount=dot?parseInt(dot.textContent)||0:0;
-    fetch(window.location.href,{headers:{'X-Requested-With':'XMLHttpRequest'}})
-        .then(r=>r.text())
-        .then(html=>{
-            const parser=new DOMParser();
-            const doc=parser.parseFromString(html,'text/html');
-            const newDot=doc.querySelector('.notif-dot');
-            const newCount=newDot?parseInt(newDot.textContent)||0:0;
-            if(newCount>currentCount){
-                const dotEl=document.querySelector('.notif-dot');
-                if(dotEl)dotEl.textContent=newCount;
-                else{
-                    const btn=document.getElementById('notifBtn');
-                    if(btn){
-                        const span=document.createElement('span');
-                        span.className='notif-dot';
-                        span.textContent=newCount;
-                        btn.appendChild(span);
-                    }
-                }
-            }
-        }).catch(()=>{});
+    const dot=document.querySelector('.notif-dot');const cc=dot?parseInt(dot.textContent)||0:0;
+    fetch(window.location.href,{headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.text()).then(html=>{
+        const doc=new DOMParser().parseFromString(html,'text/html');const nd=doc.querySelector('.notif-dot');const nc=nd?parseInt(nd.textContent)||0:0;
+        if(nc>cc){if(dot)dot.textContent=nc;else{const btn=document.getElementById('notifBtn');if(btn){const s=document.createElement('span');s.className='notif-dot';s.textContent=nc;btn.appendChild(s);}}}
+    }).catch(()=>{});
 },30000);
 </script>
 

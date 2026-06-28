@@ -1,0 +1,1741 @@
+# English translations for MedApp
+# Generated automatically
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# --- BASE.HTML ---
+
+msgid "Specialități"
+msgstr "Specialties"
+
+msgid "Despre noi"
+msgstr "About us"
+
+msgid "Medici"
+msgstr "Doctors"
+
+msgid "Contact"
+msgstr "Contact"
+
+msgid "Contul meu"
+msgstr "My Account"
+
+msgid "Programare online"
+msgstr "Book Online"
+
+msgid "Deconectare"
+msgstr "Sign out"
+
+msgid "Panou principal"
+msgstr "Dashboard"
+
+msgid "Profilul meu"
+msgstr "My Profile"
+
+msgid "Securitate"
+msgstr "Security"
+
+msgid "Setări"
+msgstr "Settings"
+
+msgid "Administrator"
+msgstr "Administrator"
+
+# --- INDEX.HTML ---
+
+msgid "Programări disponibile astăzi"
+msgstr "Appointments available today"
+
+msgid "Îngrijire medicală de excepție, aproape de tine."
+msgstr "Exceptional medical care, close to you."
+
+msgid "de excepție,"
+msgstr "exceptional,"
+
+msgid "aproape de tine."
+msgstr "close to you."
+
+msgid "Accesează cei mai buni specialiști, programează consultații online și urmărește-ți dosarul medical dintr-un singur loc."
+msgstr "Access the best specialists, book online consultations and track your medical record from one place."
+
+msgid "Creează cont gratuit"
+msgstr "Create free account"
+
+msgid "Intră în cont"
+msgstr "Sign in"
+
+msgid "Specialiști"
+msgstr "Specialists"
+
+msgid "Pacienți"
+msgstr "Patients"
+
+msgid "Satisfacție"
+msgstr "Satisfaction"
+
+msgid "PROGRAMĂRI AZI"
+msgstr "APPOINTMENTS TODAY"
+
+msgid "Programate azi"
+msgstr "Booked today"
+
+msgid "Online acum"
+msgstr "Online now"
+
+msgid "CONSULTAȚII TOTALE"
+msgstr "TOTAL CONSULTATIONS"
+
+msgid "Lunar"
+msgstr "Monthly"
+
+msgid "SATISFACȚIE"
+msgstr "SATISFACTION"
+
+msgid "TIMP CONFIRMARE"
+msgstr "CONFIRMATION TIME"
+
+msgid "Instant"
+msgstr "Instant"
+
+msgid "De ce MedApp?"
+msgstr "Why MedApp?"
+
+msgid "Sănătatea ta este prioritatea noastră"
+msgstr "Your health is our priority"
+
+msgid "Rezervare online instantă"
+msgstr "Instant online booking"
+
+msgid "Alege medicul, specialitatea și ora preferată direct din platformă."
+msgstr "Choose your doctor, specialty and preferred time directly from the platform."
+
+msgid "Dosar medical digital"
+msgstr "Digital medical records"
+
+msgid "Istoricul tău medical, analizele și rețetele stocate în siguranță."
+msgstr "Your medical history, tests and prescriptions stored securely."
+
+msgid "Confidențialitate garantată"
+msgstr "Guaranteed confidentiality"
+
+msgid "Datele tale sunt criptate și accesibile doar ție și medicului tău."
+msgstr "Your data is encrypted and accessible only to you and your doctor."
+
+msgid "Confirmare în timp real"
+msgstr "Real-time confirmation"
+
+msgid "Primești confirmare instant prin email pentru fiecare programare."
+msgstr "You receive instant email confirmation for each appointment."
+
+msgid "Echipa noastră"
+msgstr "Our team"
+
+msgid "Medici cu experiență"
+msgstr "Experienced doctors"
+
+msgid "Disponibil astăzi"
+msgstr "Available today"
+
+msgid "Indisponibil"
+msgstr "Unavailable"
+
+msgid "Rezervă acum →"
+msgstr "Book now →"
+
+msgid "Vezi toți medicii →"
+msgstr "See all doctors →"
+
+# --- LOGIN.HTML ---
+
+msgid "Bun venit înapoi"
+msgstr "Welcome back"
+
+msgid "Autentifică-te pentru a continua"
+msgstr "Sign in to continue"
+
+msgid "Utilizator"
+msgstr "Username"
+
+msgid "Parolă"
+msgstr "Password"
+
+msgid "Nume utilizator"
+msgstr "Username"
+
+msgid "Nu ai cont?"
+msgstr "Don't have an account?"
+
+msgid "Înregistrează-te gratuit"
+msgstr "Register for free"
+
+msgid "Ai uitat parola?"
+msgstr "Forgot your password?"
+
+# --- REGISTER.HTML ---
+
+msgid "Creează cont"
+msgstr "Create account"
+
+msgid "Alătură-te MedApp"
+msgstr "Join MedApp"
+
+msgid "Completează datele pentru a crea contul tău"
+msgstr "Fill in your details to create your account"
+
+msgid "Confirmare parolă"
+msgstr "Confirm password"
+
+msgid "Am citit și accept"
+msgstr "I have read and accept the"
+
+msgid "Termenii și Condițiile"
+msgstr "Terms and Conditions"
+
+msgid "Creează contul →"
+msgstr "Create account →"
+
+msgid "Ai deja cont?"
+msgstr "Already have an account?"
+
+msgid "Autentifică-te"
+msgstr "Sign in"
+
+# --- DOCTORS LIST ---
+
+msgid "Caută medic sau specialitate..."
+msgstr "Search doctor or specialty..."
+
+msgid "Toate specialitățile"
+msgstr "All specialties"
+
+msgid "Disponibili acum"
+msgstr "Available now"
+
+msgid "Niciun medic găsit."
+msgstr "No doctor found."
+
+msgid "Programează-te"
+msgstr "Book appointment"
+
+msgid "Vezi profil"
+msgstr "View profile"
+
+msgid "ani experiență"
+msgstr "years of experience"
+
+# --- DOCTOR CALENDAR ---
+
+msgid "Calendarul meu"
+msgstr "My calendar"
+
+msgid "Programări"
+msgstr "Appointments"
+
+msgid "Azi"
+msgstr "Today"
+
+msgid "Săptămână"
+msgstr "Week"
+
+msgid "Lună"
+msgstr "Month"
+
+msgid "Zi"
+msgstr "Day"
+
+msgid "Nicio programare."
+msgstr "No appointments."
+
+msgid "Nicio programare în această perioadă."
+msgstr "No appointments in this period."
+
+msgid "Confirmat"
+msgstr "Confirmed"
+
+msgid "Așteptare"
+msgstr "Pending"
+
+msgid "Finalizat"
+msgstr "Completed"
+
+msgid "Neprezentare"
+msgstr "No-show"
+
+msgid "Confirmă"
+msgstr "Confirm"
+
+msgid "Marchează finalizat"
+msgstr "Mark as completed"
+
+msgid "Marchează neprezentare"
+msgstr "Mark as no-show"
+
+msgid "Anulează"
+msgstr "Cancel"
+
+msgid "Ianuarie"
+msgstr "January"
+
+msgid "Februarie"
+msgstr "February"
+
+msgid "Martie"
+msgstr "March"
+
+msgid "Aprilie"
+msgstr "April"
+
+msgid "Mai"
+msgstr "May"
+
+msgid "Iunie"
+msgstr "June"
+
+msgid "Iulie"
+msgstr "July"
+
+msgid "August"
+msgstr "August"
+
+msgid "Septembrie"
+msgstr "September"
+
+msgid "Octombrie"
+msgstr "October"
+
+msgid "Noiembrie"
+msgstr "November"
+
+msgid "Decembrie"
+msgstr "December"
+
+msgid "Luni"
+msgstr "Monday"
+
+msgid "Marți"
+msgstr "Tuesday"
+
+msgid "Miercuri"
+msgstr "Wednesday"
+
+msgid "Joi"
+msgstr "Thursday"
+
+msgid "Vineri"
+msgstr "Friday"
+
+msgid "Sâmbătă"
+msgstr "Saturday"
+
+msgid "Duminică"
+msgstr "Sunday"
+
+# --- DOCTOR DASHBOARD ---
+
+msgid "Panou Medic"
+msgstr "Doctor Dashboard"
+
+msgid "Bună ziua"
+msgstr "Good afternoon"
+
+msgid "Bună dimineața"
+msgstr "Good morning"
+
+msgid "Bună seara"
+msgstr "Good evening"
+
+msgid "Programările mele de azi"
+msgstr "My appointments today"
+
+msgid "Total pacienți"
+msgstr "Total patients"
+
+msgid "Venituri luna asta"
+msgstr "Revenue this month"
+
+msgid "Rating mediu"
+msgstr "Average rating"
+
+msgid "Fișa pacientului"
+msgstr "Patient record"
+
+msgid "Adaugă rețetă"
+msgstr "Add prescription"
+
+msgid "Motivul vizitei:"
+msgstr "Reason for visit:"
+
+# --- PATIENT DASHBOARD ---
+
+msgid "Panou Pacient"
+msgstr "Patient Dashboard"
+
+msgid "Programările mele"
+msgstr "My appointments"
+
+msgid "Viitoare"
+msgstr "Upcoming"
+
+msgid "Istoric"
+msgstr "History"
+
+msgid "Nicio programare viitoare."
+msgstr "No upcoming appointments."
+
+msgid "Niciun istoric."
+msgstr "No history."
+
+msgid "Caută un medic →"
+msgstr "Find a doctor →"
+
+msgid "Programare nouă →"
+msgstr "New appointment →"
+
+msgid "Starea mea medicală"
+msgstr "My medical status"
+
+msgid "Informații rapide despre sănătatea ta"
+msgstr "Quick information about your health"
+
+msgid "Profil completat"
+msgstr "Profile completed"
+
+msgid "Grup sanguin"
+msgstr "Blood type"
+
+msgid "Ultima vizită"
+msgstr "Last visit"
+
+msgid "Alergii înregistrate"
+msgstr "Registered allergies"
+
+msgid "Asigurat CNAS"
+msgstr "CNAS insured"
+
+msgid "Următoarea programare"
+msgstr "Next appointment"
+
+msgid "Ultimele rețete"
+msgstr "Latest prescriptions"
+
+msgid "Anulezi această programare?"
+msgstr "Cancel this appointment?"
+
+msgid "Evaluează →"
+msgstr "Rate →"
+
+msgid "Evaluează"
+msgstr "Rate"
+
+msgid "Programări totale"
+msgstr "Total appointments"
+
+msgid "În așteptare"
+msgstr "Pending"
+
+msgid "SOLD"
+msgstr "BALANCE"
+
+msgid "Reîncarcă"
+msgstr "Top up"
+
+msgid "Copiază nr."
+msgstr "Copy no."
+
+msgid "✓ Copiat!"
+msgstr "✓ Copied!"
+
+msgid "Partajează numărul cardului cu aparținătorii care plătesc pentru tine."
+msgstr "Share your card number with guardians who pay for you."
+
+msgid "Ultimele plăți"
+msgstr "Latest payments"
+
+msgid "Profilul meu"
+msgstr "My profile"
+
+msgid "Nume complet"
+msgstr "Full name"
+
+msgid "Descarcă datele mele"
+msgstr "Download my data"
+
+msgid "Rețetă medicală"
+msgstr "Medical prescription"
+
+msgid "MEDIC"
+msgstr "DOCTOR"
+
+msgid "DATA EMITERII"
+msgstr "DATE ISSUED"
+
+msgid "Consultație din"
+msgstr "Consultation from"
+
+msgid "Prescrisă pentru:"
+msgstr "Prescribed for:"
+
+msgid "Diagnostic"
+msgstr "Diagnosis"
+
+msgid "Medicație prescrisă"
+msgstr "Prescribed medication"
+
+msgid "Instrucțiuni suplimentare"
+msgstr "Additional instructions"
+
+msgid "Pagina"
+msgstr "Page"
+
+msgid "din"
+msgstr "of"
+
+msgid "Anterior"
+msgstr "Previous"
+
+msgid "Următor →"
+msgstr "Next →"
+
+msgid "Cum a fost consultația cu <strong>Dr. %(name)s</strong>? Lasă o evaluare!"
+msgstr "How was your consultation with <strong>Dr. %(name)s</strong>? Leave a review!"
+
+# --- COMUNE (mai multe template-uri) ---
+
+msgid "Salvează"
+msgstr "Save"
+
+msgid "Salvează modificările"
+msgstr "Save Changes"
+
+msgid "Prenume"
+msgstr "First name"
+
+msgid "Nume"
+msgstr "Last name"
+
+msgid "Data nașterii"
+msgstr "Date of birth"
+
+msgid "Telefon"
+msgstr "Phone"
+
+msgid "Total"
+msgstr "Total"
+
+msgid "programări"
+msgstr "appointments"
+
+msgid "pentru"
+msgstr "for"
+
+msgid "Finalizate"
+msgstr "Completed"
+
+msgid "Confirmate"
+msgstr "Confirmed"
+
+msgid "Așteptare"
+msgstr "Pending"
+
+msgid "Finalizată"
+msgstr "Completed"
+
+msgid "Confirmată"
+msgstr "Confirmed"
+
+msgid "pt."
+msgstr "for"
+
+msgid "plătit de"
+msgstr "paid by"
+
+msgid "Data"
+msgstr "Date"
+
+msgid "Utilizator"
+msgstr "User"
+
+msgid "Acțiune"
+msgstr "Action"
+
+msgid "Editează"
+msgstr "Edit"
+
+msgid "Rețetă"
+msgstr "Prescription"
+
+msgid "Rețete"
+msgstr "Prescriptions"
+
+msgid "Rețete emise"
+msgstr "Prescriptions issued"
+
+msgid "Diagnostic:"
+msgstr "Diagnosis:"
+
+msgid "Total programări"
+msgstr "Total appointments"
+
+msgid "Total programări:"
+msgstr "Total appointments:"
+
+msgid "Statistici"
+msgstr "Statistics"
+
+msgid "Disponibil"
+msgstr "Available"
+
+msgid "Nu există date."
+msgstr "No data available."
+
+msgid "Nicio activitate."
+msgstr "No activity."
+
+msgid "anonim"
+msgstr "anonymous"
+
+msgid "Nicio rețetă emisă."
+msgstr "No prescriptions issued."
+
+msgid "Nicio consultație înregistrată."
+msgstr "No consultations recorded."
+
+msgid "Înapoi la medici"
+msgstr "Back to doctors"
+
+msgid "Înapoi la programări"
+msgstr "Back to appointments"
+
+msgid "Înapoi la dashboard"
+msgstr "Back to dashboard"
+
+msgid "← Înapoi la autentificare"
+msgstr "← Back to login"
+
+msgid "Date cont"
+msgstr "Account data"
+
+msgid "Schimbă parola"
+msgstr "Change password"
+
+msgid "Specializare necompletată"
+msgstr "Specialization not filled"
+
+msgid "Specializare"
+msgstr "Specialization"
+
+msgid "Nr. Licență"
+msgstr "License No."
+
+msgid "Tarif consultație (RON)"
+msgstr "Consultation fee (RON)"
+
+msgid "Tarif consultație"
+msgstr "Consultation fee"
+
+msgid "Cont creat:"
+msgstr "Account created:"
+
+msgid "Date profesionale"
+msgstr "Professional data"
+
+msgid "Vizibile pacienților în catalogul medicilor"
+msgstr "Visible to patients in the doctors catalog"
+
+msgid "Poză de profil"
+msgstr "Profile photo"
+
+msgid "Poza curentă:"
+msgstr "Current photo:"
+
+msgid "vizualizează"
+msgstr "view"
+
+msgid "Despre mine"
+msgstr "About me"
+
+msgid "Descriere experiență..."
+msgstr "Experience description..."
+
+msgid "Disponibil pentru programări noi"
+msgstr "Available for new appointments"
+
+msgid "recenzii"
+msgstr "reviews"
+
+msgid "L"
+msgstr "M"
+
+msgid "Ma"
+msgstr "T"
+
+msgid "Mi"
+msgstr "W"
+
+msgid "J"
+msgstr "T"
+
+msgid "V"
+msgstr "F"
+
+msgid "S"
+msgstr "S"
+
+msgid "D"
+msgstr "S"
+
+# --- ADMIN PROFILE EDIT ---
+
+msgid "Editare Profil Admin"
+msgstr "Edit Admin Profile"
+
+msgid "Mergi la pagina de securitate →"
+msgstr "Go to security page →"
+
+# --- ADMIN REPORTS ---
+
+msgid "Rapoarte Admin"
+msgstr "Admin Reports"
+
+msgid "Rapoarte & Statistici"
+msgstr "Reports & Statistics"
+
+msgid "Editează profilul meu"
+msgstr "Edit my profile"
+
+msgid "Venituri luna asta"
+msgstr "Revenue this month"
+
+msgid "Pacienți noi luna asta"
+msgstr "New patients this month"
+
+msgid "Total pacienți"
+msgstr "Total patients"
+
+msgid "Total medici"
+msgstr "Total doctors"
+
+msgid "Medici disponibili"
+msgstr "Available doctors"
+
+msgid "Programări pe luni"
+msgstr "Monthly appointments"
+
+msgid "Ultimele 6 luni"
+msgstr "Last 6 months"
+
+msgid "Grafic programari lunare"
+msgstr "Monthly appointments chart"
+
+msgid "Programări pe ultimele 6 luni."
+msgstr "Appointments in the last 6 months."
+
+msgid "Grafic donut status programari"
+msgstr "Appointment status donut chart"
+
+msgid "Status programari."
+msgstr "Appointment status."
+
+msgid "Distribuție curentă"
+msgstr "Current distribution"
+
+msgid "Top medici după venituri"
+msgstr "Top doctors by revenue"
+
+msgid "Consultații finalizate × tarif"
+msgstr "Completed consultations × fee"
+
+msgid "Niciun medic."
+msgstr "No doctors."
+
+msgid "Ultimele programări"
+msgstr "Recent appointments"
+
+msgid "Jurnal de audit"
+msgstr "Audit journal"
+
+msgid "Ultimele 8 acțiuni din sistem"
+msgstr "Last 8 actions in the system"
+
+# --- CARD CHECKOUT ---
+
+msgid "Plată securizată"
+msgstr "Secure Payment"
+
+msgid "Plată online"
+msgstr "Online Payment"
+
+msgid "Plătești pentru"
+msgstr "Paying for"
+
+msgid "Nume titular card"
+msgstr "Cardholder name"
+
+msgid "Plătește"
+msgstr "Pay"
+
+msgid "Conexiune criptată SSL 256-bit. Datele cardului nu sunt stocate."
+msgstr "Encrypted SSL 256-bit connection. Card data is not stored."
+
+msgid "Se procesează plata..."
+msgstr "Processing payment..."
+
+msgid "Nu închide această pagină"
+msgstr "Do not close this page"
+
+msgid "Plată procesată cu succes!"
+msgstr "Payment processed successfully!"
+
+msgid "Referință tranzacție:"
+msgstr "Transaction reference:"
+
+msgid "Număr de card invalid."
+msgstr "Invalid card number."
+
+msgid "Data expirare invalidă."
+msgstr "Invalid expiry date."
+
+msgid "CVV invalid."
+msgstr "Invalid CVV."
+
+msgid "Introdu numele titularului."
+msgstr "Enter cardholder name."
+
+msgid "Completează informațiile consultației"
+msgstr "Fill in consultation information"
+
+msgid "Plată în numerar la recepție"
+msgstr "Cash payment at reception"
+
+msgid "Plată securizată cu cardul bancar"
+msgstr "Secure payment with bank card"
+
+msgid "sau plătit de aparținător"
+msgstr "or paid by guardian"
+
+msgid "Asigurare sănătate (CNAS)"
+msgstr "Health insurance (CNAS)"
+
+msgid "Necesită card de sănătate și bilet de trimitere"
+msgstr "Requires health card and referral"
+
+msgid "Asigurat CNAS confirmat"
+msgstr "CNAS insurance confirmed"
+
+msgid "Card sănătate:"
+msgstr "Health card:"
+
+msgid "Nu ești marcat ca asigurat CNAS"
+msgstr "You are not marked as CNAS insured"
+
+msgid "Actualizează-ți"
+msgstr "Update your"
+
+msgid "profilul"
+msgstr "profile"
+
+msgid "înainte."
+msgstr "first."
+
+msgid "De la medicul de familie — obligatoriu pentru decontare CNAS."
+msgstr "From your GP — mandatory for CNAS reimbursement."
+
+# --- WALLET CHECKOUT ---
+
+msgid "Plată cu Wallet MedApp"
+msgstr "MedApp Wallet Payment"
+
+msgid "Plată consultație"
+msgstr "Consultation Payment"
+
+msgid "Consultație cu"
+msgstr "Consultation with"
+
+msgid "Alege cine efectuează plata"
+msgstr "Choose who makes the payment"
+
+msgid "Plătesc din walletul meu"
+msgstr "Pay from my wallet"
+
+msgid "Sold disponibil:"
+msgstr "Available balance:"
+
+msgid "Altcineva plătește pentru mine"
+msgstr "Someone else pays for me"
+
+msgid "Aparținător, părinte, însoțitor"
+msgstr "Guardian, parent, companion"
+
+msgid "Număr card MedApp al plătitorului"
+msgstr "Payer's MedApp card number"
+
+msgid "Cere numărul de card din secțiunea"
+msgstr "Ask for the card number from the"
+
+msgid "din aplicația plătitorului. Plătitorul va primi un email de confirmare după tranzacție."
+msgstr "section in the payer's app. The payer will receive a confirmation email after the transaction."
+
+msgid "⚠ Sold insuficient"
+msgstr "⚠ Insufficient balance"
+
+msgid "Confirmă plata →"
+msgstr "Confirm payment →"
+
+msgid "Reîncarcă walletul cu %(fee)s RON"
+msgstr "Top up wallet with %(fee)s RON"
+
+# --- WALLET TOPUP CARD ---
+
+msgid "Reîncarcă Wallet"
+msgstr "Top Up Wallet"
+
+msgid "Reîncarcă Wallet MedApp"
+msgstr "Top Up MedApp Wallet"
+
+msgid "TITULAR"
+msgstr "CARDHOLDER"
+
+msgid "SOLD CURENT"
+msgstr "CURRENT BALANCE"
+
+msgid "Reîncarcă prin card bancar"
+msgstr "Top up via bank card"
+
+msgid "Sumă de adăugat:"
+msgstr "Amount to add:"
+
+msgid "Sumă personalizată (RON)"
+msgstr "Custom amount (RON)"
+
+msgid "Dată expirare"
+msgstr "Expiry date"
+
+msgid "Nume titular"
+msgstr "Cardholder name"
+
+msgid "Se procesează..."
+msgstr "Processing..."
+
+msgid "Wallet reîncărcat!"
+msgstr "Wallet topped up!"
+
+msgid "Adaugă"
+msgstr "Add"
+
+msgid "RON în wallet"
+msgstr "RON to wallet"
+
+msgid "Tranzacție securizată · Datele cardului nu sunt stocate"
+msgstr "Secure transaction · Card data is not stored"
+
+msgid "⚠ Suma trebuie să fie între 1 și 5000 RON."
+msgstr "⚠ Amount must be between 1 and 5000 RON."
+
+msgid "⚠ Număr de card invalid."
+msgstr "⚠ Invalid card number."
+
+msgid "⚠ Dată expirare invalidă."
+msgstr "⚠ Invalid expiry date."
+
+msgid "⚠ CVV invalid."
+msgstr "⚠ Invalid CVV."
+
+msgid "⚠ Introdu numele titularului."
+msgstr "⚠ Enter the cardholder name."
+
+msgid "RON adăugați"
+msgstr "RON added"
+
+# --- ADMIN DASHBOARD ---
+
+msgid "Panou Administrare"
+msgstr "Admin Panel"
+
+msgid "Pacienți înregistrați"
+msgstr "Registered patients"
+
+msgid "Medici activi"
+msgstr "Active doctors"
+
+msgid "Venituri totale"
+msgstr "Total revenue"
+
+msgid "Programări recente"
+msgstr "Recent appointments"
+
+msgid "Audit Log recent"
+msgstr "Recent Audit Log"
+
+msgid "Casă — Plăți Cash în Așteptare"
+msgstr "Cashier — Pending Cash Payments"
+
+msgid "Plăți care urmează să fie încasate la recepție"
+msgstr "Payments to be collected at reception"
+
+msgid "DE ÎNCASAT"
+msgstr "TO COLLECT"
+
+msgid "aparținător:"
+msgstr "guardian:"
+
+msgid "Restantă"
+msgstr "Overdue"
+
+msgid "Confirmă plata"
+msgstr "Confirm payment"
+
+msgid "Confirmați încasarea"
+msgstr "Confirm collection of"
+
+msgid "de la"
+msgstr "from"
+
+msgid "Nicio plată cash în așteptare."
+msgstr "No pending cash payments."
+
+msgid "Protecție Brute-Force · Progressive Throttling"
+msgstr "Brute-Force Protection · Progressive Throttling"
+
+msgid "Treapta 1 — Soft Ban:"
+msgstr "Level 1 — Soft Ban:"
+
+msgid "5 încercări consecutive → blocat 10 minute"
+msgstr "5 consecutive attempts → blocked for 10 minutes"
+
+msgid "Treapta 2 — Hard Ban:"
+msgstr "Level 2 — Hard Ban:"
+
+msgid "30 încercări în 24h → blocat permanent"
+msgstr "30 attempts in 24h → permanently blocked"
+
+msgid "⚠️ Încercări eșuate per cont (ultimele 24h)"
+msgstr "⚠️ Failed attempts per account (last 24h)"
+
+msgid "Hard Bans — Blocare Permanentă"
+msgstr "Hard Bans — Permanent Block"
+
+msgid "Blocat la"
+msgstr "Blocked at"
+
+msgid "Ești sigur că vrei să revoici banul pentru"
+msgstr "Are you sure you want to revoke the ban for"
+
+msgid "Niciun hard ban activ."
+msgstr "No active hard bans."
+
+msgid "Expiră la"
+msgstr "Expires at"
+
+msgid "✕ Ridică restricția"
+msgstr "✕ Lift restriction"
+
+msgid "încercări"
+msgstr "attempts"
+
+# --- ADMIN STATS ---
+
+msgid "Statistici Admin"
+msgstr "Admin Statistics"
+
+msgid "Statistici & Grafice"
+msgstr "Statistics & Charts"
+
+msgid "Venituri lunare"
+msgstr "Monthly revenue"
+
+msgid "6 luni"
+msgstr "6 months"
+
+msgid "12 luni"
+msgstr "12 months"
+
+msgid "Pacienți noi"
+msgstr "New patients"
+
+msgid "Creștere lunară"
+msgstr "Monthly growth"
+
+msgid "Status programări"
+msgstr "Appointment status"
+
+msgid "Calitate"
+msgstr "Quality"
+
+msgid "Fiabilitate"
+msgstr "Reliability"
+
+msgid "consultații vs no-show"
+msgstr "consultations vs no-show"
+
+msgid "Volum"
+msgstr "Volume"
+
+msgid "relativ la clinică"
+msgstr "relative to clinic"
+
+msgid "Performance Score Medici"
+msgstr "Doctor Performance Score"
+
+msgid "Scor ponderat 0–100"
+msgstr "Weighted score 0–100"
+
+msgid "Performant"
+msgstr "High performer"
+
+msgid "Mediu"
+msgstr "Average"
+
+msgid "Insuficient date"
+msgstr "Insufficient data"
+
+msgid "consultații finalizate"
+msgstr "completed consultations"
+
+msgid "Finalizate:"
+msgstr "Completed:"
+
+msgid "Nu există medici înregistrați."
+msgstr "No registered doctors."
+
+# --- BENEFICIARY HISTORY ---
+
+msgid "Fișă beneficiar"
+msgstr "Beneficiary Record"
+
+msgid "Fișă beneficiar — %(name)s"
+msgstr "Beneficiary Record — %(name)s"
+
+msgid "Beneficiar consultație"
+msgstr "Consultation beneficiary"
+
+msgid "Atenție"
+msgstr "Attention"
+
+msgid "Acest beneficiar nu are cont propriu. Datele au fost completate de pacientul plătitor."
+msgstr "This beneficiary does not have their own account. The data was filled in by the paying patient."
+
+msgid "Relație cu plătitorul"
+msgstr "Relationship with payer"
+
+msgid "Plătit de"
+msgstr "Paid by"
+
+msgid "Vezi fișa plătitorului"
+msgstr "View payer's record"
+
+msgid "Motivul consultației curente"
+msgstr "Reason for current consultation"
+
+msgid "Nu a fost completat un motiv."
+msgstr "No reason was provided."
+
+msgid "Alte programări"
+msgstr "Other appointments"
+
+msgid "Nicio altă programare pentru acest beneficiar."
+msgstr "No other appointments for this beneficiary."
+
+# --- NEW APPOINTMENT ---
+
+msgid "Programare nouă"
+msgstr "New appointment"
+
+msgid "Detalii programare"
+msgstr "Appointment details"
+
+msgid "Completează toate informațiile"
+msgstr "Fill in all information"
+
+msgid "Data și ora"
+msgstr "Date and time"
+
+msgid "Ore disponibile pentru"
+msgstr "Available hours for"
+
+msgid "Motivul vizitei"
+msgstr "Reason for visit"
+
+msgid "Programarea este pentru"
+msgstr "The appointment is for"
+
+msgid "Pentru mine"
+msgstr "For myself"
+
+msgid "Pentru altcineva"
+msgstr "For someone else"
+
+msgid "Copil, părinte, persoană vârstnică"
+msgstr "Child, parent, elderly person"
+
+msgid "Datele persoanei pentru care faci programarea"
+msgstr "Details of the person you're booking for"
+
+msgid "Nume complet *"
+msgstr "Full name *"
+
+msgid "13 cifre"
+msgstr "13 digits"
+
+msgid "Relație"
+msgstr "Relationship"
+
+msgid "— Selectează —"
+msgstr "— Select —"
+
+msgid "Copil"
+msgstr "Child"
+
+msgid "Părinte"
+msgstr "Parent"
+
+msgid "Soț/Soție"
+msgstr "Spouse"
+
+msgid "Bunic/Bunică"
+msgstr "Grandparent"
+
+msgid "Altă relație"
+msgstr "Other relationship"
+
+msgid "Metodă de plată"
+msgstr "Payment method"
+
+msgid "Plătește cu Wallet MedApp și primești 5% cashback!"
+msgstr "Pay with MedApp Wallet and get 5% cashback!"
+
+msgid "Suma se adaugă automat înapoi în Wallet-ul tău după confirmare."
+msgstr "The amount is automatically added back to your Wallet after confirmation."
+
+msgid "Card online"
+msgstr "Online card"
+
+msgid "Completează datele cardului mai jos"
+msgstr "Fill in card details below"
+
+msgid "Număr card"
+msgstr "Card number"
+
+msgid "Expirare"
+msgstr "Expiry"
+
+msgid "Titular"
+msgstr "Cardholder"
+
+msgid "Datele cardului nu sunt stocate · Tranzacție securizată"
+msgstr "Card data is not stored · Secure transaction"
+
+msgid "Sold"
+msgstr "Balance"
+
+msgid "Sold insuficient —"
+msgstr "Insufficient balance —"
+
+msgid "necesari"
+msgstr "needed"
+
+msgid "Reîncarcă acum →"
+msgstr "Top up now →"
+
+msgid "Sold suficient · Vei primi cashback după confirmare."
+msgstr "Sufficient balance · You'll receive cashback after confirmation."
+
+msgid "Decontare prin asigurare medicală"
+msgstr "Reimbursed via health insurance"
+
+msgid "Serie bilet trimitere"
+msgstr "Referral serial"
+
+msgid "Confirmă programarea →"
+msgstr "Confirm appointment →"
+
+msgid "⚠ Te rog selectează data și ora programării."
+msgstr "⚠ Please select the date and time of your appointment."
+
+msgid "⚠ Introduceți numărul cardului."
+msgstr "⚠ Please enter the card number."
+
+msgid "⚠ Introduceți data de expirare a cardului."
+msgstr "⚠ Please enter the card expiry date."
+
+msgid "⚠ Introduceți CVV-ul cardului."
+msgstr "⚠ Please enter the card CVV."
+
+msgid "⚠ Introduceți numele titularului cardului."
+msgstr "⚠ Please enter the cardholder name."
+
+msgid "⚠ Nu ești marcat ca asigurat CNAS. Actualizează-ți profilul înainte de programare."
+msgstr "⚠ You are not marked as CNAS insured. Update your profile before booking."
+
+msgid "⚠ Introduceți seria biletului de trimitere pentru CNAS."
+msgstr "⚠ Please enter the CNAS referral serial."
+
+msgid "⚠ Sold insuficient în Wallet."
+msgstr "⚠ Insufficient Wallet balance."
+
+# --- PATIENT HISTORY ---
+
+msgid "Fișa pacientului"
+msgstr "Patient Record"
+
+msgid "Pacient"
+msgstr "Patient"
+
+msgid "Date medicale"
+msgstr "Medical data"
+
+msgid "Alergii cunoscute"
+msgstr "Known allergies"
+
+msgid "Niciuna înregistrată"
+msgstr "None recorded"
+
+msgid "Profil medical necompletat."
+msgstr "Medical profile not completed."
+
+msgid "Vizite la tine"
+msgstr "Visits to you"
+
+msgid "Istoricul consultațiilor"
+msgstr "Consultation history"
+
+# --- PROFILE EDIT ---
+
+msgid "Editare Profil — MedApp"
+msgstr "Edit Profile — MedApp"
+
+msgid "Setări Profil"
+msgstr "Profile Settings"
+
+msgid "Actualizare date personale"
+msgstr "Update personal data"
+
+msgid "Asigură-te că datele tale sunt corecte. Acestea vor fi văzute de medicul tău."
+msgstr "Make sure your data is correct. It will be seen by your doctor."
+
+msgid "Date Cont"
+msgstr "Account Data"
+
+msgid "Formate acceptate: JPG, PNG. Max 2MB."
+msgstr "Accepted formats: JPG, PNG. Max 2MB."
+
+msgid "Date Specifice"
+msgstr "Specific Data"
+
+msgid "Salvează Modificările"
+msgstr "Save Changes"
+
+# --- PROFILE SECURITY ---
+
+msgid "Securitate Cont"
+msgstr "Account Security"
+
+msgid "Folosește o parolă puternică, de minim 8 caractere"
+msgstr "Use a strong password, at least 8 characters"
+
+msgid "Sfaturi pentru o parolă sigură"
+msgstr "Tips for a secure password"
+
+msgid "Minim 10 caractere"
+msgstr "At least 10 characters"
+
+msgid "Combină litere mari, mici, cifre și simboluri"
+msgstr "Combine uppercase, lowercase, numbers and symbols"
+
+msgid "Nu folosi numele sau data nașterii"
+msgstr "Do not use your name or date of birth"
+
+msgid "Nu reutiliza parole vechi"
+msgstr "Do not reuse old passwords"
+
+# --- ADD PRESCRIPTION ---
+
+msgid "Adaugă Rețetă"
+msgstr "Add Prescription"
+
+msgid "Consultație:"
+msgstr "Consultation:"
+
+msgid "Completează diagnosticul și medicația prescrisă"
+msgstr "Fill in the diagnosis and prescribed medication"
+
+msgid "Salvează rețeta"
+msgstr "Save prescription"
+
+# --- RATE DOCTOR ---
+
+msgid "Evaluează consultația"
+msgstr "Rate the consultation"
+
+msgid "Feedback-ul tău ajută alți pacienți să aleagă medicul potrivit"
+msgstr "Your feedback helps other patients choose the right doctor"
+
+msgid "Cât de mulțumit ai fost de consultație?"
+msgstr "How satisfied were you with the consultation?"
+
+msgid "Comentariu (opțional)"
+msgstr "Comment (optional)"
+
+msgid "Descrie experiența ta cu acest medic..."
+msgstr "Describe your experience with this doctor..."
+
+msgid "Sari peste"
+msgstr "Skip"
+
+msgid "Trimite evaluarea"
+msgstr "Submit rating"
+
+msgid "Foarte nesatisfăcător"
+msgstr "Very unsatisfactory"
+
+msgid "Nesatisfăcător"
+msgstr "Unsatisfactory"
+
+msgid "Satisfăcător"
+msgstr "Satisfactory"
+
+msgid "Bun"
+msgstr "Good"
+
+msgid "Excelent"
+msgstr "Excellent"
+
+# --- RECEIPT ---
+
+msgid "Confirmare plată"
+msgstr "Payment confirmation"
+
+msgid "Programare înregistrată!"
+msgstr "Appointment registered!"
+
+msgid "Plata cash se efectuează la recepție în ziua consultației."
+msgstr "Cash payment is made at reception on the day of the consultation."
+
+msgid "De achitat la recepție:"
+msgstr "To be paid at reception:"
+
+msgid "Prezintă-te la recepția clinicii cu această confirmare. Plata se face înainte de consultație."
+msgstr "Present yourself at the clinic reception with this confirmation. Payment is made before the consultation."
+
+msgid "Plată confirmată!"
+msgstr "Payment confirmed!"
+
+msgid "Programarea ta a fost înregistrată cu succes."
+msgstr "Your appointment has been successfully registered."
+
+msgid "Cashback 5% pentru plata cu Wallet MedApp — suma a fost adăugată automat înapoi în Wallet-ul tău."
+msgstr "5% cashback for MedApp Wallet payment — the amount was automatically added back to your Wallet."
+
+msgid "REZERVARE · PLATĂ CASH"
+msgstr "RESERVATION · CASH PAYMENT"
+
+msgid "CHITANȚĂ DIGITALĂ"
+msgstr "DIGITAL RECEIPT"
+
+msgid "DATA"
+msgstr "DATE"
+
+msgid "Medic"
+msgstr "Doctor"
+
+msgid "Data consultației"
+msgstr "Consultation date"
+
+msgid "Metodă plată"
+msgstr "Payment method"
+
+msgid "Cod validare CNAS"
+msgstr "CNAS validation code"
+
+msgid "Păstrați acest cod pentru evidența decontării."
+msgstr "Keep this code for reimbursement records."
+
+msgid "De achitat"
+msgstr "Amount due"
+
+msgid "Total achitat"
+msgstr "Total paid"
+
+msgid "Plata nu a fost încă efectuată. Prezintă-te la recepție cu acest document."
+msgstr "Payment has not been made yet. Present yourself at reception with this document."
+
+msgid "Descarcă PDF"
+msgstr "Download PDF"
+
+msgid "Acest document confirmă rezervarea. Plata se face la recepție."
+msgstr "This document confirms the reservation. Payment is made at reception."
+
+msgid "Acest document servește ca dovadă a plății efectuate."
+msgstr "This document serves as proof of payment made."
+
+# --- DOCTOR PROFILE ---
+
+msgid "Profil Medic"
+msgstr "Doctor Profile"
+
+msgid "Programează-te →"
+msgstr "Book appointment →"
+
+msgid "Medicul nu este disponibil momentan pentru programări noi."
+msgstr "The doctor is currently unavailable for new appointments."
+
+msgid "Numărul total de pacienților consultați"
+msgstr "Total number of patients consulted"
+
+msgid "Pacienți unici"
+msgstr "Unique patients"
+
+# --- VERIFY 2FA ---
+
+msgid "Verificare identitate"
+msgstr "Identity Verification"
+
+msgid "Am trimis un cod de 6 cifre la"
+msgstr "We sent a 6-digit code to"
+
+msgid "Cod de verificare"
+msgstr "Verification code"
+
+msgid "Verifică codul →"
+msgstr "Verify code →"
+
+msgid "Dacă nu ai primit emailul, verifică folderul Spam."
+msgstr "If you didn't receive the email, check the Spam folder."
+
+msgid "Comută tema"
+msgstr "Toggle theme"
+
+# --- SPECIALIZARI ---
+
+msgid "Cardiologie"
+msgstr "Cardiology"
+
+msgid "Neurologie"
+msgstr "Neurology"
+
+msgid "Oftalmologie"
+msgstr "Ophthalmology"
+
+msgid "Medicina interna"
+msgstr "Internal Medicine"
+
+msgid "Ortopedie"
+msgstr "Orthopedics"
+
+msgid "Dermatologie"
+msgstr "Dermatology"
+
+msgid "Pediatrie"
+msgstr "Pediatrics"
+
+msgid "Ginecologie"
+msgstr "Gynecology"
+
+msgid "Chirurgie"
+msgstr "Surgery"
+
+msgid "Psihiatrie"
+msgstr "Psychiatry"
+
+msgid "Stomatologie"
+msgstr "Dentistry"
+
+msgid "Radiologie"
+msgstr "Radiology"
+
+msgid "Gastroenterologie"
+msgstr "Gastroenterology"
+
+msgid "Urologie"
+msgstr "Urology"
+
+msgid "Endocrinologie"
+msgstr "Endocrinology"
+
+msgid "Reumatologie"
+msgstr "Rheumatology"
+
+msgid "Pneumologie"
+msgstr "Pulmonology"
+
+msgid "Nefrologie"
+msgstr "Nephrology"
+
+msgid "Hematologie"
+msgstr "Hematology"
+
+msgid "Oncologie"
+msgstr "Oncology"
+
+msgid "Medicina de familie"
+msgstr "Family Medicine"
+
+msgid "Medicina urgenta"
+msgstr "Emergency Medicine"
+
+msgid "Anestezie"
+msgstr "Anesthesiology"
+
+msgid "Chirurgie plastica"
+msgstr "Plastic Surgery"
+
+msgid "Chirurgie ortopedica"
+msgstr "Orthopedic Surgery"
+
+msgid "Medicina sportiva"
+msgstr "Sports Medicine"
+
+msgid "Nutriție"
+msgstr "Nutrition"
+
+msgid "Alergologie"
+msgstr "Allergology"
+
+msgid "Infectioase"
+msgstr "Infectious Diseases"
+
+# --- INDEX.HTML COMPLET ---
+
+msgid "Clinica Ta de Încredere"
+msgstr "Your Trusted Clinic"
+
+msgid "Îngrijire medicală"
+msgstr "Medical care"
+
+msgid "Programări azi"
+msgstr "Today's appointments"
+
+msgid "Medici activi"
+msgstr "Active doctors"
+
+msgid "Consultații totale"
+msgstr "Total consultations"
+
+msgid "Timp confirmare"
+msgstr "Confirmation time"
+
+msgid "Clinică autorizată MS"
+msgstr "MS Authorized Clinic"
+
+msgid "Date protejate GDPR"
+msgstr "GDPR Protected Data"
+
+msgid "Confirmare în 2 minute"
+msgstr "Confirmation in 2 minutes"
+
+msgid "Acces de pe orice dispozitiv"
+msgstr "Access from any device"
+
+msgid "Suport 24/7"
+msgstr "Support 24/7"
+
+msgid "Toate specialitățile medicale, într-un singur loc"
+msgstr "All medical specialties, in one place"
+
+msgid "De la consultații de rutină la investigații complexe — echipa noastră acoperă toate nevoile tale de sănătate."
+msgstr "From routine consultations to complex investigations — our team covers all your health needs."
+
+msgid "Evaluare cardiovasculară completă și monitorizare Holter"
+msgstr "Complete cardiovascular evaluation and Holter monitoring"
+
+msgid "Diagnosticarea și tratamentul afecțiunilor sistemului nervos"
+msgstr "Diagnosis and treatment of nervous system disorders"
+
+msgid "Traumatologie sportivă și chirurgie ortopedică minim invazivă"
+msgstr "Sports traumatology and minimally invasive orthopedic surgery"
+
+msgid "Control oftalmologic complet și corecție laser LASIK"
+msgstr "Complete ophthalmological examination and LASIK correction"
+
+msgid "Spirometrie, tratament astm și afecțiuni pulmonare cronice"
+msgstr "Spirometry, asthma treatment and chronic pulmonary conditions"
+
+msgid "Medicină internă"
+msgstr "Internal Medicine"
+
+msgid "Consultații generale și management afecțiuni cronice"
+msgstr "General consultations and chronic disease management"
+
+msgid "ani de experiență"
+msgstr "years of experience"
+
+msgid "Rating pacienți"
+msgstr "Patient rating"
+
+msgid "De ce MedApp"
+msgstr "Why MedApp"
+
+msgid "Sănătatea ta este prioritatea noastră"
+msgstr "Your health is our priority"
+
+msgid "Programare online instant"
+msgstr "Instant online booking"
+
+msgid "Alegi medicul, specialitatea și ora preferată direct din platformă."
+msgstr "Choose your doctor, specialty and preferred time directly from the platform."
+
+msgid "Dosar medical digital"
+msgstr "Digital medical records"
+
+msgid "Istoricul tău medical, analizele și rețetele stocate securizat."
+msgstr "Your medical history, tests and prescriptions stored securely."
+
+msgid "Confidențialitate garantată"
+msgstr "Guaranteed confidentiality"
+
+msgid "Datele tale sunt criptate și accesibile doar ție și medicului tău."
+msgstr "Your data is encrypted and accessible only to you and your doctor."
+
+msgid "Confirmare în timp real"
+msgstr "Real-time confirmation"
+
+msgid "Primești confirmare instantă pe email la fiecare programare."
+msgstr "You receive instant email confirmation for each appointment."
+
+msgid "Echipa noastră"
+msgstr "Our team"
+
+msgid "Medici cu experiență"
+msgstr "Experienced doctors"
+
+msgid "Disponibil azi"
+msgstr "Available today"
+
+msgid "Gata să ai grijă de sănătatea ta?"
+msgstr "Ready to take care of your health?"
+
+msgid "Creează-ți un cont gratuit în mai puțin de 2 minute și programează prima consultație chiar astăzi."
+msgstr "Create a free account in less than 2 minutes and book your first consultation today."
+
+msgid "Înregistrare gratuită"
+msgstr "Free registration"
+
+msgid "Am deja cont →"
+msgstr "I already have an account →"
+
+msgid "Platformă digitală pentru managementul clinic și programări medicale online."
+msgstr "Digital platform for clinic management and online medical appointments."
+
+msgid "Servicii"
+msgstr "Services"
+
+msgid "Programare"
+msgstr "Appointment"
+
+msgid "Cont"
+msgstr "Account"
+
+msgid "Autentificare"
+msgstr "Login"
+
+msgid "Înregistrare"
+msgstr "Register"
+
+msgid "Toate drepturile rezervate."
+msgstr "All rights reserved."
+
+msgid "Proiect Licență — Aplicație Web Clinică Medicală"
+msgstr "License Project — Medical Clinic Web Application"

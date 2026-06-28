@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Panou Medic{% endblock %}
-{% block page_title %}Programările pacienților{% endblock %}
+{% block title %}{% trans "Panou Medic" %}{% endblock %}
+{% block page_title %}{% trans "Programările pacienților" %}{% endblock %}
 {% block nav_doctor %}active{% endblock %}
 
 {% block content %}
@@ -10,51 +11,51 @@
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;margin-bottom:20px;align-items:start;">
     <div class="stat-card">
         <div class="stat-value">{{ appointments.count }}</div>
-        <div class="stat-label">Total programări</div>
+        <div class="stat-label">{% trans "Total programări" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-success);">{{ completed_count }}</div>
-        <div class="stat-label">Finalizate</div>
+        <div class="stat-label">{% trans "Finalizate" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-warning);">{{ pending_count }}</div>
-        <div class="stat-label">În așteptare</div>
+        <div class="stat-label">{% trans "În așteptare" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-danger);">{{ no_show_count }}</div>
-        <div class="stat-label">Neprezentări</div>
+        <div class="stat-label">{% trans "Neprezentări" %}</div>
     </div>
     <div class="card" style="padding:14px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:140px;">
         {% if doctor_profile %}
             {% if doctor_profile.is_available %}
-                <span class="badge badge-success" style="font-size:13px;padding:5px 14px;">● Disponibil</span>
+                <span class="badge badge-success" style="font-size:13px;padding:5px 14px;">● {% trans "Disponibil" %}</span>
             {% else %}
-                <span class="badge badge-danger" style="font-size:13px;padding:5px 14px;">● Indisponibil</span>
+                <span class="badge badge-danger" style="font-size:13px;padding:5px 14px;">● {% trans "Indisponibil" %}</span>
             {% endif %}
         {% endif %}
         <form method="POST" action="{% url 'toggle_availability' %}" style="margin:0;">
             {% csrf_token %}
-            <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;">Schimbă status</button>
+            <button type="submit" class="btn btn-ghost btn-sm" style="width:100%;">{% trans "Schimbă status" %}</button>
         </form>
     </div>
 </div>
 
 <div class="card" style="margin-bottom:20px;">
     <div class="card-header">
-        <div class="card-title">💰 Venituri — Luna curentă</div>
+        <div class="card-title">💰 {% trans "Venituri — Luna curentă" %}</div>
         <div class="card-subtitle">Total all-time: {{ revenue_all_time }} RON</div>
     </div>
     <div class="card-body" style="padding:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
         <div style="text-align:center;padding:16px;background:var(--surface-2);border-radius:var(--radius-md);">
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Privat (Cash/Card)</div>
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">{% trans "Privat (Cash/Card)" %}</div>
             <div style="font-size:26px;font-weight:700;color:var(--c-primary);">{{ revenue_private }} <span style="font-size:13px;">RON</span></div>
         </div>
         <div style="text-align:center;padding:16px;background:var(--surface-2);border-radius:var(--radius-md);">
-            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Decontări CNAS</div>
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">{% trans "Decontări CNAS" %}</div>
             <div style="font-size:26px;font-weight:700;color:var(--c-teal);">{{ revenue_cnas }} <span style="font-size:13px;">RON</span></div>
         </div>
         <div style="text-align:center;padding:16px;background:var(--c-primary-lt);border-radius:var(--radius-md);">
-            <div style="font-size:11px;color:var(--c-primary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Total lunar</div>
+            <div style="font-size:11px;color:var(--c-primary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">{% trans "Total lunar" %}</div>
             <div style="font-size:26px;font-weight:700;color:var(--c-primary);">{{ revenue_total_month }} <span style="font-size:13px;">RON</span></div>
         </div>
     </div>
@@ -63,21 +64,21 @@
 <div class="card">
     <div class="card-header" style="flex-wrap:wrap;gap:12px;">
         <div>
-            <div class="card-title">🗓 Lista programărilor</div>
+            <div class="card-title">🗓 {% trans "Lista programărilor" %}</div>
             <div class="card-subtitle">Dr. {{ user.get_full_name|default:user.username }}</div>
         </div>
-        <input type="text" id="search-input" placeholder="🔍 Caută pacient..." class="form-input"
+        <input type="text" id="search-input" placeholder="🔍 {% trans "Caută pacient..." %}" class="form-input"
                style="width:200px;font-size:13px;padding:6px 12px;"
                oninput="applyFilters()">
     </div>
 
     <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <span style="font-size:12px;color:var(--text-muted);margin-right:4px;">Filtrează:</span>
-        <button class="filter-btn active" onclick="setFilter('all', this)">Toate</button>
-        <button class="filter-btn" onclick="setFilter('pending', this)">⏳ Așteptare</button>
-        <button class="filter-btn" onclick="setFilter('confirmed', this)">✓ Confirmate</button>
-        <button class="filter-btn" onclick="setFilter('completed', this)">✔ Finalizate</button>
-        <button class="filter-btn" onclick="setFilter('noshow', this)">✗ Neprezentare</button>
+        <span style="font-size:12px;color:var(--text-muted);margin-right:4px;">{% trans "Filtrează:" %}</span>
+        <button class="filter-btn active" onclick="setFilter('all', this)">{% trans "Toate" %}</button>
+        <button class="filter-btn" onclick="setFilter('pending', this)">⏳ {% trans "Așteptare" %}</button>
+        <button class="filter-btn" onclick="setFilter('confirmed', this)">✓ {% trans "Confirmate" %}</button>
+        <button class="filter-btn" onclick="setFilter('completed', this)">✔ {% trans "Finalizate" %}</button>
+        <button class="filter-btn" onclick="setFilter('noshow', this)">✗ {% trans "Neprezentare" %}</button>
         <span style="margin-left:auto;font-size:12px;color:var(--text-muted);" id="results-count"></span>
     </div>
 
@@ -96,10 +97,10 @@
                     {% if appt.is_for_other and appt.beneficiary_name %}
                         <a href="{% url 'beneficiary_view' appt.id %}" style="font-weight:600;font-size:15px;color:var(--text);text-decoration:none;">
                             {{ appt.beneficiary_name }}
-                             <span style="font-size:11px;color:var(--c-primary);margin-left:4px;">→ fișă</span>
+                             <span style="font-size:11px;color:var(--c-primary);margin-left:4px;">→ {% trans "fișă" %}</span>
                         </a>
                          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
-                            plătit de
+                            {% trans "plătit de" %}
                             <a href="{% url 'patient_history' appt.patient.id %}" style="color:var(--c-primary);text-decoration:none;">
                                 {{ appt.patient.get_full_name|default:appt.patient.username }}
                              </a>
@@ -107,35 +108,35 @@
                     {% else %}
                         <a href="{% url 'patient_history' appt.patient.id %}" style="font-weight:600;font-size:15px;color:var(--text);text-decoration:none;">
                             {{ appt.patient.get_full_name|default:appt.patient.username }}
-                            <span style="font-size:11px;color:var(--c-primary);margin-left:4px;">→ fișă</span>
+                            <span style="font-size:11px;color:var(--c-primary);margin-left:4px;">→ {% trans "fișă" %}</span>
                         </a>
                     {% endif %}
                     <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
                     {% if appt.reason %}<div class="appt-reason">„{{ appt.reason|truncatechars:60 }}"</div>{% endif %}
                     <div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
                         {% if appt.is_no_show %}
-                            <span class="badge badge-danger">✗ Neprezentare</span>
+                            <span class="badge badge-danger">✗ {% trans "Neprezentare" %}</span>
                         {% elif appt.is_completed %}
-                            <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ Finalizată</span>
+                            <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ {% trans "Finalizată" %}</span>
                         {% elif appt.is_confirmed %}
-                            <span class="badge badge-success">✓ Confirmată</span>
+                            <span class="badge badge-success">✓ {% trans "Confirmată" %}</span>
                         {% else %}
-                            <span class="badge badge-warning">⏳ În așteptare</span>
+                            <span class="badge badge-warning">⏳ {% trans "În așteptare" %}</span>
                         {% endif %}
                         {% if appt.payment_method %}
                             <span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:10px;">
-                                {% if appt.payment_method == 'CASH' %}💵 Cash
-                                {% elif appt.payment_method == 'CARD_ONLINE' %}💳 Card online
+                                {% if appt.payment_method == 'CASH' %}💵 {% trans "Cash" %}
+                                {% elif appt.payment_method == 'CARD_ONLINE' %}💳 {% trans "Card online" %}
                                 {% elif appt.payment_method == 'CNAS' %}🏥 CNAS
                                 {% else %}{{ appt.payment_method }}{% endif %}
                             </span>
                         {% endif %}
-                        {% if appt.cnas_covered %}<span class="badge badge-primary" style="font-size:10px;">🏥 Decontat CNAS</span>{% endif %}
-                        {% if appt.referral_serial %}<span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:10px;">📋 Trimitere</span>{% endif %}
-                        {% if appt.prescription %}<span class="badge badge-primary" style="margin-left:2px;">💊 Rețetă</span>{% endif %}
+                        {% if appt.cnas_covered %}<span class="badge badge-primary" style="font-size:10px;">🏥 {% trans "Decontat CNAS" %}</span>{% endif %}
+                        {% if appt.referral_serial %}<span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:10px;">📋 {% trans "Trimitere" %}</span>{% endif %}
+                        {% if appt.prescription %}<span class="badge badge-primary" style="margin-left:2px;">💊 {% trans "Rețetă" %}</span>{% endif %}
                     </div>
                     {% if appt.cnas_code %}
-                        <div style="font-size:11px;color:var(--c-teal);margin-top:4px;">Cod CNAS: {{ appt.cnas_code }}</div>
+                        <div style="font-size:11px;color:var(--c-teal);margin-top:4px;">{% trans "Cod CNAS:" %} {{ appt.cnas_code }}</div>
                     {% endif %}
                 </div>
                 {% if not appt.is_completed and not appt.is_no_show %}
@@ -143,24 +144,24 @@
                     {% if not appt.is_confirmed %}
                         <form method="POST" action="{% url 'approve_appointment' appt.id %}" style="margin:0;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-success btn-sm">✓ Aprobă</button>
+                            <button type="submit" class="btn btn-success btn-sm">✓ {% trans "Aprobă" %}</button>
                         </form>
                     {% endif %}
                     {% if appt.is_confirmed %}
-                        <button onclick="openCompleteModal({{ appt.id }})" class="btn btn-primary btn-sm">✔ Finalizează</button>
+                        <button onclick="openCompleteModal({{ appt.id }})" class="btn btn-primary btn-sm">✔ {% trans "Finalizează" %}</button>
                     {% endif %}
                     {% if appt.is_confirmed and not appt.prescription %}
-                        <a href="{% url 'add_prescription' appt.id %}" class="btn btn-ghost btn-sm">💊 Rețetă</a>
+                        <a href="{% url 'add_prescription' appt.id %}" class="btn btn-ghost btn-sm">💊 {% trans "Rețetă" %}</a>
                     {% endif %}
                     {% if appt.is_confirmed %}
                         <form method="POST" action="{% url 'mark_no_show' appt.id %}" style="margin:0;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--c-danger);"
-                                    onclick="return confirm('Marchezi neprezentare?')">✗ No-Show</button>
+                                    onclick="return confirm('{% trans "Marchezi neprezentare?" %}')">✗ No-Show</button>
                         </form>
                     {% endif %}
                     <form method="POST" action="{% url 'delete_appointment' appt.id %}" style="margin:0;"
-                          onsubmit="return confirm('Ștergi această programare?');">
+                          onsubmit="return confirm('{% trans "Ștergi această programare?" %}');">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger btn-sm">✕</button>
                     </form>
@@ -170,36 +171,36 @@
         {% empty %}
             <div class="empty-state">
                 <div class="empty-state-icon">📭</div>
-                <div class="empty-state-text">Nicio programare.</div>
+                <div class="empty-state-text">{% trans "Nicio programare." %}</div>
             </div>
         {% endfor %}
     </div>
 
     <div id="empty-filter" style="display:none;padding:32px;text-align:center;">
         <div style="font-size:32px;margin-bottom:8px;">🔍</div>
-        <div style="font-size:14px;color:var(--text-muted);">Nicio programare găsită pentru filtrele selectate.</div>
+        <div style="font-size:14px;color:var(--text-muted);">{% trans "Nicio programare găsită pentru filtrele selectate." %}</div>
     </div>
 
     <div style="padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;" id="pagination-bar">
-        <button id="btn-prev" onclick="changePage(-1)" class="btn btn-ghost btn-sm">← Anterior</button>
+        <button id="btn-prev" onclick="changePage(-1)" class="btn btn-ghost btn-sm">← {% trans "Anterior" %}</button>
         <div id="page-info" style="font-size:13px;color:var(--text-muted);display:flex;gap:6px;"></div>
-        <button id="btn-next" onclick="changePage(1)" class="btn btn-ghost btn-sm">Următor →</button>
+        <button id="btn-next" onclick="changePage(1)" class="btn btn-ghost btn-sm">{% trans "Următor →" %}</button>
     </div>
 </div>
 
 <div id="completeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center;">
     <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:420px;max-width:90vw;box-shadow:var(--shadow-lg);">
-        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">✔ Finalizare consultație</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;">✔ {% trans "Finalizare consultație" %}</div>
         <form method="POST" id="completeForm">
             {% csrf_token %}
             <div class="form-group" style="margin-bottom:16px;">
-                <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">Cod ICD-10 (opțional)</label>
+                <label style="font-size:13px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">{% trans "Cod ICD-10 (opțional)" %}</label>
                 <input type="text" name="icd10_code" class="form-input" placeholder="Ex: J06, I10, E11, Z00" style="width:100%;">
-                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Dacă pacientul e asigurat CNAS și are bilet de trimitere, se va genera automat decontare.</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">{% trans "Dacă pacientul e asigurat CNAS și are bilet de trimitere, se va genera automat decontare." %}</div>
             </div>
             <div style="display:flex;gap:10px;justify-content:flex-end;">
-                <button type="button" onclick="closeCompleteModal()" class="btn btn-ghost btn-sm">Anulează</button>
-                <button type="submit" class="btn btn-primary btn-sm">Finalizează</button>
+                <button type="button" onclick="closeCompleteModal()" class="btn btn-ghost btn-sm">{% trans "Anulează" %}</button>
+                <button type="submit" class="btn btn-primary btn-sm">{% trans "Finalizează" %}</button>
             </div>
         </form>
     </div>
@@ -232,6 +233,13 @@
 </style>
 
 <script>
+var DOC_LANG = '{{ request.LANGUAGE_CODE }}';
+var DOC_I18N = {
+    ro: { programari: 'programări' },
+    en: { programari: 'appointments' }
+};
+var DL = DOC_I18N[DOC_LANG] || DOC_I18N.ro;
+
 const PER_PAGE = 10;
 let currentPage = 1;
 let activeFilter = 'all';
@@ -270,7 +278,7 @@ function renderPage() {
     pageItems.forEach(item => item.style.display = '');
     const total = filtered.length;
     const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
-    document.getElementById('results-count').textContent = total + ' programări';
+    document.getElementById('results-count').textContent = total + ' ' + DL.programari;
     document.getElementById('empty-filter').style.display = total === 0 ? 'block' : 'none';
     document.getElementById('pagination-bar').style.display = total === 0 ? 'none' : 'flex';
     document.getElementById('btn-prev').disabled = currentPage === 1;

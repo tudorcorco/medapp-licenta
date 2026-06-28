@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Panou Administrare{% endblock %}
-{% block page_title %}Panou Administrare{% endblock %}
+{% block title %}{% trans "Panou Administrare" %}{% endblock %}
+{% block page_title %}{% trans "Panou Administrare" %}{% endblock %}
 {% block nav_reports %}active{% endblock %}
 
 {% block content %}
@@ -11,19 +12,19 @@
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
         <div class="stat-card">
             <div class="stat-value">{{ total_patients }}</div>
-            <div class="stat-label">👥 Pacienți înregistrați</div>
+            <div class="stat-label">👥 {% trans "Pacienți înregistrați" %}</div>
         </div>
         <div class="stat-card">
             <div class="stat-value">{{ total_doctors }}</div>
-            <div class="stat-label">🩺 Medici activi</div>
+            <div class="stat-label">🩺 {% trans "Medici activi" %}</div>
         </div>
         <div class="stat-card">
             <div class="stat-value">{{ total_appointments }}</div>
-            <div class="stat-label">📅 Total programări</div>
+            <div class="stat-label">📅 {% trans "Total programări" %}</div>
         </div>
         <div class="stat-card">
             <div class="stat-value">{{ revenue_total }} RON</div>
-            <div class="stat-label">💰 Venituri totale</div>
+            <div class="stat-label">💰 {% trans "Venituri totale" %}</div>
         </div>
     </div>
 
@@ -31,7 +32,7 @@
 
         <div class="card">
             <div class="card-header">
-                <div class="card-title">📋 Programări recente</div>
+                <div class="card-title">📋 {% trans "Programări recente" %}</div>
             </div>
             <div class="card-body" style="padding:0;">
                 {% for appt in recent_appointments %}
@@ -41,22 +42,22 @@
                         <div style="font-size:12px;color:var(--text-muted);">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }} · {{ appt.date_time|date:"d M Y, H:i" }}</div>
                     </div>
                     {% if appt.is_completed %}
-                        <span class="badge badge-success">Finalizat</span>
+                        <span class="badge badge-success">{% trans "Finalizat" %}</span>
                     {% elif appt.is_confirmed %}
-                        <span class="badge badge-primary">Confirmat</span>
+                        <span class="badge badge-primary">{% trans "Confirmat" %}</span>
                     {% else %}
-                        <span class="badge badge-warning">Așteptare</span>
+                        <span class="badge badge-warning">{% trans "Așteptare" %}</span>
                     {% endif %}
                 </div>
                 {% empty %}
-                <div class="empty-state">Nicio programare.</div>
+                <div class="empty-state">{% trans "Nicio programare." %}</div>
                 {% endfor %}
             </div>
         </div>
 
         <div class="card">
             <div class="card-header">
-                <div class="card-title">🔍 Audit Log recent</div>
+                <div class="card-title">🔍 {% trans "Audit Log recent" %}</div>
             </div>
             <div class="card-body" style="padding:0;max-height:480px;overflow-y:auto;">
                 {% for log in audit_logs %}
@@ -68,7 +69,7 @@
                             {% elif log.metadata.username %}
                                 {{ log.metadata.username }}
                             {% else %}
-                                <span style="color:var(--text-muted);">anonim</span>
+                                <span style="color:var(--text-muted);">{% trans "anonim" %}</span>
                             {% endif %}
                         </div>
                         <div style="font-size:11px;color:var(--text-muted);">{{ log.timestamp|date:"d M, H:i" }}</div>
@@ -76,7 +77,7 @@
                     <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">{{ log.get_action_display }}</div>
                 </div>
                 {% empty %}
-                <div class="empty-state">Nicio activitate.</div>
+                <div class="empty-state">{% trans "Nicio activitate." %}</div>
                 {% endfor %}
             </div>
         </div>
@@ -85,12 +86,12 @@
     <div class="card" style="border:1.5px solid rgba(240,165,0,0.3);">
         <div class="card-header" style="background:rgba(240,165,0,0.06);border-bottom:1px solid rgba(240,165,0,0.15);">
             <div>
-                <div class="card-title" style="color:var(--c-warning);">🏧 Casă — Plăți Cash în Așteptare</div>
-                <div class="card-subtitle">Plăți care urmează să fie încasate la recepție</div>
+                <div class="card-title" style="color:var(--c-warning);">🏧 {% trans "Casă — Plăți Cash în Așteptare" %}</div>
+                <div class="card-subtitle">{% trans "Plăți care urmează să fie încasate la recepție" %}</div>
             </div>
             <div style="text-align:center;">
                 <div style="font-size:20px;font-weight:800;color:var(--c-warning);">{{ cash_pending|length }}</div>
-                <div style="font-size:10px;color:var(--text-muted);font-weight:600;">DE ÎNCASAT</div>
+                <div style="font-size:10px;color:var(--text-muted);font-weight:600;">{% trans "DE ÎNCASAT" %}</div>
             </div>
         </div>
 
@@ -103,7 +104,7 @@
                     <div style="font-size:13px;font-weight:600;color:var(--text);">
                         {{ appt.get_patient_display_name }}
                         {% if appt.is_for_other %}
-                        <span style="font-size:11px;color:var(--text-muted);font-weight:400;"> (aparținător: {{ appt.patient.get_full_name|default:appt.patient.username }})</span>
+                        <span style="font-size:11px;color:var(--text-muted);font-weight:400;"> ({% trans "aparținător:" %} {{ appt.patient.get_full_name|default:appt.patient.username }})</span>
                         {% endif %}
                     </div>
                     <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
@@ -113,7 +114,7 @@
                     <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">
                         📅 {{ appt.date_time|date:"d M Y, H:i" }}
                         {% if appt.date_time < now %}
-                        <span style="color:var(--c-danger);font-weight:600;"> · Restantă</span>
+                        <span style="color:var(--c-danger);font-weight:600;"> · {% trans "Restantă" %}</span>
                         {% endif %}
                     </div>
                 </div>
@@ -124,9 +125,9 @@
                 <form method="POST" action="{% url 'confirm_cash_payment' payment.id %}" style="margin:0;flex-shrink:0;">
                     {% csrf_token %}
                     <button type="submit"
-                        onclick="return confirm('Confirmați încasarea a {{ payment.amount }} RON cash de la {{ appt.get_patient_display_name }}?')"
+                        onclick="return confirm('{% trans "Confirmați încasarea" %} {{ payment.amount }} RON cash {% trans "de la" %} {{ appt.get_patient_display_name }}?')"
                         style="padding:8px 16px;background:var(--c-success);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
-                        ✓ Confirmă plata
+                        ✓ {% trans "Confirmă plata" %}
                     </button>
                 </form>
             </div>
@@ -134,7 +135,7 @@
             {% empty %}
             <div class="empty-state" style="padding:32px;">
                 <div style="font-size:32px;margin-bottom:8px;">✅</div>
-                <div>Nicio plată cash în așteptare.</div>
+                <div>{% trans "Nicio plată cash în așteptare." %}</div>
             </div>
             {% endfor %}
         </div>
@@ -144,7 +145,7 @@
         <div class="card-header" style="background:rgba(220,53,69,0.06);border-bottom:1px solid rgba(220,53,69,0.15);">
             <div>
                 <div class="card-title" style="color:var(--c-danger);">🔒 Security Center</div>
-                <div class="card-subtitle">Protecție Brute-Force · Progressive Throttling</div>
+                <div class="card-subtitle">{% trans "Protecție Brute-Force · Progressive Throttling" %}</div>
             </div>
             <div style="display:flex;gap:16px;">
                 <div style="text-align:center;">
@@ -161,18 +162,18 @@
         <div style="padding:12px 24px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;gap:24px;flex-wrap:wrap;">
             <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
                 <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c-warning);"></span>
-                <span style="color:var(--text-muted);"><strong style="color:var(--text);">Treapta 1 — Soft Ban:</strong> 5 încercări consecutive → blocat 10 minute</span>
+                <span style="color:var(--text-muted);"><strong style="color:var(--text);">{% trans "Treapta 1 — Soft Ban:" %}</strong> {% trans "5 încercări consecutive → blocat 10 minute" %}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
                 <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c-danger);"></span>
-                <span style="color:var(--text-muted);"><strong style="color:var(--text);">Treapta 2 — Hard Ban:</strong> 30 încercări în 24h → blocat permanent</span>
+                <span style="color:var(--text-muted);"><strong style="color:var(--text);">{% trans "Treapta 2 — Hard Ban:" %}</strong> {% trans "30 încercări în 24h → blocat permanent" %}</span>
             </div>
         </div>
 
         {% if attempts_per_ip %}
         <div style="padding:16px 24px 8px;">
             <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
-                ⚠️ Încercări eșuate per cont (ultimele 24h)
+                ⚠️ {% trans "Încercări eșuate per cont (ultimele 24h)" %}
             </div>
             {% for entry in attempts_per_ip %}
             <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--surface-2);border-radius:8px;margin-bottom:6px;">
@@ -183,7 +184,7 @@
                     {% endif %}
                 </div>
                 <span style="font-size:13px;font-weight:700;color:{% if entry.count >= 20 %}var(--c-danger){% elif entry.count >= 10 %}var(--c-warning){% else %}var(--text-muted){% endif %};">
-                    {{ entry.count }} încercări
+                    {{ entry.count }} {% trans "încercări" %}
                 </span>
             </div>
             {% endfor %}
@@ -193,7 +194,7 @@
         {% if hard_bans %}
         <div style="padding:16px 24px 8px;">
             <div style="font-size:12px;font-weight:700;color:var(--c-danger);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
-                🚫 Hard Bans — Blocare Permanentă
+                🚫 {% trans "Hard Bans — Blocare Permanentă" %}
             </div>
             {% for ban in hard_bans %}
             <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;background:rgba(220,53,69,0.06);border:1px solid rgba(220,53,69,0.2);border-radius:10px;margin-bottom:8px;">
@@ -205,14 +206,14 @@
                         {% endif %}
                     </div>
                     <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
-                        Blocat la {{ ban.timestamp|date:"d M Y, H:i" }}
+                        {% trans "Blocat la" %} {{ ban.timestamp|date:"d M Y, H:i" }}
                         {% if ban.hard_ban_reason %} · {{ ban.hard_ban_reason }}{% endif %}
                     </div>
                 </div>
                 <form method="POST" action="{% url 'revoke_ban' ban.id %}" style="margin:0;">
                     {% csrf_token %}
                     <button type="submit"
-                        onclick="return confirm('Ești sigur că vrei să revoici banul pentru {{ ban.ip_address }}?')"
+                        onclick="return confirm('{% trans "Ești sigur că vrei să revoici banul pentru" %} {{ ban.ip_address }}?')"
                         style="padding:6px 14px;background:var(--c-success);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
                         ✓ Revoke Ban
                     </button>
@@ -223,7 +224,7 @@
         {% else %}
         <div style="padding:16px 24px 8px;">
             <div style="font-size:12px;font-weight:700;color:var(--c-danger);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🚫 Hard Bans</div>
-            <div style="font-size:13px;color:var(--text-muted);padding:12px;background:var(--surface-2);border-radius:8px;">✅ Niciun hard ban activ.</div>
+            <div style="font-size:13px;color:var(--text-muted);padding:12px;background:var(--surface-2);border-radius:8px;">✅ {% trans "Niciun hard ban activ." %}</div>
         </div>
         {% endif %}
 
@@ -237,7 +238,7 @@
                 <div style="flex:1;">
                     <div style="font-size:13px;font-weight:600;color:var(--text);font-family:monospace;">{{ ban.ip_address }}</div>
                     <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
-                        Expiră la {{ ban.soft_ban_until|date:"H:i" }}
+                        {% trans "Expiră la" %} {{ ban.soft_ban_until|date:"H:i" }}
                         {% if ban.username %} · user: {{ ban.username }}{% endif %}
                     </div>
                 </div>
@@ -245,7 +246,7 @@
                     {% csrf_token %}
                     <button type="submit"
                         style="padding:6px 14px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
-                        ✕ Ridică restricția
+                        ✕ {% trans "Ridică restricția" %}
                     </button>
                 </form>
             </div>

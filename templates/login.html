@@ -1,10 +1,11 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="ro" data-theme="light">
+<html lang="{{ request.LANGUAGE_CODE }}" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autentificare - Clinica Medicală</title>
+    <title>{% trans "Autentificare" %} - {% trans "Clinică Medicală" %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="{% static 'js/theme.js' %}"></script>
 </head>
@@ -13,15 +14,15 @@
     <div class="auth-card">
         <div class="auth-logo">
             <div class="auth-logo-icon">M</div>
-            <h1 class="auth-title">Bun venit înapoi</h1>
-            <p class="auth-subtitle">Autentifică-te pentru a continua</p>
+            <h1 class="auth-title">{% trans "Bun venit înapoi" %}</h1>
+            <p class="auth-subtitle">{% trans "Autentifică-te pentru a continua" %}</p>
         </div>
 
         {% if ban_error %}
         <div style="background:rgba(220,53,69,0.08);border:1.5px solid var(--c-danger);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;">
             <span style="font-size:18px;flex-shrink:0;">🚫</span>
             <div>
-                <div style="font-weight:700;color:var(--c-danger);font-size:13px;margin-bottom:2px;">Acces blocat</div>
+                <div style="font-weight:700;color:var(--c-danger);font-size:13px;margin-bottom:2px;">{% trans "Acces blocat" %}</div>
                 <div style="font-size:12px;color:var(--text-muted);">{{ ban_error }}</div>
             </div>
         </div>
@@ -34,11 +35,11 @@
         <form method="POST" action="" novalidate>
             {% csrf_token %}
             <div class="form-group">
-                <label class="form-label" for="{{ form.username.id_for_label }}">Utilizator</label>
+                <label class="form-label" for="{{ form.username.id_for_label }}">{% trans "Utilizator" %}</label>
                 {{ form.username }}
             </div>
             <div class="form-group">
-                <label class="form-label" for="{{ form.password.id_for_label }}">Parolă</label>
+                <label class="form-label" for="{{ form.password.id_for_label }}">{% trans "Parolă" %}</label>
                 {{ form.password }}
             </div>
 
@@ -50,23 +51,23 @@
                     <div id="switch-track" style="position:absolute;inset:0;border-radius:11px;background:var(--border);transition:background .2s;"></div>
                     <div id="switch-thumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform .2s;"></div>
                 </div>
-                <span style="font-size:13px;color:var(--text-muted);">Ține-mă minte pe acest dispozitiv</span>
+                <span style="font-size:13px;color:var(--text-muted);">{% trans "Ține-mă minte pe acest dispozitiv" %}</span>
             </label>
 
             <button type="submit" class="btn btn-primary btn-full"
                     style="padding:13px;font-size:15px;font-weight:600;border-radius:12px;letter-spacing:.02em;">
-                Intră în cont →
+                {% trans "Intră în cont →" %}
             </button>
         </form>
 
         <div style="text-align:center;margin-top:16px;">
-            <a href="{% url 'home' %}" style="font-size:13px;color:var(--text-muted);">← Înapoi la pagina principală</a>
+            <a href="{% url 'home' %}" style="font-size:13px;color:var(--text-muted);">{% trans "← Înapoi la pagina principală" %}</a>
         </div>
 
-        <div class="auth-divider"><span>sau</span></div>
+        <div class="auth-divider"><span>{% trans "sau" %}</span></div>
 
         <div class="auth-footer">
-            Nu ai cont? <a href="{% url 'register' %}" style="font-weight:600;">Înregistrează-te gratuit</a>
+            {% trans "Nu ai cont?" %} <a href="{% url 'register' %}" style="font-weight:600;">{% trans "Înregistrează-te gratuit" %}</a>
         </div>
 
         <div style="text-align:center;margin-top:16px;">

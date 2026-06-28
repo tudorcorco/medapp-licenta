@@ -1,37 +1,32 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="{{ request.LANGUAGE_CODE|default:"ro" }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MedApp — Clinica Ta de Încredere</title>
+  <title>MedApp — {% trans "Clinica Ta de Încredere" %}</title>
   <link rel="stylesheet" href="{% static 'css/landing.css' %}">
   <style>
-    .fc {
-      position: absolute;
-      background: white;
-      border-radius: 16px;
-      padding: 18px 22px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.13);
-      min-width: 190px;
+    .fc { position:absolute;background:white;border-radius:16px;padding:18px 22px;box-shadow:0 8px 32px rgba(0,0,0,0.13);min-width:190px; }
+    .fc-label { font-size:11px;font-weight:600;color:#8796A5;text-transform:uppercase;letter-spacing:.07em; }
+    .fc-value { font-family:'DM Serif Display',Georgia,serif;font-size:30px;color:#0B2545;margin-top:4px;line-height:1; }
+    .fc-sub { font-size:12px;color:#0D9E8A;margin-top:5px; }
+    .doctors-slider-wrapper { overflow:hidden;width:100%;height:460px; }
+    .doctors-slider-track { display:flex;gap:24px;width:max-content; }
+    .doctors-slider-track .doctor-card { flex:0 0 280px; }
+    .lang-nav {
+      display:flex; align-items:center; gap:4px; margin-right:8px;
     }
-    .fc-label { font-size: 11px; font-weight: 600; color: #8796A5; text-transform: uppercase; letter-spacing: .07em; }
-    .fc-value { font-family: 'DM Serif Display', Georgia, serif; font-size: 30px; color: #0B2545; margin-top: 4px; line-height: 1; }
-    .fc-sub   { font-size: 12px; color: #0D9E8A; margin-top: 5px; }
-
-    .doctors-slider-wrapper {
-      overflow: hidden;
-      width: 100%;
-      height: 460px;
+    .lang-nav-btn {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:5px 12px; border-radius:7px;
+      border:1.5px solid #d0dae8; background:white;
+      color:#5a7090; font-size:12px; font-weight:700;
+      cursor:pointer; transition:all 0.15s; letter-spacing:0.02em;
     }
-    .doctors-slider-track {
-      display: flex;
-      gap: 24px;
-      width: max-content;
-    }
-    .doctors-slider-track .doctor-card {
-      flex: 0 0 280px;
-    }
+    .lang-nav-btn:hover { border-color:#1464A5; color:#1464A5; background:#f0f7ff; }
+    .lang-nav-btn.active { background:#1464A5; border-color:#1464A5; color:white; }
   </style>
 </head>
 <body>
@@ -42,14 +37,23 @@
     <span class="nav-logo-text">MedApp</span>
   </div>
   <ul class="nav-links">
-    <li><a href="#specialitati">Specialități</a></li>
-    <li><a href="#despre">Despre noi</a></li>
-    <li><a href="#medici">Medici</a></li>
+    <li><a href="#specialitati">{% trans "Specialități" %}</a></li>
+    <li><a href="#despre">{% trans "Despre noi" %}</a></li>
+    <li><a href="#medici">{% trans "Medici" %}</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
   <div class="nav-cta">
-    <a href="{% url 'login' %}" class="btn-outline">Contul meu</a>
-    <a href="{% url 'register' %}" class="btn-solid">Programare online</a>
+    <form id="langFormNav" action="{% url 'set_language' %}" method="post" style="display:none;">
+      {% csrf_token %}
+      <input name="next" type="hidden" value="{{ request.path }}">
+      <input id="langInputNav" name="language" type="hidden" value="">
+    </form>
+    <div class="lang-nav">
+      <button type="button" onclick="setLangNav('ro')" class="lang-nav-btn {% if request.LANGUAGE_CODE == 'ro' %}active{% endif %}">🇷🇴 RO</button>
+      <button type="button" onclick="setLangNav('en')" class="lang-nav-btn {% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">🇬🇧 EN</button>
+    </div>
+    <a href="{% url 'login' %}" class="btn-outline">{% trans "Contul meu" %}</a>
+    <a href="{% url 'register' %}" class="btn-solid">{% trans "Programare online" %}</a>
   </div>
 </nav>
 
@@ -57,27 +61,26 @@
   <div class="hero-text">
     <div class="hero-badge">
       <span class="hero-badge-dot"></span>
-      Programări disponibile astăzi
+      {% trans "Programări disponibile astăzi" %}
     </div>
     <h1 class="hero-title">
-      Îngrijire medicală<br>
-      <em>de excepție,</em><br>
-      aproape de tine.
+      {% trans "Îngrijire medicală" %}<br>
+      <em>{% trans "de excepție," %}</em><br>
+      {% trans "aproape de tine." %}
     </h1>
     <p class="hero-desc">
-      Accesează cei mai buni specialiști, programează consultații online
-      și urmărește-ți dosarul medical dintr-un singur loc.
+      {% trans "Accesează cei mai buni specialiști, programează consultații online și urmărește-ți dosarul medical dintr-un singur loc." %}
     </p>
     <div class="hero-actions">
-      <a href="{% url 'register' %}" class="hero-btn-primary">Creează cont gratuit</a>
+      <a href="{% url 'register' %}" class="hero-btn-primary">{% trans "Creează cont gratuit" %}</a>
       <a href="{% url 'login' %}" class="hero-btn-ghost">
-        Intră în cont <span class="hero-btn-ghost-arrow">→</span>
+        {% trans "Intră în cont" %} <span class="hero-btn-ghost-arrow">→</span>
       </a>
     </div>
     <div class="hero-stats">
-      <div><div class="hero-stat-num">24+</div><div class="hero-stat-label">Specialiști</div></div>
-      <div><div class="hero-stat-num">12k+</div><div class="hero-stat-label">Pacienți</div></div>
-      <div><div class="hero-stat-num">88%</div><div class="hero-stat-label">Satisfacție</div></div>
+      <div><div class="hero-stat-num">24+</div><div class="hero-stat-label">{% trans "Specialiști" %}</div></div>
+      <div><div class="hero-stat-num">12k+</div><div class="hero-stat-label">{% trans "Pacienți" %}</div></div>
+      <div><div class="hero-stat-num">88%</div><div class="hero-stat-label">{% trans "Satisfacție" %}</div></div>
     </div>
   </div>
 
@@ -85,27 +88,27 @@
     <div style="width:100%;height:100%;background:linear-gradient(145deg,#dce8f5 0%,#b8d4eb 40%,#8fbdd8 100%);"></div>
     <div class="hero-image-overlay"></div>
     <div class="fc" style="top:10%;left:6%;animation:float 4s ease-in-out infinite;">
-      <div class="fc-label">Programări azi</div>
+      <div class="fc-label">{% trans "Programări azi" %}</div>
       <div class="fc-value">{{ programari_azi }}</div>
-      <div class="fc-sub">↑ Programate azi</div>
+      <div class="fc-sub">↑ {% trans "Programate azi" %}</div>
     </div>
     <div class="fc" style="top:6%;right:6%;animation:float 5s ease-in-out infinite 0.8s;">
-      <div class="fc-label">Medici activi</div>
+      <div class="fc-label">{% trans "Medici activi" %}</div>
       <div class="fc-value">{{ medici_activi }}</div>
-      <div class="fc-sub">↑ Online acum</div>
+      <div class="fc-sub">↑ {% trans "Online acum" %}</div>
     </div>
     <div class="fc" style="top:42%;right:8%;animation:float 4.8s ease-in-out infinite 1.4s;">
-      <div class="fc-label">Consultații totale</div>
+      <div class="fc-label">{% trans "Consultații totale" %}</div>
       <div class="fc-value">9k+</div>
-      <div class="fc-sub">↑ Lunar</div>
+      <div class="fc-sub">↑ {% trans "Lunar" %}</div>
     </div>
     <div class="fc" style="bottom:22%;left:6%;animation:float 4.5s ease-in-out infinite 1s;">
-      <div class="fc-label">Satisfacție</div>
+      <div class="fc-label">{% trans "Satisfacție" %}</div>
       <div class="fc-value">88%</div>
       <div class="fc-sub">★ 4.7 rating</div>
     </div>
     <div class="fc" style="bottom:5%;right:6%;animation:float 5.5s ease-in-out infinite 0.3s;">
-      <div class="fc-label">Timp confirmare</div>
+      <div class="fc-label">{% trans "Timp confirmare" %}</div>
       <div class="fc-value">5 min</div>
       <div class="fc-sub">⚡ Instant</div>
     </div>
@@ -113,24 +116,24 @@
 </section>
 
 <div class="trust-bar">
-  <div class="trust-item"><div class="trust-icon">🏥</div><span>Clinică autorizată MS</span></div>
-  <div class="trust-item"><div class="trust-icon">🔒</div><span>Date protejate GDPR</span></div>
-  <div class="trust-item"><div class="trust-icon">⚡</div><span>Confirmare în 2 minute</span></div>
-  <div class="trust-item"><div class="trust-icon">📱</div><span>Acces de pe orice dispozitiv</span></div>
-  <div class="trust-item"><div class="trust-icon">💬</div><span>Suport 24/7</span></div>
+  <div class="trust-item"><div class="trust-icon">🏥</div><span>{% trans "Clinică autorizată MS" %}</span></div>
+  <div class="trust-item"><div class="trust-icon">🔒</div><span>{% trans "Date protejate GDPR" %}</span></div>
+  <div class="trust-item"><div class="trust-icon">⚡</div><span>{% trans "Confirmare în 2 minute" %}</span></div>
+  <div class="trust-item"><div class="trust-icon">📱</div><span>{% trans "Acces de pe orice dispozitiv" %}</span></div>
+  <div class="trust-item"><div class="trust-icon">💬</div><span>{% trans "Suport 24/7" %}</span></div>
 </div>
 
 <section class="section" id="specialitati">
-  <div class="section-label">Specialități</div>
-  <h2 class="section-title">Toate specialitățile<br>medicale, într-un singur loc</h2>
-  <p class="section-desc">De la consultații de rutină la investigații complexe — echipa noastră acoperă toate nevoile tale de sănătate.</p>
+  <div class="section-label">{% trans "Specialități" %}</div>
+  <h2 class="section-title">{% trans "Toate specialitățile medicale, într-un singur loc" %}</h2>
+  <p class="section-desc">{% trans "De la consultații de rutină la investigații complexe — echipa noastră acoperă toate nevoile tale de sănătate." %}</p>
   <div class="specialties-grid">
-    <div class="spec-card reveal"><div class="spec-icon" style="background:#EBF4FF;">❤️</div><div class="spec-name">Cardiologie</div><div class="spec-desc">Evaluare cardiovasculară completă și monitorizare Holter</div></div>
-    <div class="spec-card reveal reveal-delay-1"><div class="spec-icon" style="background:#ECFDF5;">🧠</div><div class="spec-name">Neurologie</div><div class="spec-desc">Diagnosticarea și tratamentul afecțiunilor sistemului nervos</div></div>
-    <div class="spec-card reveal reveal-delay-2"><div class="spec-icon" style="background:#FFF7ED;">🦴</div><div class="spec-name">Ortopedie</div><div class="spec-desc">Traumatologie sportivă și chirurgie ortopedică minim invazivă</div></div>
-    <div class="spec-card reveal reveal-delay-3"><div class="spec-icon" style="background:#F0F9FF;">👁️</div><div class="spec-name">Oftalmologie</div><div class="spec-desc">Control oftalmologic complet și corecție laser LASIK</div></div>
-    <div class="spec-card reveal reveal-delay-4"><div class="spec-icon" style="background:#FDF4FF;">🫁</div><div class="spec-name">Pneumologie</div><div class="spec-desc">Spirometrie, tratament astm și afecțiuni pulmonare cronice</div></div>
-    <div class="spec-card reveal reveal-delay-1"><div class="spec-icon" style="background:#F0FDF4;">🩺</div><div class="spec-name">Medicină internă</div><div class="spec-desc">Consultații generale și management afecțiuni cronice</div></div>
+    <div class="spec-card reveal"><div class="spec-icon" style="background:#EBF4FF;">❤️</div><div class="spec-name">{% trans "Cardiologie" %}</div><div class="spec-desc">{% trans "Evaluare cardiovasculară completă și monitorizare Holter" %}</div></div>
+    <div class="spec-card reveal reveal-delay-1"><div class="spec-icon" style="background:#ECFDF5;">🧠</div><div class="spec-name">{% trans "Neurologie" %}</div><div class="spec-desc">{% trans "Diagnosticarea și tratamentul afecțiunilor sistemului nervos" %}</div></div>
+    <div class="spec-card reveal reveal-delay-2"><div class="spec-icon" style="background:#FFF7ED;">🦴</div><div class="spec-name">{% trans "Ortopedie" %}</div><div class="spec-desc">{% trans "Traumatologie sportivă și chirurgie ortopedică minim invazivă" %}</div></div>
+    <div class="spec-card reveal reveal-delay-3"><div class="spec-icon" style="background:#F0F9FF;">👁️</div><div class="spec-name">{% trans "Oftalmologie" %}</div><div class="spec-desc">{% trans "Control oftalmologic complet și corecție laser LASIK" %}</div></div>
+    <div class="spec-card reveal reveal-delay-4"><div class="spec-icon" style="background:#FDF4FF;">🫁</div><div class="spec-name">{% trans "Pneumologie" %}</div><div class="spec-desc">{% trans "Spirometrie, tratament astm și afecțiuni pulmonare cronice" %}</div></div>
+    <div class="spec-card reveal reveal-delay-1"><div class="spec-icon" style="background:#F0FDF4;">🩺</div><div class="spec-name">{% trans "Medicină internă" %}</div><div class="spec-desc">{% trans "Consultații generale și management afecțiuni cronice" %}</div></div>
   </div>
 </section>
 
@@ -141,22 +144,22 @@
         <div class="why-visual-pattern"></div>
         <div class="why-visual-inner">
           <div class="why-visual-number">15</div>
-          <div class="why-visual-text">ani de experiență</div>
+          <div class="why-visual-text">{% trans "ani de experiență" %}</div>
         </div>
       </div>
       <div class="why-badge-float">
         <div class="why-badge-float-num">4.7 ★</div>
-        <div class="why-badge-float-label">Rating pacienți</div>
+        <div class="why-badge-float-label">{% trans "Rating pacienți" %}</div>
       </div>
     </div>
     <div>
-      <div class="section-label">De ce MedApp</div>
-      <h2 class="section-title" style="margin-bottom:36px;">Sănătatea ta<br>este prioritatea noastră</h2>
+      <div class="section-label">{% trans "De ce MedApp" %}</div>
+      <h2 class="section-title" style="margin-bottom:36px;">{% trans "Sănătatea ta este prioritatea noastră" %}</h2>
       <div class="why-features">
-        <div class="why-feature reveal"><div class="why-feature-icon">🗓️</div><div><div class="why-feature-title">Programare online instant</div><div class="why-feature-desc">Alegi medicul, specialitatea și ora preferată direct din platformă.</div></div></div>
-        <div class="why-feature reveal reveal-delay-1"><div class="why-feature-icon">📋</div><div><div class="why-feature-title">Dosar medical digital</div><div class="why-feature-desc">Istoricul tău medical, analizele și rețetele stocate securizat.</div></div></div>
-        <div class="why-feature reveal reveal-delay-2"><div class="why-feature-icon">🔐</div><div><div class="why-feature-title">Confidențialitate garantată</div><div class="why-feature-desc">Datele tale sunt criptate și accesibile doar ție și medicului tău.</div></div></div>
-        <div class="why-feature reveal reveal-delay-3"><div class="why-feature-icon">⚡</div><div><div class="why-feature-title">Confirmare în timp real</div><div class="why-feature-desc">Primești confirmare instantă pe email la fiecare programare.</div></div></div>
+        <div class="why-feature reveal"><div class="why-feature-icon">🗓️</div><div><div class="why-feature-title">{% trans "Programare online instant" %}</div><div class="why-feature-desc">{% trans "Alegi medicul, specialitatea și ora preferată direct din platformă." %}</div></div></div>
+        <div class="why-feature reveal reveal-delay-1"><div class="why-feature-icon">📋</div><div><div class="why-feature-title">{% trans "Dosar medical digital" %}</div><div class="why-feature-desc">{% trans "Istoricul tău medical, analizele și rețetele stocate securizat." %}</div></div></div>
+        <div class="why-feature reveal reveal-delay-2"><div class="why-feature-icon">🔐</div><div><div class="why-feature-title">{% trans "Confidențialitate garantată" %}</div><div class="why-feature-desc">{% trans "Datele tale sunt criptate și accesibile doar ție și medicului tău." %}</div></div></div>
+        <div class="why-feature reveal reveal-delay-3"><div class="why-feature-icon">⚡</div><div><div class="why-feature-title">{% trans "Confirmare în timp real" %}</div><div class="why-feature-desc">{% trans "Primești confirmare instantă pe email la fiecare programare." %}</div></div></div>
       </div>
     </div>
   </div>
@@ -165,12 +168,11 @@
 <section class="doctors-section" id="medici">
   <div class="doctors-header">
     <div>
-      <div class="section-label">Echipa noastră</div>
-      <h2 class="section-title" style="margin-bottom:0;">Medici cu experiență</h2>
+      <div class="section-label">{% trans "Echipa noastră" %}</div>
+      <h2 class="section-title" style="margin-bottom:0;">{% trans "Medici cu experiență" %}</h2>
     </div>
-    <a href="{% url 'login' %}" class="btn-solid">Programează-te →</a>
+    <a href="{% url 'login' %}" class="btn-solid">{% trans "Programează-te →" %}</a>
   </div>
-
   <div class="doctors-slider-wrapper">
     <div class="doctors-slider-track" id="sliderTrack">
       {% for doctor in medici %}
@@ -184,11 +186,11 @@
         </div>
         <div class="doctor-card-body">
           <div class="doctor-card-name">Dr. {{ doctor.user.get_full_name }}</div>
-          <div class="doctor-card-spec">{{ doctor.specialization }}</div>
+          <div class="doctor-card-spec">{% trans doctor.specialization %}</div>
           {% if doctor.is_available %}
-            <div class="doctor-card-tag">Disponibil azi</div>
+            <div class="doctor-card-tag">{% trans "Disponibil azi" %}</div>
           {% else %}
-            <div class="doctor-card-tag doctor-card-tag--indisponibil">Indisponibil</div>
+            <div class="doctor-card-tag doctor-card-tag--indisponibil">{% trans "Indisponibil" %}</div>
           {% endif %}
         </div>
       </div>
@@ -199,11 +201,11 @@
 
 <section class="cta-section" id="contact">
   <div class="cta-inner">
-    <h2 class="cta-title">Gata să ai grijă<br>de <em>sănătatea ta?</em></h2>
-    <p class="cta-desc">Creează-ți un cont gratuit în mai puțin de 2 minute și programează prima consultație chiar astăzi.</p>
+    <h2 class="cta-title">{% trans "Gata să ai grijă de sănătatea ta?" %}</h2>
+    <p class="cta-desc">{% trans "Creează-ți un cont gratuit în mai puțin de 2 minute și programează prima consultație chiar astăzi." %}</p>
     <div class="cta-actions">
-      <a href="{% url 'register' %}" class="cta-btn-white">Înregistrare gratuită</a>
-      <a href="{% url 'login' %}" class="cta-btn-ghost-white">Am deja cont →</a>
+      <a href="{% url 'register' %}" class="cta-btn-white">{% trans "Înregistrare gratuită" %}</a>
+      <a href="{% url 'login' %}" class="cta-btn-ghost-white">{% trans "Am deja cont →" %}</a>
     </div>
   </div>
 </section>
@@ -212,67 +214,60 @@
   <div class="footer-top">
     <div>
       <div class="footer-brand-text">MedApp</div>
-      <p class="footer-brand-desc">Platformă digitală pentru managementul clinic și programări medicale online.</p>
+      <p class="footer-brand-desc">{% trans "Platformă digitală pentru managementul clinic și programări medicale online." %}</p>
     </div>
     <div>
-      <div class="footer-col-title">Servicii</div>
+      <div class="footer-col-title">{% trans "Servicii" %}</div>
       <ul class="footer-col-links">
-        <li><a href="#specialitati">Specialități</a></li>
-        <li><a href="#medici">Medici</a></li>
-        <li><a href="{% url 'register' %}">Programare</a></li>
+        <li><a href="#specialitati">{% trans "Specialități" %}</a></li>
+        <li><a href="#medici">{% trans "Medici" %}</a></li>
+        <li><a href="{% url 'register' %}">{% trans "Programare" %}</a></li>
       </ul>
     </div>
     <div>
-      <div class="footer-col-title">Cont</div>
+      <div class="footer-col-title">{% trans "Cont" %}</div>
       <ul class="footer-col-links">
-        <li><a href="{% url 'login' %}">Autentificare</a></li>
-        <li><a href="{% url 'register' %}">Înregistrare</a></li>
+        <li><a href="{% url 'login' %}">{% trans "Autentificare" %}</a></li>
+        <li><a href="{% url 'register' %}">{% trans "Înregistrare" %}</a></li>
       </ul>
     </div>
     <div>
-      <div class="footer-col-title">Contact</div>
+      <div class="footer-col-title">{% trans "Contact" %}</div>
       <ul class="footer-col-links">
         <li><a href="#">contact@medapp.ro</a></li>
         <li><a href="#">0800 000 000</a></li>
-        <li><a href="#">București, România</a></li>
+        <li><a href="#">Craiova, România</a></li>
       </ul>
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2025 MedApp. Toate drepturile rezervate.</span>
-    <span>Proiect Licență — Aplicație Web Clinică Medicală</span>
+    <span>© 2025 MedApp. {% trans "Toate drepturile rezervate." %}</span>
+    <span>{% trans "Proiect Licență — Aplicație Web Clinică Medicală" %}</span>
   </div>
 </footer>
 
 <script>
+function setLangNav(lang) {
+    document.getElementById('langInputNav').value = lang;
+    document.getElementById('langFormNav').submit();
+}
 const nav = document.getElementById('mainNav');
 window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 20));
-
 const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
 }, { threshold: 0.12 });
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
 const track = document.getElementById('sliderTrack');
 let pos = 0;
-const speed = 0.3;
-
 track.innerHTML += track.innerHTML;
-
 function animate() {
-  pos -= speed;
-  const firstCard = track.children[0];
-  const cardWidth = firstCard.offsetWidth + 24;
-  if (Math.abs(pos) >= cardWidth) {
-    pos += cardWidth;
-    track.appendChild(firstCard);
-  }
-  track.style.transform = `translateX(${pos}px)`;
-  requestAnimationFrame(animate);
+    pos -= 0.3;
+    const fw = track.children[0].offsetWidth + 24;
+    if (Math.abs(pos) >= fw) { pos += fw; track.appendChild(track.children[0]); }
+    track.style.transform = `translateX(${pos}px)`;
+    requestAnimationFrame(animate);
 }
-
 animate();
 </script>
-
 </body>
 </html>

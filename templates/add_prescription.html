@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Adaugă Rețetă{% endblock %}
-{% block page_title %}Adaugă Rețetă{% endblock %}
+{% block title %}{% trans "Adaugă Rețetă" %}{% endblock %}
+{% block page_title %}{% trans "Adaugă Rețetă" %}{% endblock %}
 {% block nav_doctor %}active{% endblock %}
 
 {% block content %}
@@ -22,7 +23,7 @@
                     {% endif %}
                 </div>
                 <div style="font-size:13px;color:var(--text-muted);">
-                    Consultație: {{ appointment.date_time|date:"d M Y, H:i" }}
+                    {% trans "Consultație:" %} {{ appointment.date_time|date:"d M Y, H:i" }}
                 </div>
             </div>
         </div>
@@ -30,8 +31,8 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">💊 Rețetă medicală</div>
-            <div class="card-subtitle">Completează diagnosticul și medicația prescrisă</div>
+            <div class="card-title">💊 {% trans "Rețetă medicală" %}</div>
+            <div class="card-subtitle">{% trans "Completează diagnosticul și medicația prescrisă" %}</div>
         </div>
         <div class="card-body">
             <form method="POST" action="" novalidate>
@@ -46,8 +47,8 @@
                     </div>
                 {% endfor %}
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
-                    <a href="{% url 'doctor_dashboard' %}" class="btn btn-ghost">Anulează</a>
-                    <button type="submit" class="btn btn-primary">Salvează rețeta</button>
+                    <a href="{% url 'doctor_dashboard' %}" class="btn btn-ghost">{% trans "Anulează" %}</a>
+                    <button type="submit" class="btn btn-primary">{% trans "Salvează rețeta" %}</button>
                 </div>
             </form>
         </div>

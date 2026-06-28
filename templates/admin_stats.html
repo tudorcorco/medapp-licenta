@@ -1,26 +1,25 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Statistici Admin{% endblock %}
-{% block page_title %}Statistici & Grafice{% endblock %}
+{% block title %}{% trans "Statistici Admin" %}{% endblock %}
+{% block page_title %}{% trans "Statistici & Grafice" %}{% endblock %}
 {% block nav_stats %}active{% endblock %}
 
 {% block content %}
 <div style="display:flex;flex-direction:column;gap:24px;">
 
-    
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
 
-        
         <div class="card">
             <div class="card-header">
                 <div>
-                    <div class="card-title">💰 Venituri lunare</div>
-                    <div class="card-subtitle">Ultimele 6 luni</div>
+                    <div class="card-title">💰 {% trans "Venituri lunare" %}</div>
+                    <div class="card-subtitle">{% trans "Ultimele 6 luni" %}</div>
                 </div>
                 <div style="display:flex;gap:8px;">
-                    <button onclick="switchRevChart('6m')" id="rev-btn-6m" class="btn btn-sm btn-primary" style="font-size:11px;">6 luni</button>
-                    <button onclick="switchRevChart('1y')" id="rev-btn-1y" class="btn btn-sm btn-ghost" style="font-size:11px;">12 luni</button>
+                    <button onclick="switchRevChart('6m')" id="rev-btn-6m" class="btn btn-sm btn-primary" style="font-size:11px;">{% trans "6 luni" %}</button>
+                    <button onclick="switchRevChart('1y')" id="rev-btn-1y" class="btn btn-sm btn-ghost" style="font-size:11px;">{% trans "12 luni" %}</button>
                 </div>
             </div>
             <div class="card-body" style="position:relative;height:180px;">
@@ -28,16 +27,15 @@
             </div>
         </div>
 
-        
         <div class="card">
             <div class="card-header">
                 <div>
-                    <div class="card-title">👥 Pacienți noi</div>
-                    <div class="card-subtitle">Creștere lunară</div>
+                    <div class="card-title">👥 {% trans "Pacienți noi" %}</div>
+                    <div class="card-subtitle">{% trans "Creștere lunară" %}</div>
                 </div>
                 <div style="display:flex;gap:8px;">
-                    <button onclick="switchPatientsChart('6m')" id="pat-btn-6m" class="btn btn-sm btn-primary" style="font-size:11px;">6 luni</button>
-                    <button onclick="switchPatientsChart('1y')" id="pat-btn-1y" class="btn btn-sm btn-ghost" style="font-size:11px;">12 luni</button>
+                    <button onclick="switchPatientsChart('6m')" id="pat-btn-6m" class="btn btn-sm btn-primary" style="font-size:11px;">{% trans "6 luni" %}</button>
+                    <button onclick="switchPatientsChart('1y')" id="pat-btn-1y" class="btn btn-sm btn-ghost" style="font-size:11px;">{% trans "12 luni" %}</button>
                 </div>
             </div>
             <div class="card-body" style="position:relative;height:180px;">
@@ -46,32 +44,29 @@
         </div>
     </div>
 
-    
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
 
-        
         <div class="card">
             <div class="card-header">
-                <div class="card-title">📅 Programări pe luni</div>
-                <div class="card-subtitle">Ultimele 6 luni</div>
+                <div class="card-title">📅 {% trans "Programări pe luni" %}</div>
+                <div class="card-subtitle">{% trans "Ultimele 6 luni" %}</div>
             </div>
             <div class="card-body" style="position:relative;height:200px;">
                 <canvas id="appointmentsChart"></canvas>
             </div>
         </div>
 
-        
         <div class="card">
             <div class="card-header">
-                <div class="card-title">🔵 Status programări</div>
-                <div class="card-subtitle">Distribuție curentă</div>
+                <div class="card-title">🔵 {% trans "Status programări" %}</div>
+                <div class="card-subtitle">{% trans "Distribuție curentă" %}</div>
             </div>
             <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
                 <div style="display:flex;gap:20px;font-size:12px;color:var(--text-muted);">
-                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0D9E8A;margin-right:5px;"></span>Finalizate</span>
-                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1464A5;margin-right:5px;"></span>Confirmate</span>
-                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#F0A500;margin-right:5px;"></span>Așteptare</span>
-                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:5px;"></span>Neprezentare</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#0D9E8A;margin-right:5px;"></span>{% trans "Finalizate" %}</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1464A5;margin-right:5px;"></span>{% trans "Confirmate" %}</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#F0A500;margin-right:5px;"></span>{% trans "Așteptare" %}</span>
+                    <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;margin-right:5px;"></span>{% trans "Neprezentare" %}</span>
                 </div>
                 <div style="position:relative;height:200px;width:200px;">
                     <canvas id="statusChart"></canvas>
@@ -80,12 +75,11 @@
         </div>
     </div>
 
-    
     <div class="card">
         <div class="card-header">
             <div>
-                <div class="card-title">🏆 Top medici după venituri</div>
-                <div class="card-subtitle">Consultații finalizate × tarif</div>
+                <div class="card-title">🏆 {% trans "Top medici după venituri" %}</div>
+                <div class="card-subtitle">{% trans "Consultații finalizate × tarif" %}</div>
             </div>
         </div>
         <div class="card-body" style="padding:0;">
@@ -96,31 +90,29 @@
                 </div>
                 <div style="flex:1;">
                     <div style="font-size:14px;font-weight:600;color:var(--text);">Dr. {{ doc.user.get_full_name|default:doc.user.username }}</div>
-                    <div style="font-size:12px;color:var(--text-muted);">{{ doc.specialization }} · {{ doc.appt_count }} programări</div>
+                    <div style="font-size:12px;color:var(--text-muted);">{{ doc.specialization }} · {{ doc.appt_count }} {% trans "programări" %}</div>
                 </div>
                 <div style="font-size:16px;font-weight:700;color:var(--c-primary);">{{ doc.revenue|floatformat:0 }} RON</div>
             </div>
             {% empty %}
-            <div class="empty-state">Nu există date.</div>
+            <div class="empty-state">{% trans "Nu există date." %}</div>
             {% endfor %}
         </div>
     </div>
 
-    
     <div class="card">
         <div class="card-header">
             <div>
-                <div class="card-title">⚡ Performance Score Medici</div>
+                <div class="card-title">⚡ {% trans "Performance Score Medici" %}</div>
                 <div class="card-subtitle">
-                    Scor ponderat 0–100 &nbsp;·&nbsp;
-                    <span style="color:var(--c-success);font-weight:600;">50% Calitate</span> (rating) &nbsp;+&nbsp;
-                    <span style="color:var(--c-primary);font-weight:600;">30% Fiabilitate</span> (consultații vs no-show) &nbsp;+&nbsp;
-                    <span style="color:var(--c-teal);font-weight:600;">20% Volum</span> (relativ la clinică)
+                    {% trans "Scor ponderat 0–100" %} &nbsp;·&nbsp;
+                    <span style="color:var(--c-success);font-weight:600;">50% {% trans "Calitate" %}</span> (rating) &nbsp;+&nbsp;
+                    <span style="color:var(--c-primary);font-weight:600;">30% {% trans "Fiabilitate" %}</span> ({% trans "consultații vs no-show" %}) &nbsp;+&nbsp;
+                    <span style="color:var(--c-teal);font-weight:600;">20% {% trans "Volum" %}</span> ({% trans "relativ la clinică" %})
                 </div>
             </div>
         </div>
 
-        
         <div style="padding:0 24px 16px;display:flex;gap:12px;flex-wrap:wrap;">
             <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
                 <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:linear-gradient(90deg,#0D9E8A,#07c4a8);"></span>
@@ -128,15 +120,15 @@
             </span>
             <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
                 <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#1464A5;"></span>
-                <span style="color:var(--text-muted);">Performant <strong style="color:var(--text);">70–89</strong></span>
+                <span style="color:var(--text-muted);">{% trans "Performant" %} <strong style="color:var(--text);">70–89</strong></span>
             </span>
             <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
                 <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#F0A500;"></span>
-                <span style="color:var(--text-muted);">Mediu <strong style="color:var(--text);">50–69</strong></span>
+                <span style="color:var(--text-muted);">{% trans "Mediu" %} <strong style="color:var(--text);">50–69</strong></span>
             </span>
             <span style="display:flex;align-items:center;gap:6px;font-size:12px;">
                 <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#666;"></span>
-                <span style="color:var(--text-muted);">Insuficient date <strong style="color:var(--text);">< 50</strong></span>
+                <span style="color:var(--text-muted);">{% trans "Insuficient date" %} <strong style="color:var(--text);">< 50</strong></span>
             </span>
         </div>
 
@@ -145,8 +137,6 @@
             {% with score=item.score_int %}
             <div style="padding:18px 24px;border-bottom:1px solid var(--border);{% if forloop.last %}border-bottom:none;{% endif %}">
                 <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
-
-                   
                     <div style="width:32px;height:32px;border-radius:50%;
                         {% if forloop.counter == 1 %}background:linear-gradient(135deg,#FFD700,#FFA500);
                         {% elif forloop.counter == 2 %}background:linear-gradient(135deg,#C0C0C0,#A8A8A8);
@@ -156,8 +146,6 @@
                         font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                         {{ forloop.counter }}
                     </div>
-
-                   
                     <div style="flex:1;">
                         <div style="display:flex;align-items:center;gap:8px;">
                             <span style="font-size:14px;font-weight:600;color:var(--text);">
@@ -170,14 +158,12 @@
                             {% endif %}
                         </div>
                         <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
-                            {{ item.profile.specialization|default:"Specializare necompletată" }}
+                            {{ item.profile.specialization|default:_("Specializare necompletată") }}
                             &nbsp;·&nbsp;
-                            {{ item.completed }} consultații finalizate
+                            {{ item.completed }} {% trans "consultații finalizate" %}
                             {% if item.no_show > 0 %}&nbsp;·&nbsp;<span style="color:var(--c-danger);">{{ item.no_show }} no-show</span>{% endif %}
                         </div>
                     </div>
-
-                    
                     <div style="text-align:right;flex-shrink:0;">
                         <div style="font-size:26px;font-weight:800;
                             color:{% if score >= 90 %}var(--c-teal){% elif score >= 70 %}var(--c-primary){% elif score >= 50 %}var(--c-warning){% else %}var(--text-muted){% endif %};">
@@ -186,40 +172,31 @@
                         <div style="font-size:10px;color:var(--text-muted);font-weight:600;">/ 100</div>
                     </div>
                 </div>
-
-                
                 <div style="background:var(--surface-2);border-radius:6px;height:8px;overflow:hidden;position:relative;">
-                    <div style="
-                        height:100%;
-                        width:{{ score }}%;
-                        border-radius:6px;
-                        transition:width .6s ease;
-                        background:{% if score >= 90 %}linear-gradient(90deg,#0D9E8A,#07c4a8){% elif score >= 70 %}linear-gradient(90deg,#1464A5,#2980d4){% elif score >= 50 %}linear-gradient(90deg,#F0A500,#f5c430){% else %}#555{% endif %};
-                    "></div>
+                    <div style="height:100%;width:{{ score }}%;border-radius:6px;transition:width .6s ease;
+                        background:{% if score >= 90 %}linear-gradient(90deg,#0D9E8A,#07c4a8){% elif score >= 70 %}linear-gradient(90deg,#1464A5,#2980d4){% elif score >= 50 %}linear-gradient(90deg,#F0A500,#f5c430){% else %}#555{% endif %};"></div>
                 </div>
-
-                
                 <div style="display:flex;gap:20px;margin-top:8px;">
                     <span style="font-size:11px;color:var(--text-muted);">
                         ⭐ Rating:
                         <strong style="color:var(--text);">
                             {% if item.avg_rating %}{{ item.avg_rating }}/5{% else %}—{% endif %}
                         </strong>
-                        {% if item.rating_count %}({{ item.rating_count }} recenzii){% endif %}
+                        {% if item.rating_count %}({{ item.rating_count }} {% trans "recenzii" %}){% endif %}
                     </span>
                     <span style="font-size:11px;color:var(--text-muted);">
-                        ✅ Finalizate:
+                        ✅ {% trans "Finalizate:" %}
                         <strong style="color:var(--text);">{{ item.completed }}</strong>
                     </span>
                     <span style="font-size:11px;color:var(--text-muted);">
-                        📋 Total programări:
+                        📋 {% trans "Total programări:" %}
                         <strong style="color:var(--text);">{{ item.total }}</strong>
                     </span>
                 </div>
             </div>
             {% endwith %}
             {% empty %}
-            <div class="empty-state" style="padding:40px;">Nu există medici înregistrați.</div>
+            <div class="empty-state" style="padding:40px;">{% trans "Nu există medici înregistrați." %}</div>
             {% endfor %}
         </div>
     </div>
@@ -237,7 +214,6 @@ Chart.defaults.borderColor = gridColor;
 Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
 Chart.defaults.font.size = 11;
 
-
 const rev6mLabels  = {{ revenue_labels|safe }};
 const rev6mData    = {{ revenue_data|safe }};
 const rev1yLabels  = {{ revenue_labels_1y|safe }};
@@ -249,7 +225,6 @@ const pat1yData    = {{ patients_data_1y|safe }};
 const apptLabels   = {{ monthly_labels|safe }};
 const apptCounts   = {{ monthly_counts|safe }};
 const statusData   = {{ status_counts|safe }};
-
 
 function lineOpts(labels, data, color) {
     return {
@@ -279,7 +254,6 @@ function lineOpts(labels, data, color) {
     };
 }
 
-
 let revChart = new Chart(document.getElementById('revenueChart'),
     lineOpts(rev6mLabels, rev6mData, 'rgb(20, 100, 165)'));
 
@@ -291,7 +265,6 @@ function switchRevChart(period) {
     document.getElementById('rev-btn-1y').className = 'btn btn-sm ' + (period==='1y'?'btn-primary':'btn-ghost');
 }
 
-
 let patChart = new Chart(document.getElementById('patientsChart'),
     lineOpts(pat6mLabels, pat6mData, 'rgb(13, 158, 138)'));
 
@@ -302,7 +275,6 @@ function switchPatientsChart(period) {
     document.getElementById('pat-btn-6m').className = 'btn btn-sm ' + (period==='6m'?'btn-primary':'btn-ghost');
     document.getElementById('pat-btn-1y').className = 'btn btn-sm ' + (period==='1y'?'btn-primary':'btn-ghost');
 }
-
 
 new Chart(document.getElementById('appointmentsChart'), {
     type: 'bar',
@@ -327,11 +299,10 @@ new Chart(document.getElementById('appointmentsChart'), {
     }
 });
 
-
 new Chart(document.getElementById('statusChart'), {
     type: 'doughnut',
     data: {
-        labels: ['Finalizate', 'Confirmate', 'Așteptare', 'Neprezentare'],
+        labels: ['{% trans "Finalizate" %}', '{% trans "Confirmate" %}', '{% trans "Așteptare" %}', '{% trans "Neprezentare" %}'],
         datasets: [{
             data: statusData,
             backgroundColor: ['#0D9E8A', '#1464A5', '#F0A500', '#ef4444'],

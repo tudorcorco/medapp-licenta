@@ -1,49 +1,50 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Rapoarte Admin{% endblock %}
-{% block page_title %}Rapoarte & Statistici{% endblock %}
+{% block title %}{% trans "Rapoarte Admin" %}{% endblock %}
+{% block page_title %}{% trans "Rapoarte & Statistici" %}{% endblock %}
 {% block nav_reports %}active{% endblock %}
 
 {% block content %}
 
 <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
     <a href="{% url 'admin_profile_edit' %}" class="btn btn-ghost btn-sm">
-        ✏️ Editează profilul meu
+        ✏️ {% trans "Editează profilul meu" %}
     </a>
 </div>
 
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-primary);">{{ revenue_month }} <span style="font-size:14px">RON</span></div>
-        <div class="stat-label">Venituri luna asta</div>
+        <div class="stat-label">{% trans "Venituri luna asta" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value">{{ total_appointments }}</div>
-        <div class="stat-label">Total programări</div>
+        <div class="stat-label">{% trans "Total programări" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-success);">{{ completed_appts }}</div>
-        <div class="stat-label">Finalizate</div>
+        <div class="stat-label">{% trans "Finalizate" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-warning);">{{ new_patients_month }}</div>
-        <div class="stat-label">Pacienți noi luna asta</div>
+        <div class="stat-label">{% trans "Pacienți noi luna asta" %}</div>
     </div>
 </div>
 
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
     <div class="stat-card">
         <div class="stat-value">{{ total_patients }}</div>
-        <div class="stat-label">Total pacienți</div>
+        <div class="stat-label">{% trans "Total pacienți" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value">{{ total_doctors }}</div>
-        <div class="stat-label">Total medici</div>
+        <div class="stat-label">{% trans "Total medici" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-teal);">{{ available_doctors }}</div>
-        <div class="stat-label">Medici disponibili</div>
+        <div class="stat-label">{% trans "Medici disponibili" %}</div>
     </div>
 </div>
 
@@ -51,32 +52,35 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">📊 Programări pe luni</div>
-            <div class="card-subtitle">Ultimele 6 luni</div>
+            <div class="card-title">📊 {% trans "Programări pe luni" %}</div>
+            <div class="card-subtitle">{% trans "Ultimele 6 luni" %}</div>
         </div>
         <div class="card-body">
             <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;color:var(--text-muted);">
-                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>Programări</span>
+                <span style="display:flex;align-items:center;gap:4px;">
+                    <span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>
+                    {% trans "Programări" %}
+                </span>
             </div>
             <div style="position:relative;height:200px;">
-                <canvas id="monthlyChart" role="img" aria-label="Grafic programari lunare">Programări pe ultimele 6 luni.</canvas>
+                <canvas id="monthlyChart" role="img" aria-label="{% trans "Grafic programari lunare" %}">{% trans "Programări pe ultimele 6 luni." %}</canvas>
             </div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🔵 Status programări</div>
-            <div class="card-subtitle">Distribuție curentă</div>
+            <div class="card-title">🔵 {% trans "Status programări" %}</div>
+            <div class="card-subtitle">{% trans "Distribuție curentă" %}</div>
         </div>
         <div class="card-body">
             <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);">
-                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#1D9E75;display:inline-block;"></span>Finalizate</span>
-                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>Confirmate</span>
-                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#BA7517;display:inline-block;"></span>Așteptare</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#1D9E75;display:inline-block;"></span>{% trans "Finalizate" %}</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block;"></span>{% trans "Confirmate" %}</span>
+                <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#BA7517;display:inline-block;"></span>{% trans "Așteptare" %}</span>
             </div>
             <div style="position:relative;height:200px;">
-                <canvas id="statusChart" role="img" aria-label="Grafic donut status programari">Status programari.</canvas>
+                <canvas id="statusChart" role="img" aria-label="{% trans "Grafic donut status programari" %}">{% trans "Status programari." %}</canvas>
             </div>
         </div>
     </div>
@@ -87,8 +91,8 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🏆 Top medici după venituri</div>
-            <div class="card-subtitle">Consultații finalizate × tarif</div>
+            <div class="card-title">🏆 {% trans "Top medici după venituri" %}</div>
+            <div class="card-subtitle">{% trans "Consultații finalizate × tarif" %}</div>
         </div>
         <div class="card-body" style="padding:10px 14px;">
             {% for doc in top_doctors %}
@@ -96,19 +100,19 @@
                 <div style="width:28px;height:28px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ forloop.counter }}</div>
                 <div style="flex:1;">
                     <div style="font-size:13px;font-weight:500;color:var(--text);">Dr. {{ doc.user.get_full_name|default:doc.user.username }}</div>
-                    <div style="font-size:11px;color:var(--text-muted);">{{ doc.specialization }} · {{ doc.appt_count }} programări</div>
+                    <div style="font-size:11px;color:var(--text-muted);">{{ doc.specialization }} · {{ doc.appt_count }} {% trans "programări" %}</div>
                 </div>
                 <div style="font-size:13px;font-weight:600;color:var(--c-primary);">{{ doc.revenue|floatformat:0 }} RON</div>
             </div>
             {% empty %}
-                <div class="empty-state"><div class="empty-state-text">Niciun medic.</div></div>
+                <div class="empty-state"><div class="empty-state-text">{% trans "Niciun medic." %}</div></div>
             {% endfor %}
         </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">📋 Ultimele programări</div>
+            <div class="card-title">📋 {% trans "Ultimele programări" %}</div>
         </div>
         <div class="card-body" style="padding:10px 14px;">
             {% for appt in recent_appointments %}
@@ -118,11 +122,11 @@
                     <div style="font-size:11px;color:var(--text-muted);">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }} · {{ appt.date_time|date:"d M, H:i" }}</div>
                 </div>
                 {% if appt.is_completed %}
-                    <span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:11px;">✓ Finalizată</span>
+                    <span class="badge" style="background:var(--surface-2);color:var(--text-muted);font-size:11px;">✓ {% trans "Finalizată" %}</span>
                 {% elif appt.is_confirmed %}
-                    <span class="badge badge-success" style="font-size:11px;">✓ Confirmată</span>
+                    <span class="badge badge-success" style="font-size:11px;">✓ {% trans "Confirmată" %}</span>
                 {% else %}
-                    <span class="badge badge-warning" style="font-size:11px;">⏳ Așteptare</span>
+                    <span class="badge badge-warning" style="font-size:11px;">⏳ {% trans "Așteptare" %}</span>
                 {% endif %}
             </div>
             {% endfor %}
@@ -133,16 +137,16 @@
 
 <div class="card">
     <div class="card-header">
-        <div class="card-title">🔍 Jurnal de audit</div>
-        <div class="card-subtitle">Ultimele 8 acțiuni din sistem</div>
+        <div class="card-title">🔍 {% trans "Jurnal de audit" %}</div>
+        <div class="card-subtitle">{% trans "Ultimele 8 acțiuni din sistem" %}</div>
     </div>
     <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
                 <tr style="background:var(--surface-2);">
-                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">Data</th>
-                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">Utilizator</th>
-                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">Acțiune</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">{% trans "Data" %}</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">{% trans "Utilizator" %}</th>
+                    <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">{% trans "Acțiune" %}</th>
                     <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:500;font-size:12px;border-bottom:0.5px solid var(--border);">IP</th>
                 </tr>
             </thead>
@@ -175,7 +179,7 @@ new Chart(document.getElementById('monthlyChart'), {
     data: {
         labels: {{ monthly_labels|safe }},
         datasets: [{
-            label: 'Programări',
+            label: '{% trans "Programări" %}',
             data: {{ monthly_counts|safe }},
             backgroundColor: isDark ? 'rgba(91,143,212,0.75)' : 'rgba(24,95,165,0.75)',
             borderColor: isDark ? '#5B8FD4' : '#185FA5',
@@ -196,7 +200,7 @@ new Chart(document.getElementById('monthlyChart'), {
 new Chart(document.getElementById('statusChart'), {
     type: 'doughnut',
     data: {
-        labels: ['Finalizate', 'Confirmate', 'Așteptare'],
+        labels: ['{% trans "Finalizate" %}', '{% trans "Confirmate" %}', '{% trans "Așteptare" %}'],
         datasets: [{
             data: {{ status_counts|safe }},
             backgroundColor: ['#1D9E75', '#185FA5', '#BA7517'],

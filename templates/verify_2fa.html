@@ -1,10 +1,11 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="ro" data-theme="light">
+<html lang="{% get_current_language as LANGUAGE_CODE %}{{ LANGUAGE_CODE }}" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verificare identitate - MedApp</title>
+    <title>{% trans "Verificare identitate" %} - MedApp</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="{% static 'js/theme.js' %}"></script>
 </head>
@@ -13,9 +14,9 @@
     <div class="auth-card">
         <div class="auth-logo">
             <div class="auth-logo-icon">M</div>
-            <h1 class="auth-title">Verificare identitate</h1>
+            <h1 class="auth-title">{% trans "Verificare identitate" %}</h1>
             <p class="auth-subtitle">
-                Am trimis un cod de 6 cifre la<br>
+                {% trans "Am trimis un cod de 6 cifre la" %}<br>
                 <strong style="color:var(--c-primary);">{{ masked_email }}</strong>
             </p>
         </div>
@@ -30,7 +31,7 @@
         <form method="POST" action="" novalidate>
             {% csrf_token %}
             <div class="form-group">
-                <label class="form-label">Cod de verificare</label>
+                <label class="form-label">{% trans "Cod de verificare" %}</label>
                 <input
                     type="text"
                     name="code"
@@ -45,21 +46,21 @@
             </div>
 
             <button type="submit" class="btn btn-primary btn-full" style="margin-top:8px;">
-                Verifică codul →
+                {% trans "Verifică codul →" %}
             </button>
         </form>
 
         <div style="background:var(--surface-2);border-radius:10px;padding:12px 16px;margin-top:16px;font-size:12px;color:var(--text-muted);text-align:center;">
-            🔒 Codul este valabil <strong style="color:var(--text);">5 minute</strong>.<br>
-            Dacă nu ai primit emailul, verifică folderul Spam.
+            🔒 {% blocktrans %}Codul este valabil <strong style="color:var(--text);">5 minute</strong>.{% endblocktrans %}<br>
+            {% trans "Dacă nu ai primit emailul, verifică folderul Spam." %}
         </div>
 
         <div style="text-align:center;margin-top:16px;">
-            <a href="{% url 'login' %}" style="font-size:13px;color:var(--text-muted);">← Înapoi la autentificare</a>
+            <a href="{% url 'login' %}" style="font-size:13px;color:var(--text-muted);">{% trans "← Înapoi la autentificare" %}</a>
         </div>
 
         <div style="text-align:center;margin-top:16px;">
-            <button onclick="toggleTheme()" class="theme-toggle" style="margin:0 auto;" id="theme-toggle-btn" aria-label="Comută tema">🌙</button>
+            <button onclick="toggleTheme()" class="theme-toggle" style="margin:0 auto;" id="theme-toggle-btn" aria-label="{% trans "Comută tema" %}">🌙</button>
         </div>
     </div>
 </div>

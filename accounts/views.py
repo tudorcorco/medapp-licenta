@@ -24,6 +24,7 @@ from .models import (
     PatientProfile, DoctorProfile, Prescription, Rating,
     Payment, Wallet, WalletTransaction, LoginAttempt, TwoFactorCode,
 )
+from .translations import t
 
 
 def _profile_pct(profile, user):
@@ -33,14 +34,13 @@ def _profile_pct(profile, user):
     return round((filled / len(fields)) * 100)
 
 
-
 def _get_notifications(user):
     confirmed = Appointment.objects.filter(
         patient=user,
         is_confirmed=True,
         is_completed=False,
         date_time__gte=timezone.now(),
-        notification_seen=False,  
+        notification_seen=False,
     ).select_related('doctor').order_by('date_time')[:5]
     return confirmed, confirmed.count()
 
@@ -108,8 +108,8 @@ def _get_admin_stats(now):
 
     status_counts = [
         Appointment.objects.filter(is_completed=True).count(),
-        Appointment.objects.filter(is_confirmed=True, is_completed=False).count(),
-        Appointment.objects.filter(is_confirmed=False, is_completed=False).count(),
+        Appointment.objects.filter(is_confirmed=True, is_completed=False, is_no_show=False).count(),
+        Appointment.objects.filter(is_confirmed=False, is_completed=False, is_no_show=False).count(),
         Appointment.objects.filter(is_no_show=True).count(),
     ]
 
@@ -208,7 +208,6 @@ def home_view(request):
     })
 
 
-
 def login_view(request):
     if request.user.is_authenticated:
         return _redirect_by_role(request.user)
@@ -225,30 +224,14 @@ def login_view(request):
             form = ClinicLoginForm(request, data=request.POST)
             if form.is_valid():
                 user = form.get_user()
-                if user.is_patient:
-                    tfa = TwoFactorCode.generate(user)
-                    name = user.get_full_name() or user.username
-                    code = tfa.code
-                    _send_email_safe(
-                        subject='Codul tau de verificare MedApp',
-                        recipient=user.email,
-                        message='Buna ' + name + ',\n\nCodul tau de verificare este:\n\n    ' + code + '\n\nCodul este valabil 5 minute.\nDaca nu ai initiat aceasta autentificare, ignora acest email.\n\nEchipa MedApp',
-                    )
-                    request.session['2fa_user_id'] = user.id
-                    request.session['2fa_remember'] = bool(request.POST.get('remember_me'))
-                    request.session.modified = True
-                    AuditLog.log(request, AuditLog.Action.TWO_FA_SENT, metadata={'username': user.username})
-                    return redirect('verify_2fa')
+                login(request, user)
+                if not request.POST.get('remember_me'):
+                    request.session.set_expiry(0)
                 else:
-                    
-                    login(request, user)
-                    if not request.POST.get('remember_me'):
-                        request.session.set_expiry(0)
-                    else:
-                        request.session.set_expiry(60 * 60 * 24 * 30)
-                    request.session.modified = True
-                    AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
-                    return _redirect_by_role(user)
+                    request.session.set_expiry(60 * 60 * 24 * 30)
+                request.session.modified = True
+                AuditLog.log(request, AuditLog.Action.LOGIN_SUCCESS, metadata={'username': user.username})
+                return _redirect_by_role(user)
             else:
                 soft_banned, hard_banned = LoginAttempt.record_failure(request, username)
                 AuditLog.log(request, AuditLog.Action.LOGIN_FAILED, metadata={'username': username})
@@ -271,7 +254,6 @@ def login_view(request):
                         form.add_error(None, 'Date incorecte.')
 
     return render(request, 'login.html', {'form': form, 'ban_error': ban_error})
-
 
 
 def verify_2fa(request):
@@ -299,7 +281,6 @@ def verify_2fa(request):
             del request.session['2fa_user_id']
             if '2fa_remember' in request.session:
                 del request.session['2fa_remember']
-            
             login(request, user)
             if not remember:
                 request.session.set_expiry(0)
@@ -345,7 +326,6 @@ def logout_view(request):
     return redirect('login')
 
 
-
 @login_required(login_url='login')
 def dismiss_notification(request, appointment_id):
     if request.method == 'POST':
@@ -383,8 +363,14 @@ def patient_dashboard(request):
         is_completed=True
     ).exclude(rating__isnull=False).order_by('-date_time').first()
 
+    lang = request.session.get('lang', 'ro')
     hour = now.hour
-    greeting = 'Buna dimineata' if hour < 12 else ('Buna ziua' if hour < 18 else 'Buna seara')
+    if hour < 12:
+        greeting = t('Buna dimineata', lang)
+    elif hour < 18:
+        greeting = t('Buna ziua', lang)
+    else:
+        greeting = t('Buna seara', lang)
 
     return render(request, 'patient_dashboard.html', {
         'appointments': all_appts, 'upcoming': upcoming, 'past': past,
@@ -473,6 +459,7 @@ def receipt_pdf(request, appointment_id):
     from reportlab.lib.units import cm
     import io
 
+    lang   = request.session.get('lang', 'ro')
     buffer = io.BytesIO()
     doc    = SimpleDocTemplate(buffer, pagesize=A4,
                                rightMargin=2*cm, leftMargin=2*cm,
@@ -495,22 +482,22 @@ def receipt_pdf(request, appointment_id):
 
     def clean(text):
         if not text:
-            return '—'
+            return '-'
         return (str(text)
-            .replace('ă','a').replace('Ă','A')
-            .replace('â','a').replace('Â','A')
-            .replace('î','i').replace('Î','I')
-            .replace('ș','s').replace('Ș','S')
-            .replace('ț','t').replace('Ț','T')
-            .replace('ş','s').replace('Ş','S')
-            .replace('ţ','t').replace('Ţ','T')
+            .replace('\u0103','a').replace('\u0102','A')
+            .replace('\u00e2','a').replace('\u00c2','A')
+            .replace('\u00ee','i').replace('\u00ce','I')
+            .replace('\u0219','s').replace('\u0218','S')
+            .replace('\u021b','t').replace('\u021a','T')
+            .replace('\u015f','s').replace('\u015e','S')
+            .replace('\u0163','t').replace('\u0162','T')
         )
 
     method_labels = {
-        'CASH':        'Cash',
-        'CARD_ONLINE': 'Card online',
-        'CNAS':        'Asigurare CNAS',
-        'WALLET':      'Wallet MedApp',
+        'CASH':        t('Cash', lang),
+        'CARD_ONLINE': t('Card online', lang),
+        'CNAS':        t('Asigurare CNAS', lang),
+        'WALLET':      t('Wallet MedApp', lang),
     }
 
     patient_name = clean(appt.beneficiary_name if appt.is_for_other and appt.beneficiary_name
@@ -518,7 +505,7 @@ def receipt_pdf(request, appointment_id):
 
     story = []
     story.append(Paragraph('MedApp', title_style))
-    story.append(Paragraph('Chitanta digitala de plata', sub_style))
+    story.append(Paragraph(t('Chitanță digitală de plată', lang), sub_style))
     story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#E2E8F0')))
     story.append(Spacer(1, 0.4*cm))
 
@@ -542,11 +529,11 @@ def receipt_pdf(request, appointment_id):
         spec = ''
 
     detail_data = [
-        [Paragraph('PACIENT', label_style),    Paragraph('MEDIC', label_style)],
+        [Paragraph(t('Pacient', lang).upper(), label_style), Paragraph(t('Medic', lang).upper(), label_style)],
         [Paragraph(patient_name, value_style),
          Paragraph(clean('Dr. ' + (appt.doctor.get_full_name() or appt.doctor.username)), value_style)],
         [Paragraph('', small_style), Paragraph(clean(spec), small_style)],
-        [Paragraph('DATA CONSULTATIEI', label_style), Paragraph('METODA PLATA', label_style)],
+        [Paragraph(t('Data consultației', lang).upper(), label_style), Paragraph(t('Metodă plată', lang).upper(), label_style)],
         [Paragraph(appt.date_time.strftime('%d %B %Y'), value_style),
          Paragraph(method_labels.get(payment.method, payment.method), value_style)],
         [Paragraph(appt.date_time.strftime('%H:%M'), small_style), Paragraph('', small_style)],
@@ -580,7 +567,7 @@ def receipt_pdf(request, appointment_id):
     story.append(Spacer(1, 0.3*cm))
 
     total_data = [
-        [Paragraph('TOTAL ACHITAT', label_style),
+        [Paragraph(t('Total achitat', lang).upper(), label_style),
          Paragraph(f'{payment.amount} RON',
                    ParagraphStyle('total', parent=styles['Normal'],
                                   fontSize=20, fontName='Helvetica-Bold',
@@ -597,16 +584,15 @@ def receipt_pdf(request, appointment_id):
 
     if payment.method == 'CASH':
         story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph('Plata cash se efectueaza la receptia clinicii in ziua consultatiei.', small_style))
+        story.append(Paragraph(t('Plata cash se efectueaza la receptia clinicii.', lang), small_style))
 
     story.append(Spacer(1, 1*cm))
     story.append(HRFlowable(width='100%', thickness=0.5, color=colors.HexColor('#E2E8F0')))
     story.append(Spacer(1, 0.2*cm))
     story.append(Paragraph(
-        f'MedApp · Chitanta digitala · {payment.created_at.strftime("%d %B %Y")} · Ref: {payment.reference}',
+        f'MedApp · {payment.created_at.strftime("%d %B %Y")} · Ref: {payment.reference}',
         footer_style
     ))
-    story.append(Paragraph('Acest document serveste ca dovada a platii efectuate.', footer_style))
 
     doc.build(story)
     buffer.seek(0)
@@ -819,22 +805,23 @@ def gdpr_export(request):
     from reportlab.lib.units import cm
     import io
 
-    user    = request.user
-    profile = getattr(user, 'patient_profile', None)
-    appts   = Appointment.objects.filter(patient=user).select_related('doctor')
+    lang          = request.session.get('lang', 'ro')
+    user          = request.user
+    profile       = getattr(user, 'patient_profile', None)
+    appts         = Appointment.objects.filter(patient=user).select_related('doctor')
     prescriptions = Prescription.objects.filter(patient=user).select_related('doctor')
 
     def clean(text):
         if not text:
-            return '—'
+            return '-'
         return (str(text)
-            .replace('ă', 'a').replace('Ă', 'A')
-            .replace('â', 'a').replace('Â', 'A')
-            .replace('î', 'i').replace('Î', 'I')
-            .replace('ș', 's').replace('Ș', 'S')
-            .replace('ț', 't').replace('Ț', 'T')
-            .replace('ş', 's').replace('Ş', 'S')
-            .replace('ţ', 't').replace('Ţ', 'T')
+            .replace('\u0103','a').replace('\u0102','A')
+            .replace('\u00e2','a').replace('\u00c2','A')
+            .replace('\u00ee','i').replace('\u00ce','I')
+            .replace('\u0219','s').replace('\u0218','S')
+            .replace('\u021b','t').replace('\u021a','T')
+            .replace('\u015f','s').replace('\u015e','S')
+            .replace('\u0163','t').replace('\u0162','T')
         )
 
     buffer = io.BytesIO()
@@ -851,8 +838,8 @@ def gdpr_export(request):
     normal.fontSize = 10
 
     def make_table(data, col_widths):
-        t = Table(data, colWidths=col_widths)
-        t.setStyle(TableStyle([
+        t_obj = Table(data, colWidths=col_widths)
+        t_obj.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#EBF4FF')),
             ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
             ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
@@ -863,11 +850,11 @@ def gdpr_export(request):
             ('BOTTOMPADDING', (0,0), (-1,-1), 6),
             ('LEFTPADDING', (0,0), (-1,-1), 8),
         ]))
-        return t
+        return t_obj
 
     def make_header_table(data, col_widths):
-        t = Table(data, colWidths=col_widths)
-        t.setStyle(TableStyle([
+        t_obj = Table(data, colWidths=col_widths)
+        t_obj.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1B5FAD')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
@@ -879,35 +866,35 @@ def gdpr_export(request):
             ('BOTTOMPADDING', (0,0), (-1,-1), 6),
             ('LEFTPADDING', (0,0), (-1,-1), 8),
         ]))
-        return t
+        return t_obj
 
     story = []
-    story.append(Paragraph('Export Date Personale - MedApp', title_style))
+    story.append(Paragraph(t('Export Date Personale', lang) + ' - MedApp', title_style))
     story.append(Paragraph(f'Generat la: {timezone.now().strftime("%d %B %Y, %H:%M")}', normal))
     story.append(Spacer(1, 0.4*cm))
 
-    story.append(Paragraph('Date cont', h2_style))
+    story.append(Paragraph(t('Date cont', lang), h2_style))
     story.append(make_table([
         ['Username',           clean(user.username)],
-        ['Nume complet',       clean(user.get_full_name() or '—')],
+        ['Nume complet',       clean(user.get_full_name() or '-')],
         ['Email',              clean(user.email)],
         ['Data inregistrarii', clean(user.date_joined.strftime('%d %B %Y'))],
     ], [5*cm, 12*cm]))
 
-    story.append(Paragraph('Date medicale', h2_style))
+    story.append(Paragraph(t('Date medicale', lang), h2_style))
     story.append(make_table([
-        ['CNP',            clean(profile.cnp if profile else '—')],
-        ['Data nasterii',  clean(str(profile.birth_date) if profile and profile.birth_date else '—')],
-        ['Grup sanguin',   clean(profile.blood_type if profile else '—')],
-        ['Alergii',        clean(profile.allergies if profile else '—')],
-        ['Telefon',        clean(profile.phone if profile else '—')],
+        ['CNP',            clean(profile.cnp if profile else '-')],
+        ['Data nasterii',  clean(str(profile.birth_date) if profile and profile.birth_date else '-')],
+        ['Grup sanguin',   clean(profile.blood_type if profile else '-')],
+        ['Alergii',        clean(profile.allergies if profile else '-')],
+        ['Telefon',        clean(profile.phone if profile else '-')],
         ['Asigurat CNAS',  'Da' if (profile and profile.is_insured) else 'Nu'],
-        ['Card sanatate',  clean(profile.health_card_serial if profile else '—')],
+        ['Card sanatate',  clean(profile.health_card_serial if profile else '-')],
     ], [5*cm, 12*cm]))
 
-    story.append(Paragraph('Programari', h2_style))
+    story.append(Paragraph(t('Programări', lang), h2_style))
     if appts.exists():
-        data = [['Medic', 'Data', 'Status', 'Plata']]
+        data = [[t('Medic', lang), t('Data consultației', lang), 'Status', t('Metodă plată', lang)]]
         for a in appts:
             if a.is_no_show:
                 status = 'Neprezentare'
@@ -921,24 +908,24 @@ def gdpr_export(request):
                 clean(f'Dr. {a.doctor.get_full_name() or a.doctor.username}'),
                 a.date_time.strftime('%d %B %Y, %H:%M'),
                 status,
-                clean(a.payment_method or '—'),
+                clean(a.payment_method or '-'),
             ])
         story.append(make_header_table(data, [6*cm, 5*cm, 3*cm, 3*cm]))
     else:
-        story.append(Paragraph('Nicio programare inregistrata.', normal))
+        story.append(Paragraph(t('Nicio programare inregistrata.', lang), normal))
 
-    story.append(Paragraph('Retete', h2_style))
+    story.append(Paragraph(t('Rețete', lang), h2_style))
     if prescriptions.exists():
-        data = [['Medic', 'Data', 'Diagnostic']]
-        for r in prescriptions:
+        data = [[t('Medic', lang), 'Data', t('Diagnostic', lang)]]
+        for rx in prescriptions:
             data.append([
-                clean(f'Dr. {r.doctor.get_full_name() or r.doctor.username}'),
-                r.created_at.strftime('%d %B %Y'),
-                clean(r.diagnosis or '—'),
+                clean(f'Dr. {rx.doctor.get_full_name() or rx.doctor.username}'),
+                rx.created_at.strftime('%d %B %Y'),
+                clean(rx.diagnosis or '-'),
             ])
         story.append(make_header_table(data, [7*cm, 4*cm, 6*cm]))
     else:
-        story.append(Paragraph('Nicio reteta inregistrata.', normal))
+        story.append(Paragraph(t('Nicio reteta inregistrata.', lang), normal))
 
     doc.build(story)
     buffer.seek(0)
@@ -1108,7 +1095,6 @@ def new_appointment(request, doctor_id):
                 birth_str = request.POST.get('beneficiary_birth_date', '')
                 if birth_str:
                     try:
-                        from datetime import date
                         appt.beneficiary_birth_date = date.fromisoformat(birth_str)
                     except ValueError:
                         pass
@@ -1168,7 +1154,7 @@ def new_appointment(request, doctor_id):
                     status=Payment.Status.COMPLETED,
                 )
 
-            else:  # CASH
+            else:
                 appt.save()
                 Payment.objects.create(
                     appointment=appt, payer=request.user, beneficiary=request.user,
@@ -1312,15 +1298,28 @@ def approve_appointment(request, appointment_id):
     appt.is_confirmed = True
     appt.save()
     AuditLog.log(request, AuditLog.Action.APPT_APPROVED, metadata={'appointment_id': appointment_id})
-    _send_email_safe(
-        subject='Programarea ta a fost confirmata — MedApp',
-        message=f'Buna {appt.patient.get_full_name() or appt.patient.username},\n\n'
-                f'Programarea ta la Dr. {appt.doctor.get_full_name() or appt.doctor.username} '
-                f'din data de {appt.date_time.strftime("%d %B %Y, ora %H:%M")} a fost confirmata.\n\n'
-                f'Te asteptam!\nEchipa MedApp',
-        recipient=appt.patient.email,
-    )
-    messages.success(request, 'Programarea a fost aprobata.')
+
+    lang = request.session.get('lang', 'ro')
+
+    if lang == 'en':
+        subject = 'Your appointment has been confirmed — MedApp'
+        message = (
+            f'Hello {appt.patient.get_full_name() or appt.patient.username},\n\n'
+            f'Your appointment with Dr. {appt.doctor.get_full_name() or appt.doctor.username} '
+            f'on {appt.date_time.strftime("%d %B %Y at %H:%M")} has been confirmed.\n\n'
+            f'We look forward to seeing you!\nThe MedApp Team'
+        )
+    else:
+        subject = 'Programarea ta a fost confirmata — MedApp'
+        message = (
+            f'Buna {appt.patient.get_full_name() or appt.patient.username},\n\n'
+            f'Programarea ta la Dr. {appt.doctor.get_full_name() or appt.doctor.username} '
+            f'din data de {appt.date_time.strftime("%d %B %Y, ora %H:%M")} a fost confirmata.\n\n'
+            f'Te asteptam!\nEchipa MedApp'
+        )
+
+    _send_email_safe(subject=subject, message=message, recipient=appt.patient.email)
+    messages.success(request, 'Programarea a fost aprobata.' if lang == 'ro' else 'Appointment approved.')
     return redirect('doctor_dashboard')
 
 
@@ -1611,7 +1610,7 @@ def doctor_calendar(request):
             'payment_method': getattr(appt, 'payment_method', '') or '',
         })
 
-    day_names = ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm', 'Dum']
+    day_names = ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'S\u00e2m', 'Dum']
     days_data = []
     for i in range(7):
         d = week_start + timedelta(days=i)
@@ -1637,6 +1636,7 @@ def doctor_calendar(request):
         'month_start':        month_start.isoformat(),
     }
     return render(request, 'doctor_calendar.html', context)
+
 
 @login_required(login_url='login')
 def beneficiary_view(request, appointment_id):
@@ -1664,3 +1664,11 @@ def beneficiary_view(request, appointment_id):
         'other_appts': other_appts,
         'prescriptions': prescriptions,
     })
+
+
+@login_required(login_url='login')
+def toggle_language(request):
+    current = request.session.get('lang', 'ro')
+    request.session['lang'] = 'en' if current == 'ro' else 'ro'
+    referer = request.META.get('HTTP_REFERER', '/')
+    return redirect(referer)

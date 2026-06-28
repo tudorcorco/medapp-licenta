@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Evaluează consultația{% endblock %}
-{% block page_title %}Evaluează consultația{% endblock %}
+{% block title %}{% trans "Evaluează consultația" %}{% endblock %}
+{% block page_title %}{% trans "Evaluează consultația" %}{% endblock %}
 {% block nav_dashboard %}active{% endblock %}
 
 {% block content %}
@@ -23,7 +24,7 @@
                     Dr. {{ appointment.doctor.get_full_name|default:appointment.doctor.username }}
                 </div>
                 <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">
-                    Consultație: {{ appointment.date_time|date:"d M Y, H:i" }}
+                    {% trans "Consultație:" %} {{ appointment.date_time|date:"d M Y, H:i" }}
                 </div>
             </div>
         </div>
@@ -31,8 +32,8 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">⭐ Evaluează consultația</div>
-            <div class="card-subtitle">Feedback-ul tău ajută alți pacienți să aleagă medicul potrivit</div>
+            <div class="card-title">⭐ {% trans "Evaluează consultația" %}</div>
+            <div class="card-subtitle">{% trans "Feedback-ul tău ajută alți pacienți să aleagă medicul potrivit" %}</div>
         </div>
         <div class="card-body">
             <form method="POST" action="" novalidate>
@@ -40,7 +41,7 @@
 
                 <div style="text-align:center;margin-bottom:28px;">
                     <div style="font-size:14px;color:var(--text-muted);margin-bottom:14px;">
-                        Cât de mulțumit ai fost de consultație?
+                        {% trans "Cât de mulțumit ai fost de consultație?" %}
                     </div>
 
                     <div class="star-rating" id="starRating">
@@ -59,16 +60,16 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Comentariu (opțional)</label>
+                    <label class="form-label">{% trans "Comentariu (opțional)" %}</label>
                     <textarea name="comment" class="form-input" rows="3"
-                              placeholder="Descrie experiența ta cu acest medic..."></textarea>
+                              placeholder="{% trans "Descrie experiența ta cu acest medic..." %}"></textarea>
                 </div>
 
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
-                    <a href="{% url 'patient_dashboard' %}" class="btn btn-ghost">Sari peste</a>
+                    <a href="{% url 'patient_dashboard' %}" class="btn btn-ghost">{% trans "Sari peste" %}</a>
                     <button type="submit" class="btn btn-primary" id="submitBtn" disabled
                             style="opacity:.5;cursor:not-allowed;">
-                        Trimite evaluarea
+                        {% trans "Trimite evaluarea" %}
                     </button>
                 </div>
             </form>
@@ -89,33 +90,39 @@
 
 <script>
 let currentRating = 0;
-const labels = ['', 'Foarte nemulțumit', 'Nemulțumit', 'Satisfăcut', 'Mulțumit', 'Excelent!'];
+const labels = {
+    1: '{% trans "Foarte nesatisfăcător" %}',
+    2: '{% trans "Nesatisfăcător" %}',
+    3: '{% trans "Satisfăcător" %}',
+    4: '{% trans "Bun" %}',
+    5: '{% trans "Excelent" %}'
+};
 
 function setRating(val) {
     currentRating = val;
     document.getElementById('scoreInput').value = val;
-    document.getElementById('ratingLabel').textContent = labels[val];
-    document.getElementById('submitBtn').disabled = false;
-    document.getElementById('submitBtn').style.opacity = '1';
-    document.getElementById('submitBtn').style.cursor = 'pointer';
-    updateStars(val, 'active');
+    document.querySelectorAll('.star-btn').forEach(function(btn) {
+        btn.classList.toggle('active', parseInt(btn.dataset.value) <= val);
+    });
+    document.getElementById('ratingLabel').textContent = labels[val] || '';
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
+    submitBtn.style.cursor = 'pointer';
 }
 
 function hoverRating(val) {
-    updateStars(val, 'hover');
-    document.getElementById('ratingLabel').textContent = labels[val];
+    document.querySelectorAll('.star-btn').forEach(function(btn) {
+        btn.classList.toggle('hover', parseInt(btn.dataset.value) <= val);
+    });
+    document.getElementById('ratingLabel').textContent = labels[val] || '';
 }
 
 function resetHover() {
-    updateStars(currentRating, 'active');
+    document.querySelectorAll('.star-btn').forEach(function(btn) {
+        btn.classList.remove('hover');
+    });
     document.getElementById('ratingLabel').textContent = currentRating ? labels[currentRating] : '';
 }
-
-function updateStars(val, cls) {
-    document.querySelectorAll('.star-btn').forEach((btn, i) => {
-        btn.className = 'star-btn' + (i < val ? ' ' + cls : '');
-    });
-}
 </script>
-
 {% endblock %}

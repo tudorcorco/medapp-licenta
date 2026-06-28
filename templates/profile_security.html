@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Securitate Cont{% endblock %}
-{% block page_title %}Securitate Cont{% endblock %}
+{% block title %}{% trans "Securitate Cont" %}{% endblock %}
+{% block page_title %}{% trans "Securitate Cont" %}{% endblock %}
 
 {% block content %}
 <div style="max-width:480px;margin:0 auto;">
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🔐 Schimbă parola</div>
-            <div class="card-subtitle">Folosește o parolă puternică, de minim 8 caractere</div>
+            <div class="card-title">🔐 {% trans "Schimbă parola" %}</div>
+            <div class="card-subtitle">{% trans "Folosește o parolă puternică, de minim 8 caractere" %}</div>
         </div>
         <div class="card-body">
             <form method="POST" action="" novalidate>
@@ -26,28 +27,28 @@
                 {% endfor %}
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
                     <a href="{% if user.is_patient %}{% url 'patient_dashboard' %}{% else %}{% url 'doctor_dashboard' %}{% endif %}"
-                       class="btn btn-ghost">Anulează</a>
-                    <button type="submit" class="btn btn-primary">Schimbă parola</button>
+                       class="btn btn-ghost">{% trans "Anulează" %}</a>
+                    <button type="submit" class="btn btn-primary">{% trans "Schimbă parola" %}</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div class="card" style="margin-top:14px;">
-        <div class="card-header"><div class="card-title">Sfaturi pentru o parolă sigură</div></div>
+        <div class="card-header"><div class="card-title">{% trans "Sfaturi pentru o parolă sigură" %}</div></div>
         <div class="card-body">
             <div style="display:flex;flex-direction:column;gap:8px;">
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);">
-                    <span style="color:var(--c-success);">✓</span> Minim 10 caractere
+                    <span style="color:var(--c-success);">✓</span> {% trans "Minim 10 caractere" %}
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);">
-                    <span style="color:var(--c-success);">✓</span> Combină litere mari, mici, cifre și simboluri
+                    <span style="color:var(--c-success);">✓</span> {% trans "Combină litere mari, mici, cifre și simboluri" %}
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);">
-                    <span style="color:var(--c-danger);">✗</span> Nu folosi numele sau data nașterii
+                    <span style="color:var(--c-danger);">✗</span> {% trans "Nu folosi numele sau data nașterii" %}
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);">
-                    <span style="color:var(--c-danger);">✗</span> Nu reutiliza parole vechi
+                    <span style="color:var(--c-danger);">✗</span> {% trans "Nu reutiliza parole vechi" %}
                 </div>
             </div>
         </div>

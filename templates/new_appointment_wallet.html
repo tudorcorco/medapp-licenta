@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Programare nouă{% endblock %}
-{% block page_title %}Programare nouă{% endblock %}
+{% block title %}{% trans "Programare nouă" %}{% endblock %}
+{% block page_title %}{% trans "Programare nouă" %}{% endblock %}
 {% block nav_doctors %}active{% endblock %}
 
 {% block content %}
@@ -11,7 +12,7 @@
     <a href="{% url 'doctors_list' %}" class="btn btn-ghost btn-sm"
        style="margin-bottom:20px;display:inline-flex;align-items:center;gap:6px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        Înapoi la medici
+        {% trans "Înapoi la medici" %}
     </a>
 
     {% if selected_doctor %}
@@ -27,7 +28,7 @@
             <div>
                 <div style="font-size:16px;font-weight:600;color:var(--text);">Dr. {{ selected_doctor.get_full_name|default:selected_doctor.username }}</div>
                 <div style="font-size:13px;color:var(--c-primary);margin-top:2px;">{% if selected_doctor.doctor_profile.specialization %}{{ selected_doctor.doctor_profile.specialization }}{% endif %}</div>
-                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">Tarif: {{ selected_doctor.doctor_profile.consultation_fee }} RON</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px;">{% trans "Tarif:" %} {{ selected_doctor.doctor_profile.consultation_fee }} RON</div>
             </div>
         </div>
     </div>
@@ -35,8 +36,8 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">📅 Detalii programare</div>
-            <div class="card-subtitle">Completează informațiile consultației</div>
+            <div class="card-title">📅 {% trans "Detalii programare" %}</div>
+            <div class="card-subtitle">{% trans "Completează informațiile consultației" %}</div>
         </div>
         <div class="card-body">
             <form method="POST" action="" novalidate>
@@ -44,19 +45,19 @@
                 <input type="hidden" name="payment_method" id="payment_method_hidden" value="CASH">
 
                 <div class="form-group">
-                    <label class="form-label">Data și ora</label>
+                    <label class="form-label">{% trans "Data și ora" %}</label>
                     {{ form.date_time }}
                     {% if form.date_time.errors %}<ul class="errorlist">{% for e in form.date_time.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Motivul vizitei</label>
+                    <label class="form-label">{% trans "Motivul vizitei" %}</label>
                     {{ form.reason }}
                     {% if form.reason.errors %}<ul class="errorlist">{% for e in form.reason.errors %}<li>⚠ {{ e }}</li>{% endfor %}</ul>{% endif %}
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" style="margin-bottom:10px;display:block;">Metodă de plată</label>
+                    <label class="form-label" style="margin-bottom:10px;display:block;">{% trans "Metodă de plată" %}</label>
                     <div style="display:flex;flex-direction:column;gap:8px;">
 
                         <label class="pay-option" id="pay-cash" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;">
@@ -65,7 +66,7 @@
                             <span style="font-size:20px;">💵</span>
                             <div>
                                 <div style="font-size:14px;font-weight:600;color:var(--text);">Cash</div>
-                                <div style="font-size:12px;color:var(--text-muted);">Plată în numerar la recepție</div>
+                                <div style="font-size:12px;color:var(--text-muted);">{% trans "Plată în numerar la recepție" %}</div>
                             </div>
                         </label>
 
@@ -74,8 +75,8 @@
                                    style="accent-color:var(--c-primary);" onchange="selectPay(this)">
                             <span style="font-size:20px;">💳</span>
                             <div>
-                                <div style="font-size:14px;font-weight:600;color:var(--text);">Card online</div>
-                                <div style="font-size:12px;color:var(--text-muted);">Plată securizată cu cardul bancar</div>
+                                <div style="font-size:14px;font-weight:600;color:var(--text);">{% trans "Card online" %}</div>
+                                <div style="font-size:12px;color:var(--text-muted);">{% trans "Plată securizată cu cardul bancar" %}</div>
                             </div>
                         </label>
 
@@ -86,8 +87,8 @@
                             <div style="flex:1;">
                                 <div style="font-size:14px;font-weight:600;color:var(--text);">Wallet MedApp</div>
                                 <div style="font-size:12px;color:var(--text-muted);">
-                                    Sold: <strong style="color:var(--c-teal);">{% if patient_wallet %}{{ patient_wallet.balance }}{% else %}0{% endif %} RON</strong>
-                                    · sau plătit de aparținător
+                                    {% trans "Sold:" %} <strong style="color:var(--c-teal);">{% if patient_wallet %}{{ patient_wallet.balance }}{% else %}0{% endif %} RON</strong>
+                                    · {% trans "sau plătit de aparținător" %}
                                 </div>
                             </div>
                         </label>
@@ -97,8 +98,8 @@
                                    style="accent-color:var(--c-primary);" onchange="selectPay(this)">
                             <span style="font-size:20px;">🏥</span>
                             <div>
-                                <div style="font-size:14px;font-weight:600;color:var(--text);">Asigurare sănătate (CNAS)</div>
-                                <div style="font-size:12px;color:var(--text-muted);">Necesită card de sănătate și bilet de trimitere</div>
+                                <div style="font-size:14px;font-weight:600;color:var(--text);">{% trans "Asigurare sănătate (CNAS)" %}</div>
+                                <div style="font-size:12px;color:var(--text-muted);">{% trans "Necesită card de sănătate și bilet de trimitere" %}</div>
                             </div>
                         </label>
 
@@ -110,26 +111,26 @@
                     <div style="background:rgba(13,158,138,0.08);border:1px solid rgba(13,158,138,0.3);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;">
                         <span style="font-size:18px;">✓</span>
                         <div>
-                            <div style="font-size:13px;font-weight:600;color:var(--c-teal);">Asigurat CNAS confirmat</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Card sănătate: <strong>{{ patient_profile.health_card_serial }}</strong></div>
+                            <div style="font-size:13px;font-weight:600;color:var(--c-teal);">{% trans "Asigurat CNAS confirmat" %}</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{% trans "Card sănătate:" %} <strong>{{ patient_profile.health_card_serial }}</strong></div>
                         </div>
                     </div>
                     {% elif patient_profile and not patient_profile.is_insured %}
                     <div style="background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.3);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:14px;">
-                        <div style="font-size:13px;font-weight:600;color:var(--c-danger);">⚠ Nu ești marcat ca asigurat CNAS</div>
-                        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Actualizează-ți <a href="{% url 'profile_edit' %}" style="color:var(--c-primary);">profilul</a> înainte.</div>
+                        <div style="font-size:13px;font-weight:600;color:var(--c-danger);">⚠ {% trans "Nu ești marcat ca asigurat CNAS" %}</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{% trans "Actualizează-ți" %} <a href="{% url 'profile_edit' %}" style="color:var(--c-primary);">{% trans "profilul" %}</a> {% trans "înainte." %}</div>
                     </div>
                     {% endif %}
                     <div class="form-group">
-                        <label class="form-label">Serie bilet trimitere</label>
+                        <label class="form-label">{% trans "Serie bilet trimitere" %}</label>
                         {{ form.referral_serial }}
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">De la medicul de familie — obligatoriu pentru decontare CNAS.</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">{% trans "De la medicul de familie — obligatoriu pentru decontare CNAS." %}</div>
                     </div>
                 </div>
 
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
-                    <a href="{% url 'doctors_list' %}" class="btn btn-ghost">Anulează</a>
-                    <button type="submit" class="btn btn-teal" style="padding:10px 28px;">Confirmă programarea →</button>
+                    <a href="{% url 'doctors_list' %}" class="btn btn-ghost">{% trans "Anulează" %}</a>
+                    <button type="submit" class="btn btn-teal" style="padding:10px 28px;">{% trans "Confirmă programarea →" %}</button>
                 </div>
             </form>
         </div>
@@ -139,7 +140,7 @@
 <script>
 function selectPay(radio) {
     document.getElementById('payment_method_hidden').value = radio.value;
-    document.querySelectorAll('.pay-option').forEach(el => {
+    document.querySelectorAll('.pay-option').forEach(function(el) {
         el.style.borderColor = 'var(--border)';
         el.style.background  = 'transparent';
     });

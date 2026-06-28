@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Plată cu Wallet MedApp{% endblock %}
-{% block page_title %}Plată consultație{% endblock %}
+{% block title %}{% trans "Plată cu Wallet MedApp" %}{% endblock %}
+{% block page_title %}{% trans "Plată consultație" %}{% endblock %}
 
 {% block content %}
 <div style="max-width:500px;margin:0 auto;">
@@ -10,12 +11,12 @@
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;">
         <div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);">
             <div>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Consultație cu</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">{% trans "Consultație cu" %}</div>
                 <div style="font-size:15px;font-weight:600;color:var(--text);">Dr. {{ appointment.doctor.get_full_name }}</div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{{ appointment.date_time|date:"d M Y, H:i" }}</div>
             </div>
             <div style="text-align:right;">
-                <div style="font-size:12px;color:var(--text-muted);">Total</div>
+                <div style="font-size:12px;color:var(--text-muted);">{% trans "Total" %}</div>
                 <div style="font-size:28px;font-weight:700;color:var(--c-primary);">{{ fee }} RON</div>
             </div>
         </div>
@@ -23,8 +24,8 @@
 
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
-            <div style="font-size:15px;font-weight:700;color:var(--text);">👛 Plată cu Wallet MedApp</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Alege cine efectuează plata</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);">{% trans "👛 Plată cu Wallet MedApp" %}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{% trans "Alege cine efectuează plata" %}</div>
         </div>
 
         <div style="padding:20px;">
@@ -47,9 +48,9 @@
                         <input type="radio" name="pay_type" value="own" checked
                                style="accent-color:var(--c-primary);flex-shrink:0;">
                         <div style="flex:1;">
-                            <div style="font-size:14px;font-weight:600;color:var(--text);">Plătesc din walletul meu</div>
+                            <div style="font-size:14px;font-weight:600;color:var(--text);">{% trans "Plătesc din walletul meu" %}</div>
                             <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
-                                Sold disponibil:
+                                {% trans "Sold disponibil:" %}
                                 <strong style="color:{% if my_wallet.balance >= fee_decimal %}var(--c-success){% else %}var(--c-danger){% endif %};">
                                     {{ my_wallet.balance }} RON
                                 </strong>
@@ -70,8 +71,8 @@
                         <input type="radio" name="pay_type" value="other"
                                style="accent-color:var(--c-primary);flex-shrink:0;">
                         <div>
-                            <div style="font-size:14px;font-weight:600;color:var(--text);">Altcineva plătește pentru mine</div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Aparținător, părinte, însoțitor</div>
+                            <div style="font-size:14px;font-weight:600;color:var(--text);">{% trans "Altcineva plătește pentru mine" %}</div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{% trans "Aparținător, părinte, însoțitor" %}</div>
                         </div>
                     </label>
                 </div>
@@ -79,7 +80,7 @@
                 <div id="other-card-section" style="display:none;margin-bottom:20px;">
                     <div style="background:var(--surface-2);border-radius:10px;padding:16px;">
                         <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">
-                            Număr card MedApp al plătitorului
+                            {% trans "Număr card MedApp al plătitorului" %}
                         </label>
                         <input type="text" name="other_card" id="other_card_input"
                                class="form-input"
@@ -87,31 +88,30 @@
                                style="width:100%;text-transform:uppercase;letter-spacing:2px;font-family:monospace;font-size:15px;"
                                oninput="this.value=this.value.toUpperCase()">
                         <div style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5;">
-                            💡 Cere numărul de card din secțiunea <strong>Wallet MedApp</strong> din aplicația plătitorului.
-                            Plătitorul va primi un email de confirmare după tranzacție.
+                            💡 {% trans "Cere numărul de card din secțiunea" %} <strong>Wallet MedApp</strong> {% trans "din aplicația plătitorului. Plătitorul va primi un email de confirmare după tranzacție." %}
                         </div>
                     </div>
                 </div>
 
                 {% if my_wallet.balance < fee_decimal %}
                 <div style="background:rgba(220,53,69,0.08);border:1px solid rgba(220,53,69,0.3);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
-                    <div style="font-size:13px;font-weight:600;color:var(--c-danger);margin-bottom:4px;">⚠ Sold insuficient</div>
+                    <div style="font-size:13px;font-weight:600;color:var(--c-danger);margin-bottom:4px;">⚠ {% trans "Sold insuficient" %}</div>
                     <div style="font-size:12px;color:var(--text-muted);">
-                        Ai {{ my_wallet.balance }} RON, necesari {{ fee }} RON.
-                        Poți reîncărca walletul sau cere unui aparținător să plătească.
+                        {% blocktrans with balance=my_wallet.balance %}Ai {{ balance }} RON, necesari {{ fee }} RON.
+                        Poți reîncărca walletul sau cere unui aparținător să plătească.{% endblocktrans %}
                     </div>
                 </div>
                 {% endif %}
 
                 <button type="submit" class="btn btn-primary" style="width:100%;padding:13px;font-size:15px;">
-                    Confirmă plata →
+                    {% trans "Confirmă plata →" %}
                 </button>
             </form>
 
             <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
                 <a href="{% url 'wallet_topup_card' %}?amount={{ fee }}"
                    style="font-size:13px;color:var(--c-teal);font-weight:500;">
-                    + Reîncarcă walletul cu {{ fee }} RON
+                    + {% blocktrans with fee=fee %}Reîncarcă walletul cu {{ fee }} RON{% endblocktrans %}
                 </a>
             </div>
         </div>

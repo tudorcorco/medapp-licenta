@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Reîncarcă Wallet{% endblock %}
-{% block page_title %}Reîncarcă Wallet MedApp{% endblock %}
+{% block title %}{% trans "Reîncarcă Wallet" %}{% endblock %}
+{% block page_title %}{% trans "Reîncarcă Wallet MedApp" %}{% endblock %}
 
 {% block content %}
 <div style="max-width:480px;margin:0 auto;">
@@ -15,11 +16,11 @@
             <div style="font-size:18px;font-family:monospace;letter-spacing:3px;margin-bottom:20px;">{{ wallet.card_number }}</div>
             <div style="display:flex;justify-content:space-between;align-items:flex-end;">
                 <div>
-                    <div style="font-size:11px;opacity:.6;margin-bottom:2px;">TITULAR</div>
+                    <div style="font-size:11px;opacity:.6;margin-bottom:2px;">{% trans "TITULAR" %}</div>
                     <div style="font-size:14px;font-weight:600;letter-spacing:.05em;">{{ user.get_full_name|default:user.username|upper }}</div>
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-size:11px;opacity:.6;margin-bottom:2px;">SOLD CURENT</div>
+                    <div style="font-size:11px;opacity:.6;margin-bottom:2px;">{% trans "SOLD CURENT" %}</div>
                     <div style="font-size:22px;font-weight:700;">{{ wallet.balance }} RON</div>
                 </div>
             </div>
@@ -28,8 +29,8 @@
 
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);">
-            <div style="font-size:15px;font-weight:700;color:var(--text);">💳 Reîncarcă prin card bancar</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Sumă de adăugat: <strong id="header-amount">{{ amount }}</strong> RON</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text);">💳 {% trans "Reîncarcă prin card bancar" %}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">{% trans "Sumă de adăugat:" %} <strong id="header-amount">{{ amount }}</strong> RON</div>
         </div>
 
         <div style="padding:24px;" id="checkout-form">
@@ -43,14 +44,14 @@
             </div>
 
             <div style="margin-bottom:16px;">
-                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Sumă personalizată (RON)</label>
+                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">{% trans "Sumă personalizată (RON)" %}</label>
                 <input type="number" id="custom-amount" class="form-input" min="1" max="5000"
                        value="{{ amount|stringformat:'g' }}" style="width:100%;font-size:16px;"
                        oninput="updateAmount(this.value)">
             </div>
 
             <div style="margin-bottom:16px;">
-                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Număr card</label>
+                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">{% trans "Număr card" %}</label>
                 <input type="text" id="card-number" class="form-input"
                        placeholder="1234 5678 9012 3456" maxlength="19"
                        oninput="formatCard(this)" style="width:100%;font-size:16px;letter-spacing:2px;">
@@ -58,7 +59,7 @@
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
                 <div>
-                    <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Dată expirare</label>
+                    <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">{% trans "Dată expirare" %}</label>
                     <input type="text" id="card-expiry" class="form-input"
                            placeholder="MM / YY" maxlength="7"
                            oninput="formatExpiry(this)" style="width:100%;">
@@ -73,7 +74,7 @@
             </div>
 
             <div style="margin-bottom:24px;">
-                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">Nume titular</label>
+                <label style="display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">{% trans "Nume titular" %}</label>
                 <input type="text" id="card-name" class="form-input"
                        placeholder="Ex: ION POPESCU" style="width:100%;text-transform:uppercase;">
             </div>
@@ -82,24 +83,24 @@
 
             <button onclick="processTopup()" type="button"
                     style="width:100%;padding:14px;background:var(--c-teal);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">
-                + Adaugă <span id="btn-amount">{{ amount|stringformat:'g' }}</span> RON în wallet
+                + {% trans "Adaugă" %} <span id="btn-amount">{{ amount|stringformat:'g' }}</span> {% trans "RON în wallet" %}
             </button>
 
             <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <span style="font-size:11px;color:var(--text-muted);">Tranzacție securizată · Datele cardului nu sunt stocate</span>
+                <span style="font-size:11px;color:var(--text-muted);">{% trans "Tranzacție securizată · Datele cardului nu sunt stocate" %}</span>
             </div>
         </div>
 
         <div id="loading-state" style="display:none;text-align:center;padding:48px 24px;">
             <div style="font-size:36px;margin-bottom:12px;">⏳</div>
-            <div style="font-size:16px;font-weight:600;color:var(--text);">Se procesează...</div>
-            <div style="font-size:13px;color:var(--text-muted);margin-top:6px;">Nu închide această pagină</div>
+            <div style="font-size:16px;font-weight:600;color:var(--text);">{% trans "Se procesează..." %}</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-top:6px;">{% trans "Nu închide această pagină" %}</div>
         </div>
 
         <div id="success-state" style="display:none;text-align:center;padding:48px 24px;">
             <div style="font-size:48px;margin-bottom:16px;">✅</div>
-            <div style="font-size:20px;font-weight:700;color:var(--c-success);margin-bottom:8px;">Wallet reîncărcat!</div>
+            <div style="font-size:20px;font-weight:700;color:var(--c-success);margin-bottom:8px;">{% trans "Wallet reîncărcat!" %}</div>
             <div style="font-size:13px;color:var(--text-muted);" id="success-ref"></div>
             <form method="POST" action="{% url 'wallet_topup_card' %}" id="confirm-form">
                 {% csrf_token %}
@@ -113,6 +114,13 @@
 
 <script>
 let currentAmount = parseFloat("{{ amount }}".replace(',', '.')) || 100;
+
+const ERR_AMOUNT  = '{% trans "⚠ Suma trebuie să fie între 1 și 5000 RON." %}';
+const ERR_CARD    = '{% trans "⚠ Număr de card invalid." %}';
+const ERR_EXPIRY  = '{% trans "⚠ Dată expirare invalidă." %}';
+const ERR_CVV     = '{% trans "⚠ CVV invalid." %}';
+const ERR_NAME    = '{% trans "⚠ Introdu numele titularului." %}';
+const TXT_ADDED   = '{% trans "RON adăugați" %}';
 
 function setAmount(val) {
     currentAmount = val;
@@ -146,23 +154,23 @@ function processTopup() {
     const errDiv = document.getElementById('error-msg');
 
     if (currentAmount < 1 || currentAmount > 5000) {
-        errDiv.textContent = '⚠ Suma trebuie să fie între 1 și 5000 RON.';
+        errDiv.textContent = ERR_AMOUNT;
         errDiv.style.display = 'block'; return;
     }
     if (number.length < 16) {
-        errDiv.textContent = '⚠ Număr de card invalid.';
+        errDiv.textContent = ERR_CARD;
         errDiv.style.display = 'block'; return;
     }
     if (expiry.length < 7) {
-        errDiv.textContent = '⚠ Dată expirare invalidă.';
+        errDiv.textContent = ERR_EXPIRY;
         errDiv.style.display = 'block'; return;
     }
     if (cvv.length < 3) {
-        errDiv.textContent = '⚠ CVV invalid.';
+        errDiv.textContent = ERR_CVV;
         errDiv.style.display = 'block'; return;
     }
     if (!name) {
-        errDiv.textContent = '⚠ Introdu numele titularului.';
+        errDiv.textContent = ERR_NAME;
         errDiv.style.display = 'block'; return;
     }
 
@@ -174,7 +182,7 @@ function processTopup() {
         const ref = 'TUP-' + Date.now() + '-' + Math.random().toString(36).substring(2,8).toUpperCase();
         document.getElementById('loading-state').style.display = 'none';
         document.getElementById('success-state').style.display = 'block';
-        document.getElementById('success-ref').textContent = 'Ref: ' + ref + ' · ' + currentAmount + ' RON adăugați';
+        document.getElementById('success-ref').textContent = 'Ref: ' + ref + ' · ' + currentAmount + ' ' + TXT_ADDED;
         document.getElementById('stripe-ref-input').value = ref;
         document.getElementById('amount-input').value = currentAmount;
         setTimeout(function() {

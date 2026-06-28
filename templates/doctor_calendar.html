@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
-{% block title %}Calendar Programări — MedApp{% endblock %}
-{% block page_title %}Calendar Programări{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Calendar Programări" %} — MedApp{% endblock %}
+{% block page_title %}{% trans "Calendar Programări" %}{% endblock %}
 {% block nav_calendar %}active{% endblock %}
 
 {% block extra_css %}
@@ -104,9 +105,9 @@
     <div class="cal-layout">
         <aside class="c-sidebar">
             <div class="c-card">
-                <div class="c-card-label" id="statsLabel">Azi</div>
+                <div class="c-card-label" id="statsLabel">{% trans "Azi" %}</div>
                 <div class="c-count" id="statsCount">{{ today_total }}</div>
-                <div class="c-count-sub" id="statsSub">programări</div>
+                <div class="c-count-sub" id="statsSub">{% trans "programări" %}</div>
                 <div class="donut-wrap">
                     <svg width="70" height="70" viewBox="0 0 70 70">
                         <circle class="donut-track" cx="35" cy="35" r="28" fill="none" stroke-width="7"/>
@@ -131,12 +132,12 @@
                     <button class="c-arr" id="navPrev">&#8249;</button>
                     <span class="c-week-lbl" id="weekLbl"></span>
                     <button class="c-arr" id="navNext">&#8250;</button>
-                    <button class="c-azi-btn" id="aziBtn">Azi</button>
+                    <button class="c-azi-btn" id="aziBtn">{% trans "Azi" %}</button>
                 </div>
                 <div class="view-toggle">
-                    <button class="view-btn" id="btnZi" onclick="setView('day')">Zi</button>
-                    <button class="view-btn v-active" id="btnSapt" onclick="setView('week')">S&#259;pt&#259;m&#226;n&#259;</button>
-                    <button class="view-btn" id="btnLuna" onclick="setView('month')">Lun&#259;</button>
+                    <button class="view-btn" id="btnZi" onclick="setView('day')">{% trans "Zi" %}</button>
+                    <button class="view-btn v-active" id="btnSapt" onclick="setView('week')">{% trans "Săptămână" %}</button>
+                    <button class="view-btn" id="btnLuna" onclick="setView('month')">{% trans "Lună" %}</button>
                 </div>
             </div>
 
@@ -159,10 +160,10 @@
             </div>
 
             <div class="c-legend">
-                <div class="legend-item"><div class="legend-dot" style="background:#0d9488;"></div>Confirmat</div>
-                <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>&#206;n a&#351;teptare</div>
-                <div class="legend-item"><div class="legend-dot" style="background:#64748b;"></div>Finalizat</div>
-                <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>Absent</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#0d9488;"></div>{% trans "Confirmat" %}</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>{% trans "În așteptare" %}</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#64748b;"></div>{% trans "Finalizat" %}</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>{% trans "Absent" %}</div>
             </div>
         </div>
     </div>
@@ -182,11 +183,30 @@
     var DAYS        = [{% for d in days %}'{{ d.date }}'{% if not forloop.last %},{% endif %}{% endfor %}];
     var H_START = 8, H_END = 18, CELL_H = 60;
     var WEEKEND = new Set([DAYS[5], DAYS[6]]);
+    var CAL_LANG = '{{ request.LANGUAGE_CODE }}';
 
-    var RO_MONTHS_SHORT = ['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Nov','Dec'];
-    var RO_MONTHS_FULL  = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
-    var RO_DAYS_FULL    = ['Duminica','Luni','Marti','Miercuri','Joi','Vineri','Sambata'];
-    var STATUS_LABELS   = { confirmed:'Confirmat', pending:'In asteptare', completed:'Finalizat', no_show:'Absent' };
+    var I18N = {
+        ro: {
+            monthsShort: ['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Nov','Dec'],
+            monthsFull:  ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'],
+            daysFull:    ['Duminica','Luni','Marti','Miercuri','Joi','Vineri','Sambata'],
+            status:      { confirmed:'Confirmat', pending:'In asteptare', completed:'Finalizat', no_show:'Absent' },
+            azi: 'Azi', ziSelectata: 'Zi selectata', saptamana: 'Saptamana', luna: 'Luna', programari: 'programari', progScurt: 'prog.'
+        },
+        en: {
+            monthsShort: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+            monthsFull:  ['January','February','March','April','May','June','July','August','September','October','November','December'],
+            daysFull:    ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+            status:      { confirmed:'Confirmed', pending:'Pending', completed:'Completed', no_show:'Absent' },
+            azi: 'Today', ziSelectata: 'Selected day', saptamana: 'Week', luna: 'Month', programari: 'appointments', progScurt: 'appts.'
+        }
+    };
+    var T = I18N[CAL_LANG] || I18N.ro;
+
+    var RO_MONTHS_SHORT = T.monthsShort;
+    var RO_MONTHS_FULL  = T.monthsFull;
+    var RO_DAYS_FULL    = T.daysFull;
+    var STATUS_LABELS   = T.status;
 
     var urlParams   = new URLSearchParams(window.location.search);
     var currentView = urlParams.get('view') || 'week';
@@ -305,7 +325,8 @@
         g.innerHTML = '';
         var ms = new Date(MONTH_START + 'T00:00:00');
         var year = ms.getFullYear(); var month = ms.getMonth();
-        ['Lun','Mar','Mie','Joi','Vin','Sam','Dum'].forEach(function(n) {
+        var dowLabels = CAL_LANG === 'en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : ['Lun','Mar','Mie','Joi','Vin','Sam','Dum'];
+        dowLabels.forEach(function(n) {
             var h = document.createElement('div'); h.className = 'm-hdr'; h.textContent = n; g.appendChild(h);
         });
         var firstDOW = new Date(year, month, 1).getDay();
@@ -329,7 +350,7 @@
                 if (count > 0) {
                     var badge = document.createElement('div');
                     badge.className = 'm-badge';
-                    badge.textContent = count + ' prog.';
+                    badge.textContent = count + ' ' + T.progScurt;
                     el.appendChild(badge);
                 }
                 el.addEventListener('click', function() {
@@ -399,17 +420,17 @@
     function updateStats() {
         var label, count;
         if (currentView==='day') {
-            label = selectedDay===TODAY_STR?'Azi':'Zi selectata';
+            label = selectedDay===TODAY_STR ? T.azi : T.ziSelectata;
             count = APPTS.filter(function(a){ return a.date===selectedDay; }).length;
         } else if (currentView==='week') {
-            label = 'Saptamana'; count = APPTS.length;
+            label = T.saptamana; count = APPTS.length;
         } else {
-            label = 'Luna';
+            label = T.luna;
             count = Object.values(MONTH_DATA).reduce(function(a,b){ return a+b; }, 0);
         }
         document.getElementById('statsLabel').textContent = label;
         document.getElementById('statsCount').textContent = count;
-        document.getElementById('statsSub').textContent   = 'programari';
+        document.getElementById('statsSub').textContent   = T.programari;
     }
 
     function updateWeekLabel() {
@@ -436,7 +457,8 @@
         document.getElementById('miniTitle').textContent = RO_MONTHS_FULL[miniRef.getMonth()]+' '+miniRef.getFullYear();
         var g = document.getElementById('miniGrid');
         g.innerHTML = '';
-        ['D','L','M','M','J','V','S'].forEach(function(n){ var el=document.createElement('div'); el.className='mini-dow'; el.textContent=n; g.appendChild(el); });
+        var miniDow = CAL_LANG === 'en' ? ['S','M','T','W','T','F','S'] : ['D','L','M','M','J','V','S'];
+        miniDow.forEach(function(n){ var el=document.createElement('div'); el.className='mini-dow'; el.textContent=n; g.appendChild(el); });
         var firstDOW = new Date(miniRef.getFullYear(), miniRef.getMonth(), 1).getDay();
         var lastDate = new Date(miniRef.getFullYear(), miniRef.getMonth()+1, 0).getDate();
         for (var i=0; i<firstDOW; i++) { var el=document.createElement('div'); el.className='mini-d empty'; g.appendChild(el); }

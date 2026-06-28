@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Panou Pacient{% endblock %}
+{% block title %}{% trans "Panou Pacient" %}{% endblock %}
 {% block page_title %}{{ greeting }}, {{ user.get_full_name|default:user.username }}!{% endblock %}
 {% block nav_dashboard %}active{% endblock %}
 
@@ -10,24 +11,24 @@
 {% if unrated %}
 <div style="background:var(--c-primary-lt);border:1px solid var(--c-primary);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
     <div style="font-size:13px;color:var(--c-primary);">
-        ⭐ Cum a fost consultația cu <strong>Dr. {{ unrated.doctor.get_full_name|default:unrated.doctor.username }}</strong>? Lasă o evaluare!
+        ⭐ {% blocktrans with name=unrated.doctor.get_full_name %}Cum a fost consultația cu <strong>Dr. {{ name }}</strong>? Lasă o evaluare!{% endblocktrans %}
     </div>
-    <a href="{% url 'rate_doctor' unrated.id %}" class="btn btn-primary btn-sm" style="white-space:nowrap;">Evaluează →</a>
+    <a href="{% url 'rate_doctor' unrated.id %}" class="btn btn-primary btn-sm" style="white-space:nowrap;">{% trans "Evaluează →" %}</a>
 </div>
 {% endif %}
 
 <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
     <div class="stat-card">
         <div class="stat-value">{{ appointments.count }}</div>
-        <div class="stat-label">Programări totale</div>
+        <div class="stat-label">{% trans "Programări totale" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-success);">{{ completed_count }}</div>
-        <div class="stat-label">Finalizate</div>
+        <div class="stat-label">{% trans "Finalizate" %}</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" style="color:var(--c-warning);">{{ pending_count }}</div>
-        <div class="stat-label">În așteptare</div>
+        <div class="stat-label">{% trans "În așteptare" %}</div>
     </div>
     <div class="stat-card" style="cursor:pointer;" onclick="document.getElementById('wallet-card').scrollIntoView({behavior:'smooth'})">
         <div class="stat-value" style="color:var(--c-teal);">{{ wallet.balance }} <span style="font-size:13px;">RON</span></div>
@@ -39,13 +40,13 @@
 
     <div class="card">
         <div class="card-header">
-            <div class="card-title">🏥 Starea mea medicală</div>
-            <div class="card-subtitle">Informații rapide despre sănătatea ta</div>
+            <div class="card-title">🏥 {% trans "Starea mea medicală" %}</div>
+            <div class="card-subtitle">{% trans "Informații rapide despre sănătatea ta" %}</div>
         </div>
         <div class="card-body">
             <div style="margin-bottom:16px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                    <div style="font-size:12px;color:var(--text-muted);">Profil completat</div>
+                    <div style="font-size:12px;color:var(--text-muted);">{% trans "Profil completat" %}</div>
                     <div style="font-size:12px;font-weight:600;color:var(--c-primary);">{{ profile_pct }}%</div>
                 </div>
                 <div style="height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;">
@@ -54,114 +55,159 @@
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
                 <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Grup sanguin</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">{% trans "Grup sanguin" %}</div>
                     <div style="font-size:22px;font-weight:600;color:var(--text);">{{ profile.blood_type|default:"—" }}</div>
                 </div>
                 <div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Ultima vizită</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">{% trans "Ultima vizită" %}</div>
                     <div style="font-size:13px;font-weight:500;color:var(--text);">{% if last_visit %}{{ last_visit.date_time|date:"d M Y" }}{% else %}—{% endif %}</div>
                 </div>
             </div>
             {% if profile.allergies and profile.allergies != "Niciuna" %}
             <div style="padding:10px 12px;background:var(--c-danger-lt);border-radius:var(--radius-md);margin-bottom:14px;">
-                <div style="font-size:11px;color:var(--c-danger);font-weight:600;margin-bottom:3px;">⚠ Alergii înregistrate</div>
+                <div style="font-size:11px;color:var(--c-danger);font-weight:600;margin-bottom:3px;">⚠ {% trans "Alergii înregistrate" %}</div>
                 <div style="font-size:13px;color:var(--c-danger);">{{ profile.allergies }}</div>
             </div>
             {% endif %}
             {% if profile.is_insured %}
             <div style="padding:10px 12px;background:rgba(13,158,138,0.08);border:1px solid rgba(13,158,138,0.3);border-radius:var(--radius-md);margin-bottom:14px;">
-                <div style="font-size:11px;color:var(--c-teal);font-weight:600;margin-bottom:2px;">✓ Asigurat CNAS</div>
+                <div style="font-size:11px;color:var(--c-teal);font-weight:600;margin-bottom:2px;">✓ {% trans "Asigurat CNAS" %}</div>
                 {% if profile.health_card_serial %}<div style="font-size:12px;color:var(--text-muted);">Card: {{ profile.health_card_serial }}</div>{% endif %}
             </div>
             {% endif %}
             {% if next_appt %}
             <div style="padding:12px;background:var(--c-primary-lt);border-radius:var(--radius-md);margin-bottom:14px;">
-                <div style="font-size:11px;color:var(--c-primary);font-weight:600;margin-bottom:6px;">📅 Următoarea programare</div>
+                <div style="font-size:11px;color:var(--c-primary);font-weight:600;margin-bottom:6px;">📅 {% trans "Următoarea programare" %}</div>
                 <div style="font-size:14px;font-weight:500;color:var(--text);">Dr. {{ next_appt.doctor.get_full_name|default:next_appt.doctor.username }}</div>
                 <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">{{ next_appt.date_time|date:"d M Y, H:i" }}</div>
-                {% if next_appt.is_confirmed %}<span class="badge badge-success" style="margin-top:6px;display:inline-block;">✓ Confirmată</span>
-                {% else %}<span class="badge badge-warning" style="margin-top:6px;display:inline-block;">⏳ În așteptare</span>{% endif %}
+                {% if next_appt.is_confirmed %}<span class="badge badge-success" style="margin-top:6px;display:inline-block;">✓ {% trans "Confirmată" %}</span>
+                {% else %}<span class="badge badge-warning" style="margin-top:6px;display:inline-block;">⏳ {% trans "În așteptare" %}</span>{% endif %}
             </div>
             {% endif %}
             <a href="{% url 'doctors_list' %}" class="btn btn-teal btn-full">
-                {% if next_appt %}Programare nouă →{% else %}Caută un medic →{% endif %}
+                {% if next_appt %}{% trans "Programare nouă →" %}{% else %}{% trans "Caută un medic →" %}{% endif %}
             </a>
+
+            {% if prescriptions %}
+            <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+                <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;">💊 {% trans "Ultimele rețete" %}</div>
+                {% for rx in prescriptions %}
+                <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md);margin-bottom:8px;border-left:3px solid var(--c-primary);cursor:pointer;transition:background .15s;"
+                     onmouseenter="this.style.background='var(--hover)'"
+                     onmouseleave="this.style.background='var(--surface-2)'"
+                     onclick="openRxModal({{ rx.id }})">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <div style="font-size:12px;font-weight:500;color:var(--text);">Dr. {{ rx.doctor.get_full_name|default:rx.doctor.username }}</div>
+                        <div style="font-size:11px;color:var(--text-muted);">{{ rx.created_at|date:"d M Y" }} <span style="color:var(--c-primary);">→</span></div>
+                    </div>
+                    {% if rx.diagnosis %}<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{{ rx.diagnosis|truncatechars:60 }}</div>{% endif %}
+                    <div style="font-size:12px;color:var(--text);">{{ rx.medication|truncatechars:60 }}</div>
+                    {% if rx.appointment.is_for_other and rx.appointment.beneficiary_name %}
+                    <div style="font-size:11px;color:var(--c-teal);margin-top:3px;">{% trans "pentru" %} {{ rx.appointment.beneficiary_name }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
     </div>
 
     <div class="card">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-            <div class="card-title">📋 Programările mele</div>
+            <div class="card-title">📋 {% trans "Programările mele" %}</div>
             <div style="display:flex;gap:4px;">
-                <button class="dash-tab active" id="tab-btn-viit" onclick="switchTab('viit')">Viitoare</button>
-                <button class="dash-tab" id="tab-btn-ist" onclick="switchTab('ist')">Istoric</button>
+                <button class="dash-tab active" id="tab-btn-viit" onclick="switchTab('viit')">{% trans "Viitoare" %}</button>
+                <button class="dash-tab" id="tab-btn-ist" onclick="switchTab('ist')">{% trans "Istoric" %}</button>
             </div>
         </div>
         <div class="card-body" style="padding:12px;">
+
             <div id="tab-viit">
-                {% for appt in upcoming %}
-                <div class="appt-item">
-                    <div style="width:42px;height:42px;background:var(--c-primary-lt);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
-                        <div style="font-size:16px;font-weight:600;color:var(--c-primary);line-height:1;">{{ appt.date_time|date:"d" }}</div>
-                        <div style="font-size:9px;color:var(--c-primary);text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
-                    </div>
-                    <div class="appt-info">
-                        <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
-                        <div class="appt-meta">{{ appt.date_time|date:"H:i" }}{% if appt.reason %} · {{ appt.reason|truncatechars:28 }}{% endif %}</div>
-                        {% if appt.payment_method %}
-                        <div style="margin-top:4px;font-size:11px;color:var(--text-muted);">
-                            {% if appt.payment_method == 'CASH' %}💵 Cash
-                            {% elif appt.payment_method == 'CARD_ONLINE' %}💳 Card online
-                            {% elif appt.payment_method == 'CNAS' %}🏥 CNAS
-                            {% elif appt.payment_method == 'WALLET' %}👛 Wallet MedApp
+                <div id="viit-list" style="min-height:60px;">
+                    {% for appt in upcoming %}
+                    <div class="appt-item appt-viit">
+                        <div style="width:42px;height:42px;background:var(--c-primary-lt);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+                            <div style="font-size:16px;font-weight:600;color:var(--c-primary);line-height:1;">{{ appt.date_time|date:"d" }}</div>
+                            <div style="font-size:9px;color:var(--c-primary);text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
+                        </div>
+                        <div class="appt-info">
+                            <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
+                            <div class="appt-meta">{{ appt.date_time|date:"H:i" }}{% if appt.reason %} · {{ appt.reason|truncatechars:28 }}{% endif %}</div>
+                            {% if appt.is_for_other and appt.beneficiary_name %}
+                            <div style="font-size:11px;color:var(--c-teal);margin-top:2px;">👤 {% trans "pentru" %} {{ appt.beneficiary_name }}</div>
+                            {% endif %}
+                            {% if appt.payment_method %}
+                            <div style="margin-top:4px;font-size:11px;color:var(--text-muted);">
+                                {% if appt.payment_method == 'CASH' %}💵 Cash
+                                {% elif appt.payment_method == 'CARD_ONLINE' %}💳 {% trans "Card online" %}
+                                {% elif appt.payment_method == 'CNAS' %}🏥 CNAS
+                                {% elif appt.payment_method == 'WALLET' %}👛 Wallet MedApp
+                                {% endif %}
+                            </div>
                             {% endif %}
                         </div>
-                        {% endif %}
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                            {% if appt.is_confirmed %}
+                                <span class="badge badge-success">✓ {% trans "Confirmat" %}</span>
+                            {% else %}
+                                <span class="badge badge-warning">⏳ {% trans "Așteptare" %}</span>
+                                <form method="POST" action="{% url 'cancel_appointment' appt.id %}" style="margin:0;" onsubmit="return confirm('{% trans "Anulezi această programare?" %}');">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--c-danger);font-size:11px;padding:0;">✕ {% trans "Anulează" %}</button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                        {% if appt.is_confirmed %}
-                            <span class="badge badge-success">✓ Confirmat</span>
-                        {% else %}
-                            <span class="badge badge-warning">⏳ Așteptare</span>
-                            <form method="POST" action="{% url 'cancel_appointment' appt.id %}" style="margin:0;" onsubmit="return confirm('Anulezi această programare?');">
-                                {% csrf_token %}
-                                <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--c-danger);font-size:11px;padding:0;">✕ Anulează</button>
-                            </form>
-                        {% endif %}
+                    {% empty %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-text">{% trans "Nicio programare viitoare." %}</div>
+                        <a href="{% url 'doctors_list' %}" class="btn btn-primary btn-sm" style="margin-top:10px;">{% trans "Caută un medic" %}</a>
                     </div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="empty-state">
-                    <div class="empty-state-icon">📭</div>
-                    <div class="empty-state-text">Nicio programare viitoare.</div>
-                    <a href="{% url 'doctors_list' %}" class="btn btn-primary btn-sm" style="margin-top:10px;">Caută un medic</a>
+                <div id="viit-pagination" style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);margin-top:8px;">
+                    <button onclick="changePg('viit',-1)" id="viit-prev" class="btn btn-ghost btn-sm">← {% trans "Anterior" %}</button>
+                    <span id="viit-info" style="font-size:12px;color:var(--text-muted);"></span>
+                    <button onclick="changePg('viit',1)" id="viit-next" class="btn btn-ghost btn-sm">{% trans "Următor →" %}</button>
                 </div>
-                {% endfor %}
             </div>
+
             <div id="tab-ist" style="display:none;">
-                {% for appt in past %}
-                <div class="appt-item" style="opacity:.8;">
-                    <div style="width:42px;height:42px;background:var(--surface-2);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
-                        <div style="font-size:16px;font-weight:600;color:var(--text-muted);line-height:1;">{{ appt.date_time|date:"d" }}</div>
-                        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
+                <div id="ist-list">
+                    {% for appt in past %}
+                    <div class="appt-item appt-ist" style="opacity:.8;">
+                        <div style="width:42px;height:42px;background:var(--surface-2);border-radius:var(--radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+                            <div style="font-size:16px;font-weight:600;color:var(--text-muted);line-height:1;">{{ appt.date_time|date:"d" }}</div>
+                            <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;">{{ appt.date_time|date:"M" }}</div>
+                        </div>
+                        <div class="appt-info">
+                            <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
+                            <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
+                            {% if appt.is_for_other and appt.beneficiary_name %}
+                            <div style="font-size:11px;color:var(--c-teal);margin-top:2px;">👤 {% trans "pentru" %} {{ appt.beneficiary_name }}</div>
+                            {% endif %}
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                            {% if appt.is_no_show %}<span class="badge badge-danger">✗ {% trans "Neprezentare" %}</span>
+                            {% elif appt.is_completed %}
+                                <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ {% trans "Finalizată" %}</span>
+                                {% if not appt.rating %}<a href="{% url 'rate_doctor' appt.id %}" style="font-size:11px;color:var(--c-primary);">⭐ {% trans "Evaluează" %}</a>
+                                {% else %}<span style="font-size:11px;color:#F5A623;">{{ appt.rating.score }}★</span>{% endif %}
+                            {% else %}<span class="badge badge-success">✓ {% trans "Confirmat" %}</span>{% endif %}
+                        </div>
                     </div>
-                    <div class="appt-info">
-                        <div class="appt-name">Dr. {{ appt.doctor.get_full_name|default:appt.doctor.username }}</div>
-                        <div class="appt-meta">{{ appt.date_time|date:"d M Y, H:i" }}</div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                        {% if appt.is_no_show %}<span class="badge badge-danger">✗ Neprezentare</span>
-                        {% elif appt.is_completed %}
-                            <span class="badge" style="background:var(--surface-2);color:var(--text-muted);">✓ Finalizată</span>
-                            {% if not appt.rating %}<a href="{% url 'rate_doctor' appt.id %}" style="font-size:11px;color:var(--c-primary);">⭐ Evaluează</a>
-                            {% else %}<span style="font-size:11px;color:#F5A623;">{{ appt.rating.score }}★</span>{% endif %}
-                        {% else %}<span class="badge badge-success">✓ Confirmat</span>{% endif %}
-                    </div>
+                    {% empty %}
+                    <div class="empty-state"><div class="empty-state-icon">🗂</div><div class="empty-state-text">{% trans "Niciun istoric." %}</div></div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="empty-state"><div class="empty-state-icon">🗂</div><div class="empty-state-text">Niciun istoric.</div></div>
-                {% endfor %}
+                <div id="ist-pagination" style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);margin-top:8px;">
+                    <button onclick="changePg('ist',-1)" id="ist-prev" class="btn btn-ghost btn-sm">← {% trans "Anterior" %}</button>
+                    <span id="ist-info" style="font-size:12px;color:var(--text-muted);"></span>
+                    <button onclick="changePg('ist',1)" id="ist-next" class="btn btn-ghost btn-sm">{% trans "Următor →" %}</button>
+                </div>
             </div>
+
         </div>
     </div>
 
@@ -176,46 +222,45 @@
                     <div style="font-size:13px;font-family:monospace;letter-spacing:2px;margin-bottom:16px;opacity:.9;">{{ wallet.card_number }}</div>
                     <div style="display:flex;justify-content:space-between;align-items:flex-end;">
                         <div>
-                            <div style="font-size:10px;opacity:.6;margin-bottom:2px;">TITULAR</div>
+                            <div style="font-size:10px;opacity:.6;margin-bottom:2px;">{% trans "TITULAR" %}</div>
                             <div style="font-size:12px;font-weight:600;letter-spacing:.03em;">{{ user.get_full_name|default:user.username|upper }}</div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-size:10px;opacity:.6;margin-bottom:2px;">SOLD</div>
+                            <div style="font-size:10px;opacity:.6;margin-bottom:2px;">{% trans "SOLD" %}</div>
                             <div style="font-size:20px;font-weight:700;">{{ wallet.balance }} RON</div>
                         </div>
                     </div>
                 </div>
             </div>
-
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-                <a href="{% url 'wallet_topup_card' %}?amount=100" class="btn btn-teal btn-sm" style="text-align:center;">+ Reîncarcă</a>
-                <button onclick="copyCard()" class="btn btn-ghost btn-sm" id="copy-btn">📋 Copiază nr.</button>
+                <a href="{% url 'wallet_topup_card' %}?amount=100" class="btn btn-teal btn-sm" style="text-align:center;">+ {% trans "Reîncarcă" %}</a>
+                <button onclick="copyCard()" class="btn btn-ghost btn-sm" id="copy-btn">📋 {% trans "Copiază nr." %}</button>
             </div>
             <div style="font-size:11px;color:var(--text-muted);text-align:center;padding:0 4px;">
-                Partajează numărul cardului cu aparținătorii care plătesc pentru tine.
+                {% trans "Partajează numărul cardului cu aparținătorii care plătesc pentru tine." %}
             </div>
         </div>
 
         {% if payments %}
         <div class="card">
-            <div class="card-header"><div class="card-title">🧾 Ultimele plăți</div></div>
-            <div class="card-body" style="padding:10px 12px;">
+            <div class="card-header"><div class="card-title">🧾 {% trans "Ultimele plăți" %}</div></div>
+            <div class="card-body" style="padding:10px 12px;max-height:280px;overflow-y:auto;">
                 {% for pay in payments %}
                 <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
                         <div style="font-size:12px;font-weight:500;color:var(--text);">
                             {% if pay.method == 'CASH' %}💵 Cash
-                            {% elif pay.method == 'CARD_ONLINE' %}💳 Card online
+                            {% elif pay.method == 'CARD_ONLINE' %}💳 {% trans "Card online" %}
                             {% elif pay.method == 'CNAS' %}🏥 CNAS
                             {% elif pay.method == 'WALLET' %}👛 Wallet
                             {% else %}{{ pay.method }}{% endif %}
                         </div>
                         <div style="font-size:11px;color:var(--text-muted);">{{ pay.created_at|date:"d M Y" }}</div>
                         {% if pay.beneficiary != pay.payer %}
-                        <div style="font-size:11px;color:var(--c-primary);">→ pt. {{ pay.beneficiary.get_full_name|default:pay.beneficiary.username }}</div>
+                        <div style="font-size:11px;color:var(--c-primary);">→ {% trans "pt." %} {{ pay.beneficiary.get_full_name|default:pay.beneficiary.username }}</div>
                         {% endif %}
                         {% if pay.payer != request.user %}
-                        <div style="font-size:11px;color:var(--c-teal);">← plătit de {{ pay.payer.get_full_name|default:pay.payer.username }}</div>
+                        <div style="font-size:11px;color:var(--c-teal);">← {% trans "plătit de" %} {{ pay.payer.get_full_name|default:pay.payer.username }}</div>
                         {% endif %}
                     </div>
                     <div style="font-size:15px;font-weight:700;color:var(--c-primary);">{{ pay.amount }} RON</div>
@@ -227,37 +272,29 @@
 
         <div class="card">
             <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-                <div class="card-title">👤 Profilul meu</div>
-                <a href="{% url 'profile_edit' %}" style="font-size:11px;color:var(--c-primary);">Editează</a>
+                <div class="card-title">👤 {% trans "Profilul meu" %}</div>
+                <a href="{% url 'profile_edit' %}" style="font-size:11px;color:var(--c-primary);">{% trans "Editează" %}</a>
             </div>
             <div class="card-body">
                 <div style="width:44px;height:44px;border-radius:50%;background:var(--c-primary-lt);color:var(--c-primary);font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">{{ user.username|first|upper }}</div>
-                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Nume complet</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{{ user.get_full_name|default:"—" }}</div></div>
-                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Grup sanguin</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.blood_type %}{{ profile.blood_type }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div></div>
-                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Telefon</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.phone %}{{ profile.phone }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div></div>
+                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{% trans "Nume complet" %}</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{{ user.get_full_name|default:"—" }}</div></div>
+                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{% trans "Grup sanguin" %}</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.blood_type %}{{ profile.blood_type }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div></div>
+                <div style="margin-bottom:9px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{% trans "Telefon" %}</div><div style="font-size:13px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.phone %}{{ profile.phone }}{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div></div>
                 <div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">CNP</div><div style="font-size:12px;color:var(--text);background:var(--surface-2);border-radius:var(--radius-md);padding:6px 10px;">{% if profile.cnp %}{{ profile.cnp|slice:":6" }}·······{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}</div></div>
-                <a href="{% url 'gdpr_export' %}" class="btn btn-ghost btn-full" style="font-size:12px;">📥 Descarcă datele mele</a>
+                <a href="{% url 'gdpr_export' %}" class="btn btn-ghost btn-full" style="font-size:12px;">📥 {% trans "Descarcă datele mele" %}</a>
             </div>
         </div>
 
-        {% if prescriptions %}
-        <div class="card">
-            <div class="card-header"><div class="card-title">💊 Ultimele rețete</div></div>
-            <div class="card-body" style="padding:10px 12px;">
-                {% for rx in prescriptions %}
-                <div style="padding:10px;background:var(--surface-2);border-radius:var(--radius-md);margin-bottom:8px;border-left:3px solid var(--c-primary);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <div style="font-size:12px;font-weight:500;color:var(--text);">Dr. {{ rx.doctor.get_full_name|default:rx.doctor.username }}</div>
-                        <div style="font-size:11px;color:var(--text-muted);">{{ rx.created_at|date:"d M Y" }}</div>
-                    </div>
-                    {% if rx.diagnosis %}<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">{{ rx.diagnosis }}</div>{% endif %}
-                    <div style="font-size:12px;color:var(--text);white-space:pre-line;">{{ rx.medication|truncatechars:80 }}</div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
+    </div>
+</div>
 
+<div id="rxModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;align-items:center;justify-content:center;">
+    <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:500px;max-width:92vw;box-shadow:var(--shadow-lg);max-height:85vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-size:16px;font-weight:700;color:var(--text);">💊 {% trans "Rețetă medicală" %}</div>
+            <button onclick="closeRxModal()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-muted);line-height:1;">×</button>
+        </div>
+        <div id="rx-content"></div>
     </div>
 </div>
 
@@ -268,19 +305,125 @@
 </style>
 
 <script>
-function switchTab(t){
-    document.getElementById('tab-viit').style.display=t==='viit'?'block':'none';
-    document.getElementById('tab-ist').style.display=t==='ist'?'block':'none';
-    document.getElementById('tab-btn-viit').className='dash-tab'+(t==='viit'?' active':'');
-    document.getElementById('tab-btn-ist').className='dash-tab'+(t==='ist'?' active':'');
+// JS translations
+const TXT_DOCTOR        = '{% trans "MEDIC" %}';
+const TXT_DATE_ISSUED   = '{% trans "DATA EMITERII" %}';
+const TXT_CONSULT_FROM  = '{% trans "Consultație din" %}';
+const TXT_PRESCRIBED_FOR = '{% trans "Prescrisă pentru:" %}';
+const TXT_DIAGNOSIS     = '{% trans "Diagnostic" %}';
+const TXT_MEDICATION    = '{% trans "Medicație prescrisă" %}';
+const TXT_INSTRUCTIONS  = '{% trans "Instrucțiuni suplimentare" %}';
+const TXT_PAGE          = '{% trans "Pagina" %}';
+const TXT_OF            = '{% trans "din" %}';
+const TXT_COPIED        = '{% trans "✓ Copiat!" %}';
+const TXT_COPY_BTN      = '{% trans "📋 Copiază nr." %}';
+
+var RX_DATA = {
+    {% for rx in prescriptions %}
+    {{ rx.id }}: {
+        doctor: "{{ rx.doctor.get_full_name|default:rx.doctor.username|escapejs }}",
+        date: "{{ rx.created_at|date:'d M Y' }}",
+        apptDate: "{{ rx.appointment.date_time|date:'d M Y, H:i' }}",
+        diagnosis: "{{ rx.diagnosis|default:''|escapejs }}",
+        medication: "{{ rx.medication|default:''|escapejs }}",
+        instructions: "{{ rx.instructions|default:''|escapejs }}",
+        beneficiary: "{% if rx.appointment.is_for_other and rx.appointment.beneficiary_name %}{{ rx.appointment.beneficiary_name|escapejs }}{% endif %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
+function openRxModal(id) {
+    var rx = RX_DATA[id];
+    if (!rx) return;
+    var html = '';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">';
+    html += '<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">' + TXT_DOCTOR + '</div><div style="font-size:13px;font-weight:600;color:var(--text);">Dr. ' + rx.doctor + '</div></div>';
+    html += '<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">' + TXT_DATE_ISSUED + '</div><div style="font-size:13px;font-weight:600;color:var(--text);">' + rx.date + '</div></div>';
+    html += '</div>';
+    if (rx.apptDate) {
+        html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">' + TXT_CONSULT_FROM + ' ' + rx.apptDate + '</div>';
+    }
+    if (rx.beneficiary) {
+        html += '<div style="background:rgba(13,158,138,0.1);border:1px solid rgba(13,158,138,0.3);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--c-teal);">👤 ' + TXT_PRESCRIBED_FOR + ' <strong>' + rx.beneficiary + '</strong></div>';
+    }
+    if (rx.diagnosis) {
+        html += '<div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">' + TXT_DIAGNOSIS + '</div>';
+        html += '<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:12px;font-size:14px;font-weight:600;color:var(--text);">' + rx.diagnosis + '</div></div>';
+    }
+    if (rx.medication) {
+        html += '<div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">' + TXT_MEDICATION + '</div>';
+        html += '<div style="background:var(--surface-2);border-radius:var(--radius-md);padding:14px;font-size:13px;color:var(--text);white-space:pre-line;line-height:1.6;">' + rx.medication + '</div></div>';
+    }
+    if (rx.instructions) {
+        html += '<div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">' + TXT_INSTRUCTIONS + '</div>';
+        html += '<div style="background:rgba(13,148,136,0.08);border:1px solid rgba(13,148,136,0.25);border-radius:var(--radius-md);padding:14px;font-size:13px;color:var(--text);white-space:pre-line;line-height:1.6;">' + rx.instructions + '</div></div>';
+    }
+    document.getElementById('rx-content').innerHTML = html;
+    document.getElementById('rxModal').style.display = 'flex';
 }
+
+function closeRxModal() {
+    document.getElementById('rxModal').style.display = 'none';
+}
+
+document.getElementById('rxModal').addEventListener('click', function(e) {
+    if (e.target === this) closeRxModal();
+});
+
+const PER_PAGE = 5;
+const pages = { viit: 1, ist: 1 };
+
+function initPagination(tab) {
+    const items = Array.from(document.querySelectorAll('.appt-' + tab));
+    items.forEach(function(el) { el.style.display = 'none'; });
+    const totalPages = Math.max(1, Math.ceil(items.length / PER_PAGE));
+    renderPg(tab, items, totalPages);
+}
+
+function renderPg(tab, items, totalPages) {
+    if (!items) items = Array.from(document.querySelectorAll('.appt-' + tab));
+    if (!totalPages) totalPages = Math.max(1, Math.ceil(items.length / PER_PAGE));
+    const pg = pages[tab];
+    const start = (pg - 1) * PER_PAGE;
+    items.forEach(function(el, i) {
+        el.style.display = (i >= start && i < start + PER_PAGE) ? 'flex' : 'none';
+    });
+    const pgBar = document.getElementById(tab + '-pagination');
+    pgBar.style.display = items.length <= PER_PAGE ? 'none' : 'flex';
+    document.getElementById(tab + '-prev').disabled = pg === 1;
+    document.getElementById(tab + '-next').disabled = pg === totalPages;
+    document.getElementById(tab + '-info').textContent = TXT_PAGE + ' ' + pg + ' ' + TXT_OF + ' ' + totalPages;
+}
+
+function changePg(tab, dir) {
+    const items = Array.from(document.querySelectorAll('.appt-' + tab));
+    const totalPages = Math.max(1, Math.ceil(items.length / PER_PAGE));
+    const next = pages[tab] + dir;
+    if (next >= 1 && next <= totalPages) {
+        pages[tab] = next;
+        renderPg(tab, items, totalPages);
+    }
+}
+
+function switchTab(t) {
+    document.getElementById('tab-viit').style.display = t === 'viit' ? 'block' : 'none';
+    document.getElementById('tab-ist').style.display  = t === 'ist'  ? 'block' : 'none';
+    document.getElementById('tab-btn-viit').className = 'dash-tab' + (t === 'viit' ? ' active' : '');
+    document.getElementById('tab-btn-ist').className  = 'dash-tab' + (t === 'ist'  ? ' active' : '');
+}
+
 function copyCard() {
     const cardNumber = '{{ wallet.card_number }}';
-    navigator.clipboard.writeText(cardNumber).then(() => {
+    navigator.clipboard.writeText(cardNumber).then(function() {
         const btn = document.getElementById('copy-btn');
-        btn.textContent = '✓ Copiat!';
-        setTimeout(() => btn.textContent = '📋 Copiază nr.', 2000);
+        btn.textContent = TXT_COPIED;
+        setTimeout(function() { btn.textContent = TXT_COPY_BTN; }, 2000);
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    initPagination('viit');
+    initPagination('ist');
+});
 </script>
 {% endblock %}
