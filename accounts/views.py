@@ -73,6 +73,66 @@ def _get_or_create_wallet(user):
     return wallet
 
 
+def _send_payment_confirmation_email(request, appt, payment, recipient_user):
+    if not recipient_user.email:
+        return
+    lang = request.session.get('lang', 'ro')
+    method_names_ro = {
+        'WALLET': 'Wallet MedApp',
+        'CARD_ONLINE': 'Card online',
+        'CASH': 'Cash',
+        'CNAS': 'Asigurare CNAS',
+    }
+    method_names_en = {
+        'WALLET': 'MedApp Wallet',
+        'CARD_ONLINE': 'Online card',
+        'CASH': 'Cash',
+        'CNAS': 'CNAS Insurance',
+    }
+    method_label = (method_names_en if lang == 'en' else method_names_ro).get(payment.method, payment.method)
+    doctor_name = appt.doctor.get_full_name() or appt.doctor.username
+    recipient_name = recipient_user.get_full_name() or recipient_user.username
+    appt_date_str = appt.date_time.strftime('%d %B %Y, %H:%M')
+
+    if lang == 'en':
+        subject = 'Payment confirmed - MedApp'
+        lines = [
+            'Hello ' + recipient_name + ',',
+            '',
+            'Your payment has been confirmed.',
+            '',
+            'Doctor: Dr. ' + doctor_name,
+            'Date: ' + appt_date_str,
+            'Amount: ' + str(payment.amount) + ' RON',
+            'Method: ' + method_label,
+            'Reference: ' + payment.reference,
+            '',
+            'Thank you for using MedApp!',
+            'The MedApp Team',
+        ]
+    else:
+        subject = 'Plata confirmata - MedApp'
+        lines = [
+            'Buna ' + recipient_name + ',',
+            '',
+            'Plata ta a fost confirmata.',
+            '',
+            'Medic: Dr. ' + doctor_name,
+            'Data: ' + appt_date_str,
+            'Suma: ' + str(payment.amount) + ' RON',
+            'Metoda: ' + method_label,
+            'Referinta: ' + payment.reference,
+            '',
+            'Iti multumim ca folosesti MedApp!',
+            'Echipa MedApp',
+        ]
+
+    message = chr(10).join(lines)
+    _send_email_safe(subject=subject, message=message, recipient=recipient_user.email)
+
+
+
+
 def _get_admin_stats(now):
     total_patients     = CustomUser.objects.filter(is_patient=True).count()
     total_doctors      = CustomUser.objects.filter(is_doctor=True).count()
@@ -113,12 +173,9 @@ def _get_admin_stats(now):
         Appointment.objects.filter(is_no_show=True).count(),
     ]
 
-    top_doctors_raw = CustomUser.objects.filter(is_doctor=True).annotate(
-        appt_count=Count('appointments_as_doctor')
-    ).order_by('-appt_count')[:5]
-
+    all_doctors = CustomUser.objects.filter(is_doctor=True)
     top_doctors = []
-    for doc in top_doctors_raw:
+    for doc in all_doctors:
         try:
             fee   = float(doc.doctor_profile.consultation_fee)
             spec  = doc.doctor_profile.specialization
@@ -131,10 +188,12 @@ def _get_admin_stats(now):
         top_doctors.append({
             'user': doc,
             'specialization': spec,
-            'appt_count': doc.appt_count,
+            'appt_count': completed,
             'revenue': completed * fee,
             'performance_score': score,
         })
+    top_doctors.sort(key=lambda x: x['revenue'], reverse=True)
+    top_doctors = top_doctors[:5]
 
     def _monthly_revenue(months_back):
         labels, data = [], []
@@ -193,11 +252,10 @@ def _get_admin_stats(now):
         'patients_data_1y':    patients_data_1y,
     }
 
-
 def home_view(request):
     today              = timezone.localdate()
     medici             = DoctorProfile.objects.select_related('user').all()
-    medici_activi      = DoctorProfile.objects.filter(is_available=True).count()
+    medici_activi      = DoctorProfile.objects.count()
     consultatii_totale = Appointment.objects.filter(is_completed=True).count()
     programari_azi     = Appointment.objects.filter(created_at__date=today).count()
     return render(request, 'index.html', {
@@ -224,6 +282,40 @@ def login_view(request):
             form = ClinicLoginForm(request, data=request.POST)
             if form.is_valid():
                 user = form.get_user()
+
+                if getattr(user, 'is_patient', False):
+                    import secrets
+                    code = ''.join(secrets.choice('0123456789') for _ in range(6))
+                    TwoFactorCode.objects.create(
+                        user=user,
+                        code=code,
+                        expires_at=timezone.now() + timezone.timedelta(minutes=5),
+                    )
+
+                    request.session['2fa_user_id'] = user.id
+                    request.session['2fa_remember'] = bool(request.POST.get('remember_me'))
+
+                    lang = request.session.get('lang', 'ro')
+                    if lang == 'en':
+                        subject = 'Your MedApp verification code'
+                        message = (
+                            f'Hello {user.get_full_name() or user.username},\n\n'
+                            f'Your verification code is: {code}\n\n'
+                            f'This code expires in 5 minutes. If you did not request this, ignore this email.\n\n'
+                            f'The MedApp Team'
+                        )
+                    else:
+                        subject = 'Codul tău de verificare MedApp'
+                        message = (
+                            f'Bună {user.get_full_name() or user.username},\n\n'
+                            f'Codul tău de verificare este: {code}\n\n'
+                            f'Codul expiră în 5 minute. Dacă nu ai solicitat asta, ignoră acest email.\n\n'
+                            f'Echipa MedApp'
+                        )
+
+                    _send_email_safe(subject=subject, message=message, recipient=user.email)
+                    return redirect('verify_2fa')
+
                 login(request, user)
                 if not request.POST.get('remember_me'):
                     request.session.set_expiry(0)
@@ -254,7 +346,6 @@ def login_view(request):
                         form.add_error(None, 'Date incorecte.')
 
     return render(request, 'login.html', {'form': form, 'ban_error': ban_error})
-
 
 def verify_2fa(request):
     user_id = request.session.get('2fa_user_id')
@@ -443,21 +534,16 @@ def receipt_view(request, appointment_id):
     })
 
 
-@login_required(login_url='login')
-def receipt_pdf(request, appointment_id):
-    if not getattr(request.user, 'is_patient', False):
-        return redirect('home')
-    appt    = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
-    payment = appt.payments.order_by('-created_at').first()
-    if not payment:
-        return redirect('patient_dashboard')
-
+def _build_receipt_pdf_bytes(request, appt, payment):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
+    from .pdf_fonts import register_pdf_fonts
     import io
+
+    register_pdf_fonts()
 
     lang   = request.session.get('lang', 'ro')
     buffer = io.BytesIO()
@@ -467,31 +553,27 @@ def receipt_pdf(request, appointment_id):
 
     styles       = getSampleStyleSheet()
     title_style  = ParagraphStyle('title', parent=styles['Title'], fontSize=22,
+                                  fontName='PdfFont-Bold',
                                   textColor=colors.HexColor('#0B2545'), spaceAfter=4)
     sub_style    = ParagraphStyle('sub', parent=styles['Normal'], fontSize=11,
+                                  fontName='PdfFont',
                                   textColor=colors.HexColor('#8796A5'), spaceAfter=20)
     label_style  = ParagraphStyle('label', parent=styles['Normal'], fontSize=9,
                                   textColor=colors.HexColor('#8796A5'),
-                                  fontName='Helvetica-Bold', spaceBefore=10)
+                                  fontName='PdfFont-Bold', spaceBefore=10)
     value_style  = ParagraphStyle('value', parent=styles['Normal'], fontSize=13,
-                                  textColor=colors.HexColor('#1A2332'), fontName='Helvetica-Bold')
+                                  textColor=colors.HexColor('#1A2332'), fontName='PdfFont-Bold')
     small_style  = ParagraphStyle('small', parent=styles['Normal'], fontSize=10,
+                                  fontName='PdfFont',
                                   textColor=colors.HexColor('#8796A5'))
     footer_style = ParagraphStyle('footer', parent=styles['Normal'], fontSize=9,
+                                  fontName='PdfFont',
                                   textColor=colors.HexColor('#8796A5'), alignment=1)
 
     def clean(text):
         if not text:
             return '-'
-        return (str(text)
-            .replace('\u0103','a').replace('\u0102','A')
-            .replace('\u00e2','a').replace('\u00c2','A')
-            .replace('\u00ee','i').replace('\u00ce','I')
-            .replace('\u0219','s').replace('\u0218','S')
-            .replace('\u021b','t').replace('\u021a','T')
-            .replace('\u015f','s').replace('\u015e','S')
-            .replace('\u0163','t').replace('\u0162','T')
-        )
+        return str(text)
 
     method_labels = {
         'CASH':        t('Cash', lang),
@@ -504,13 +586,18 @@ def receipt_pdf(request, appointment_id):
                          else appt.patient.get_full_name() or appt.patient.username)
 
     story = []
+    is_pending_cash = (payment.method == 'CASH' and payment.status == Payment.Status.PENDING)
+
     story.append(Paragraph('MedApp', title_style))
-    story.append(Paragraph(t('Chitanță digitală de plată', lang), sub_style))
+    if is_pending_cash:
+        story.append(Paragraph(t('Rezervare — de achitat la recepție', lang), sub_style))
+    else:
+        story.append(Paragraph(t('Chitanță digitală de plată', lang), sub_style))
     story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#E2E8F0')))
     story.append(Spacer(1, 0.4*cm))
 
     ref_data = [
-        [Paragraph('NUMAR REFERINTA', label_style), Paragraph('DATA EMITERII', label_style)],
+        [Paragraph(t('NUMĂR REFERINȚĂ', lang).upper(), label_style), Paragraph(t('DATA EMITERII', lang).upper(), label_style)],
         [Paragraph(clean(payment.reference), value_style),
          Paragraph(payment.created_at.strftime('%d %B %Y, %H:%M'), value_style)],
     ]
@@ -549,7 +636,7 @@ def receipt_pdf(request, appointment_id):
     if appt.cnas_code:
         story.append(Spacer(1, 0.4*cm))
         cnas_data = [
-            [Paragraph('COD VALIDARE CNAS', label_style)],
+            [Paragraph(t('COD VALIDARE CNAS', lang).upper(), label_style)],
             [Paragraph(clean(appt.cnas_code), value_style)],
         ]
         cnas_table = Table(cnas_data, colWidths=[17*cm])
@@ -566,12 +653,15 @@ def receipt_pdf(request, appointment_id):
     story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#E2E8F0'), dash=(4,4)))
     story.append(Spacer(1, 0.3*cm))
 
+    total_label = t('De achitat', lang) if is_pending_cash else t('Total achitat', lang)
+    total_color = colors.HexColor('#BA7517') if is_pending_cash else colors.HexColor('#1464A5')
+
     total_data = [
-        [Paragraph(t('Total achitat', lang).upper(), label_style),
+        [Paragraph(total_label.upper(), label_style),
          Paragraph(f'{payment.amount} RON',
                    ParagraphStyle('total', parent=styles['Normal'],
-                                  fontSize=20, fontName='Helvetica-Bold',
-                                  textColor=colors.HexColor('#1464A5'), alignment=2))],
+                                  fontSize=20, fontName='PdfFont-Bold',
+                                  textColor=total_color, alignment=2))],
     ]
     total_table = Table(total_data, colWidths=[9*cm, 8*cm])
     total_table.setStyle(TableStyle([
@@ -582,9 +672,34 @@ def receipt_pdf(request, appointment_id):
     ]))
     story.append(total_table)
 
-    if payment.method == 'CASH':
+    if is_pending_cash:
         story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph(t('Plata cash se efectueaza la receptia clinicii.', lang), small_style))
+        pending_box = Table(
+            [[Paragraph('⏳ ' + t('Plata NU a fost efectuată încă. Prezintă-te la recepție cu acest document.', lang), small_style)]],
+            colWidths=[17*cm],
+        )
+        pending_box.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FEF6E7')),
+            ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#BA7517')),
+            ('TOPPADDING', (0,0), (-1,-1), 8),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(pending_box)
+    elif payment.method == 'CASH':
+        story.append(Spacer(1, 0.3*cm))
+        confirmed_box = Table(
+            [[Paragraph('✅ ' + t('Plata a fost confirmată la recepție.', lang), small_style)]],
+            colWidths=[17*cm],
+        )
+        confirmed_box.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#EEFBF6')),
+            ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#0D9E8A')),
+            ('TOPPADDING', (0,0), (-1,-1), 8),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(confirmed_box)
 
     story.append(Spacer(1, 1*cm))
     story.append(HRFlowable(width='100%', thickness=0.5, color=colors.HexColor('#E2E8F0')))
@@ -596,11 +711,146 @@ def receipt_pdf(request, appointment_id):
 
     doc.build(story)
     buffer.seek(0)
+    return buffer
 
+
+def _send_receipt_email_with_pdf(request, appt, payment, recipient_user):
+    if not recipient_user.email:
+        return
+    lang = request.session.get('lang', 'ro')
+
+    pdf_buffer = _build_receipt_pdf_bytes(request, appt, payment)
+    pdf_bytes = pdf_buffer.getvalue()
+
+    doctor_name = appt.doctor.get_full_name() or appt.doctor.username
+    recipient_name = recipient_user.get_full_name() or recipient_user.username
+    appt_date_str = appt.date_time.strftime('%d %B %Y, %H:%M')
+
+    if lang == 'en':
+        subject = 'Booking received - MedApp'
+        body_lines = [
+            'Hello ' + recipient_name + ',',
+            '',
+            'Your appointment has been registered. Payment will be made in cash at reception.',
+            '',
+            'Doctor: Dr. ' + doctor_name,
+            'Date: ' + appt_date_str,
+            'Amount due: ' + str(payment.amount) + ' RON',
+            'Reference: ' + payment.reference,
+            '',
+            'Please find your receipt attached.',
+            '',
+            'The MedApp Team',
+        ]
+    else:
+        subject = 'Programare inregistrata - MedApp'
+        body_lines = [
+            'Buna ' + recipient_name + ',',
+            '',
+            'Programarea ta a fost inregistrata. Plata se face cash la receptie.',
+            '',
+            'Medic: Dr. ' + doctor_name,
+            'Data: ' + appt_date_str,
+            'Suma de achitat: ' + str(payment.amount) + ' RON',
+            'Referinta: ' + payment.reference,
+            '',
+            'Gasesti chitanta atasata acestui email.',
+            '',
+            'Echipa MedApp',
+        ]
+
+    body = chr(10).join(body_lines)
+
+    from django.core.mail import EmailMessage
+    try:
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[recipient_user.email],
+        )
+        email.attach('chitanta_' + payment.reference + '.pdf', pdf_bytes, 'application/pdf')
+        email.send(fail_silently=True)
+    except Exception as e:
+        print(f"EMAIL ERROR: {e}")
+
+
+def _send_cash_confirmed_email(request, appt, payment, recipient_user):
+    if not recipient_user.email:
+        return
+    lang = request.session.get('lang', 'ro')
+
+    pdf_buffer = _build_receipt_pdf_bytes(request, appt, payment)
+    pdf_bytes = pdf_buffer.getvalue()
+
+    doctor_name = appt.doctor.get_full_name() or appt.doctor.username
+    recipient_name = recipient_user.get_full_name() or recipient_user.username
+    appt_date_str = appt.date_time.strftime('%d %B %Y, %H:%M')
+
+    if lang == 'en':
+        subject = 'Payment confirmed - MedApp'
+        body_lines = [
+            'Hello ' + recipient_name + ',',
+            '',
+            'Your cash payment has been confirmed at reception.',
+            '',
+            'Doctor: Dr. ' + doctor_name,
+            'Date: ' + appt_date_str,
+            'Amount paid: ' + str(payment.amount) + ' RON',
+            'Reference: ' + payment.reference,
+            '',
+            'Please find your receipt attached.',
+            '',
+            'Thank you for using MedApp!',
+            'The MedApp Team',
+        ]
+    else:
+        subject = 'Plata confirmata - MedApp'
+        body_lines = [
+            'Buna ' + recipient_name + ',',
+            '',
+            'Plata ta cash a fost confirmata la receptie.',
+            '',
+            'Medic: Dr. ' + doctor_name,
+            'Data: ' + appt_date_str,
+            'Suma achitata: ' + str(payment.amount) + ' RON',
+            'Referinta: ' + payment.reference,
+            '',
+            'Gasesti chitanta atasata acestui email.',
+            '',
+            'Iti multumim ca folosesti MedApp!',
+            'Echipa MedApp',
+        ]
+
+    body = chr(10).join(body_lines)
+
+    from django.core.mail import EmailMessage
+    try:
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[recipient_user.email],
+        )
+        email.attach('chitanta_' + payment.reference + '.pdf', pdf_bytes, 'application/pdf')
+        email.send(fail_silently=True)
+    except Exception as e:
+        print(f"EMAIL ERROR: {e}")
+
+
+@login_required(login_url='login')
+def receipt_pdf(request, appointment_id):
+    if not getattr(request.user, 'is_patient', False):
+        return redirect('home')
+    appt    = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
+    payment = appt.payments.order_by('-created_at').first()
+    if not payment:
+        return redirect('patient_dashboard')
+
+    buffer = _build_receipt_pdf_bytes(request, appt, payment)
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="chitanta_{payment.reference}.pdf"'
     return response
-
 
 @login_required(login_url='login')
 def wallet_checkout(request, appointment_id):
@@ -639,9 +889,18 @@ def wallet_checkout(request, appointment_id):
             appt.save()
             AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
                          metadata={'method': 'WALLET', 'amount': str(fee)})
+            _send_payment_confirmation_email(request, appt, payment, request.user)
             return redirect('receipt_view', appointment_id=appt.id)
 
         elif pay_type == 'other':
+            fail_key   = f'wallet_card_fails_{request.user.id}'
+            fail_until = f'wallet_card_block_until_{request.user.id}'
+
+            blocked_until = request.session.get(fail_until)
+            if blocked_until and timezone.now().timestamp() < blocked_until:
+                messages.error(request, 'Prea multe încercări greșite. Așteaptă câteva minute înainte să reîncerci.')
+                return redirect('wallet_checkout', appointment_id=appointment_id)
+
             if not other_card:
                 messages.error(request, 'Introdu numarul cardului MedApp al platitorului.')
                 return redirect('wallet_checkout', appointment_id=appointment_id)
@@ -654,6 +913,7 @@ def wallet_checkout(request, appointment_id):
                     messages.error(request, f'Soldul platitorului este insuficient ({other_wallet.balance} RON).')
                     return redirect('wallet_checkout', appointment_id=appointment_id)
 
+                request.session[fail_key] = 0
                 other_wallet.balance -= fee_decimal
                 other_wallet.save()
 
@@ -683,9 +943,18 @@ def wallet_checkout(request, appointment_id):
                 appt.save()
                 AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
                              metadata={'method': 'WALLET_OTHER', 'payer': other_wallet.user.username})
+                _send_payment_confirmation_email(request, appt, payment, request.user)
                 return redirect('receipt_view', appointment_id=appt.id)
 
             except Wallet.DoesNotExist:
+                fails = request.session.get(fail_key, 0) + 1
+                request.session[fail_key] = fails
+                if fails >= 5:
+                    request.session[fail_until] = timezone.now().timestamp() + 300
+                    AuditLog.log(request, AuditLog.Action.LOGIN_FAILED,
+                                 metadata={'context': 'wallet_card_bruteforce', 'user': request.user.username})
+                    messages.error(request, 'Prea multe încercări greșite. Așteaptă 5 minute înainte să reîncerci.')
+                    return redirect('wallet_checkout', appointment_id=appointment_id)
                 messages.error(request, f'Numarul de card "{other_card}" nu exista in sistem.')
                 return redirect('wallet_checkout', appointment_id=appointment_id)
 
@@ -693,7 +962,6 @@ def wallet_checkout(request, appointment_id):
         'appointment': appt, 'fee': fee,
         'fee_decimal': fee_decimal, 'my_wallet': my_wallet,
     })
-
 
 @login_required(login_url='login')
 def wallet_topup(request):
@@ -803,7 +1071,10 @@ def gdpr_export(request):
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
+    from .pdf_fonts import register_pdf_fonts
     import io
+
+    register_pdf_fonts()
 
     lang          = request.session.get('lang', 'ro')
     user          = request.user
@@ -814,15 +1085,7 @@ def gdpr_export(request):
     def clean(text):
         if not text:
             return '-'
-        return (str(text)
-            .replace('\u0103','a').replace('\u0102','A')
-            .replace('\u00e2','a').replace('\u00c2','A')
-            .replace('\u00ee','i').replace('\u00ce','I')
-            .replace('\u0219','s').replace('\u0218','S')
-            .replace('\u021b','t').replace('\u021a','T')
-            .replace('\u015f','s').replace('\u015e','S')
-            .replace('\u0163','t').replace('\u0162','T')
-        )
+        return str(text)
 
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4,
@@ -830,19 +1093,20 @@ def gdpr_export(request):
                             topMargin=2*cm, bottomMargin=2*cm)
 
     styles      = getSampleStyleSheet()
-    title_style = ParagraphStyle('title', parent=styles['Title'], fontSize=20, spaceAfter=6)
+    title_style = ParagraphStyle('title', parent=styles['Title'], fontSize=20,
+                                 fontName='PdfFont-Bold', spaceAfter=6)
     h2_style    = ParagraphStyle('h2', parent=styles['Heading2'], fontSize=13,
+                                 fontName='PdfFont-Bold',
                                  spaceBefore=16, spaceAfter=6,
                                  textColor=colors.HexColor('#1B5FAD'))
-    normal = styles['Normal']
-    normal.fontSize = 10
+    normal = ParagraphStyle('normal', parent=styles['Normal'], fontName='PdfFont', fontSize=10)
 
     def make_table(data, col_widths):
         t_obj = Table(data, colWidths=col_widths)
         t_obj.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#EBF4FF')),
-            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-            ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+            ('FONTNAME', (0,0), (-1,-1), 'PdfFont'),
+            ('FONTNAME', (0,0), (0,-1), 'PdfFont-Bold'),
             ('FONTSIZE', (0,0), (-1,-1), 10),
             ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.white, colors.HexColor('#F7FAFC')]),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
@@ -857,8 +1121,8 @@ def gdpr_export(request):
         t_obj.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1B5FAD')),
             ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTNAME', (0,0), (-1,-1), 'PdfFont'),
+            ('FONTNAME', (0,0), (-1,0), 'PdfFont-Bold'),
             ('FONTSIZE', (0,0), (-1,-1), 10),
             ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#F7FAFC')]),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
@@ -934,7 +1198,6 @@ def gdpr_export(request):
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="datele_mele_medapp_{timezone.now().strftime("%Y%m%d")}.pdf"'
     return response
-
 
 @login_required(login_url='login')
 def profile_edit(request):
@@ -1119,7 +1382,7 @@ def new_appointment(request, doctor_id):
                     patient_wallet.save()
                     appt.amount_paid = fee_decimal
                     appt.save()
-                    Payment.objects.create(
+                    new_payment = Payment.objects.create(
                         appointment=appt, payer=request.user, beneficiary=request.user,
                         amount=fee_decimal, method=Payment.Method.WALLET,
                         status=Payment.Status.COMPLETED, note='Plata wallet la creare programare',
@@ -1135,18 +1398,39 @@ def new_appointment(request, doctor_id):
                             appointment=appt,
                         )
                         AuditLog.log(request, AuditLog.Action.CASHBACK_CREDIT, {'amount': str(cashback_amount), 'appointment_id': appt.id})
+                _send_payment_confirmation_email(request, appt, new_payment, request.user)
 
             elif payment_method == 'CARD_ONLINE':
                 stripe_ref = f'PI-{uuid.uuid4().hex[:16].upper()}'
                 appt.amount_paid = fee_decimal
                 appt.save()
-                Payment.objects.create(
+                new_payment = Payment.objects.create(
                     appointment=appt, payer=request.user, beneficiary=request.user,
                     amount=fee_decimal, method=Payment.Method.ONLINE,
                     status=Payment.Status.COMPLETED, stripe_id=stripe_ref,
                 )
+                _send_payment_confirmation_email(request, appt, new_payment, request.user)
 
             elif payment_method == 'CNAS':
+                cnas_error = None
+                if not patient_profile or not patient_profile.is_insured:
+                    cnas_error = 'Nu esti marcat ca asigurat CNAS. Actualizeaza-ti profilul inainte de a folosi aceasta metoda de plata.'
+                elif not patient_profile.health_card_serial:
+                    cnas_error = 'Nu ai completat seria cardului de sanatate in profil. Completeaz-o inainte de a folosi CNAS.'
+                elif not appt.referral_serial:
+                    cnas_error = 'Introdu seria biletului de trimitere pentru decontare CNAS.'
+
+                if cnas_error:
+                    messages.error(request, cnas_error)
+                    return render(request, 'new_appointment.html', {
+                        'form': form, 'selected_doctor': doctor,
+                        'patient_profile': patient_profile,
+                        'patient_wallet': patient_wallet,
+                        'doctor_fee': doctor_fee,
+                        'booked_slots': json.dumps(booked_slots),
+                        'notif_list': [], 'notif_count': 0,
+                    })
+
                 appt.save()
                 Payment.objects.create(
                     appointment=appt, payer=request.user, beneficiary=request.user,
@@ -1156,11 +1440,12 @@ def new_appointment(request, doctor_id):
 
             else:
                 appt.save()
-                Payment.objects.create(
+                new_payment = Payment.objects.create(
                     appointment=appt, payer=request.user, beneficiary=request.user,
                     amount=fee_decimal, method=Payment.Method.CASH,
                     status=Payment.Status.PENDING, note='De achitat la receptie',
                 )
+                _send_receipt_email_with_pdf(request, appt, new_payment, request.user)
 
             AuditLog.log(request, AuditLog.Action.APPT_CREATED, metadata={
                 'doctor': doctor.username, 'payment': payment_method, 'for_other': is_for_other,
@@ -1194,7 +1479,7 @@ def card_checkout(request, appointment_id):
 
     if request.method == 'POST' and request.POST.get('confirmed') == '1':
         stripe_ref = request.POST.get('stripe_ref', '')
-        Payment.objects.create(
+        new_payment = Payment.objects.create(
             appointment=appt, payer=request.user, beneficiary=request.user,
             amount=fee, method=Payment.Method.ONLINE,
             status=Payment.Status.COMPLETED, stripe_id=stripe_ref,
@@ -1204,6 +1489,7 @@ def card_checkout(request, appointment_id):
         appt.save()
         AuditLog.log(request, AuditLog.Action.PAYMENT_CREATED,
                      metadata={'method': 'CARD_ONLINE', 'amount': fee, 'ref': stripe_ref})
+        _send_payment_confirmation_email(request, appt, new_payment, request.user)
         return redirect('receipt_view', appointment_id=appt.id)
 
     return render(request, 'card_checkout.html', {'appointment': appt, 'fee': fee})
@@ -1264,13 +1550,23 @@ def doctor_profile_edit(request):
         request.user.last_name  = request.POST.get('last_name', '').strip()
         request.user.email      = request.POST.get('email', '').strip()
         request.user.save()
-        profile.specialization   = request.POST.get('specialization', '').strip()
-        profile.consultation_fee = request.POST.get('consultation_fee', 0)
-        profile.license_number   = request.POST.get('license_number', '').strip()
-        profile.bio              = request.POST.get('bio', '').strip()
-        profile.is_available     = 'is_available' in request.POST
+
+        profile.specialization = request.POST.get('specialization', '').strip()
+
+        fee_raw = request.POST.get('consultation_fee', '').strip().replace(',', '.')
+        if fee_raw:
+            try:
+                profile.consultation_fee = Decimal(fee_raw)
+            except Exception:
+                pass
+
+        profile.license_number = request.POST.get('license_number', '').strip()
+        profile.bio             = request.POST.get('bio', '').strip()
+        profile.is_available    = 'is_available' in request.POST
+
         if request.FILES.get('avatar'):
             profile.avatar = request.FILES['avatar']
+
         profile.save()
         AuditLog.log(request, AuditLog.Action.PROFILE_UPDATED)
         messages.success(request, 'Profilul a fost actualizat!')
@@ -1471,6 +1767,8 @@ def confirm_cash_payment(request, payment_id):
             'amount': str(payment.amount),
             'confirmed_by': request.user.username,
         })
+        appt = payment.appointment
+        _send_cash_confirmed_email(request, appt, payment, appt.patient)
         messages.success(request, 'Plata cash confirmata pentru ' + payment.appointment.get_patient_display_name() + '.')
     return redirect('admin_reports')
 
@@ -1541,7 +1839,7 @@ def doctor_calendar(request):
     if not request.user.is_doctor:
         return redirect('home')
 
-    today = date.today()
+    today = timezone.localdate()
 
     week_param = request.GET.get('week')
     if week_param:
@@ -1599,12 +1897,14 @@ def doctor_calendar(request):
         else:
             status = 'pending'
 
+        local_dt = timezone.localtime(appt.date_time)
+
         serialized.append({
             'id':             appt.id,
             'patient_name':   patient_name,
-            'date':           appt.date_time.date().isoformat(),
-            'hour':           appt.date_time.hour,
-            'minute':         appt.date_time.minute,
+            'date':           local_dt.date().isoformat(),
+            'hour':           local_dt.hour,
+            'minute':         local_dt.minute,
             'status':         status,
             'reason':         getattr(appt, 'reason', '') or '',
             'payment_method': getattr(appt, 'payment_method', '') or '',
@@ -1636,7 +1936,6 @@ def doctor_calendar(request):
         'month_start':        month_start.isoformat(),
     }
     return render(request, 'doctor_calendar.html', context)
-
 
 @login_required(login_url='login')
 def beneficiary_view(request, appointment_id):

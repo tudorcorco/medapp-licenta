@@ -1,7 +1,7 @@
 {% load static %}
 {% load i18n %}
 <!DOCTYPE html>
-<html lang="{% get_current_language as LANGUAGE_CODE %}{{ LANGUAGE_CODE }}" data-theme="light">
+<html lang="ro" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,7 +51,7 @@
         </form>
 
         <div style="background:var(--surface-2);border-radius:10px;padding:12px 16px;margin-top:16px;font-size:12px;color:var(--text-muted);text-align:center;">
-            🔒 {% blocktrans %}Codul este valabil <strong style="color:var(--text);">5 minute</strong>.{% endblocktrans %}<br>
+            🔒 {% trans "Codul este valabil 5 minute." %}<br>
             {% trans "Dacă nu ai primit emailul, verifică folderul Spam." %}
         </div>
 
@@ -60,7 +60,7 @@
         </div>
 
         <div style="text-align:center;margin-top:16px;">
-            <button onclick="toggleTheme()" class="theme-toggle" style="margin:0 auto;" id="theme-toggle-btn" aria-label="{% trans "Comută tema" %}">🌙</button>
+            <button onclick="toggleTheme()" class="theme-toggle" style="margin:0 auto;" id="theme-toggle-btn" aria-label="Toggle theme">🌙</button>
         </div>
     </div>
 </div>
