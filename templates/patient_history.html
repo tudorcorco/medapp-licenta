@@ -79,9 +79,9 @@
                         <div class="stat-label">{% trans "Rețete emise" %}</div>
                     </div>
                 </div>
-                {% if appointments.first %}
+                {% if last_visit %}
                     <div style="margin-top:12px;padding:8px 10px;background:var(--surface-2);border-radius:var(--radius-md);font-size:12px;color:var(--text-muted);">
-                        🕐 {% trans "Ultima vizită:" %} <strong>{{ appointments.first.date_time|date:"d M Y" }}</strong>
+                        🕐 {% trans "Ultima vizită:" %} <strong>{{ last_visit.date_time|date:"d M Y" }}</strong>
                     </div>
                 {% endif %}
             </div>

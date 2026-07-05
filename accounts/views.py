@@ -255,7 +255,7 @@ def _get_admin_stats(now):
 def home_view(request):
     today              = timezone.localdate()
     medici             = DoctorProfile.objects.select_related('user').all()
-    medici_activi      = DoctorProfile.objects.count()
+    medici_activi      = DoctorProfile.objects.filter(is_available=True).count()
     consultatii_totale = Appointment.objects.filter(is_completed=True).count()
     programari_azi     = Appointment.objects.filter(created_at__date=today).count()
     return render(request, 'index.html', {
@@ -439,7 +439,7 @@ def patient_dashboard(request):
     all_appts       = Appointment.objects.filter(patient=request.user).select_related('doctor')
     upcoming        = all_appts.filter(date_time__gte=now, is_completed=False, is_no_show=False).order_by('date_time')
     past            = (all_appts.filter(date_time__lt=now) | all_appts.filter(is_completed=True)).distinct().order_by('-date_time')
-    last_visit      = all_appts.filter(is_completed=True).order_by('-date_time').first()
+    last_visit      = all_appts.filter(is_completed=True, date_time__lte=now).order_by('-date_time').first()
     next_appt       = upcoming.first()
     confirmed_count = all_appts.filter(is_confirmed=True).count()
     pending_count   = all_appts.filter(is_confirmed=False, is_completed=False, is_no_show=False).count()
@@ -1673,8 +1673,19 @@ def delete_appointment(request, appointment_id):
     if not getattr(request.user, 'is_doctor', False):
         return redirect('home')
     appt = get_object_or_404(Appointment, id=appointment_id, doctor=request.user)
-    AuditLog.log(request, AuditLog.Action.APPT_DELETED, metadata={'patient': appt.patient.username})
-    appt.delete()
+
+    from django.db import transaction as db_transaction
+    with db_transaction.atomic():
+        wallet_payments = appt.payments.filter(method=Payment.Method.WALLET, status=Payment.Status.COMPLETED)
+        for pay in wallet_payments:
+            payer_wallet = _get_or_create_wallet(pay.payer)
+            payer_wallet.balance += pay.amount
+            payer_wallet.save()
+            AuditLog.log(request, AuditLog.Action.WALLET_TOPUP,
+                         metadata={'reason': 'refund_appointment_deleted', 'appointment_id': appt.id, 'amount': str(pay.amount)})
+        AuditLog.log(request, AuditLog.Action.APPT_DELETED, metadata={'patient': appt.patient.username})
+        appt.delete()
+
     messages.info(request, 'Programarea a fost stearsa.')
     return redirect('doctor_dashboard')
 
@@ -1693,10 +1704,15 @@ def patient_history(request, patient_id):
         patient_profile = None
     appointments  = Appointment.objects.filter(doctor=request.user, patient=patient).order_by('-date_time')
     prescriptions = Prescription.objects.filter(doctor=request.user, patient=patient).order_by('-created_at')
+    last_visit = Appointment.objects.filter(
+        doctor=request.user, patient=patient,
+        is_completed=True, date_time__lte=timezone.now(),
+    ).order_by('-date_time').first()
     AuditLog.log(request, AuditLog.Action.PATIENT_RECORD_VIEWED, metadata={'patient_username': patient.username})
     return render(request, 'patient_history.html', {
         'patient': patient, 'patient_profile': patient_profile,
         'appointments': appointments, 'prescriptions': prescriptions,
+        'last_visit': last_visit,
     })
 
 

@@ -58,9 +58,14 @@ class AppointmentForm(forms.ModelForm):
         model   = Appointment
         fields  = ['date_time', 'reason']
         widgets = {
-            'date_time': forms.DateTimeInput(attrs={**FA, 'type': 'datetime-local'}),
+            'date_time': forms.DateTimeInput(attrs={**FA, 'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
             'reason':    forms.Textarea(attrs={**FA, 'rows': 3, 'placeholder': 'Motivul vizitei...'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['date_time'].input_formats = ['%Y-%m-%dT%H:%M']
+
 
 class PatientUserForm(forms.ModelForm):
     class Meta:
@@ -78,17 +83,21 @@ class PatientProfileForm(forms.ModelForm):
         model   = PatientProfile
         fields  = ['phone', 'cnp', 'birth_date', 'blood_type', 'allergies', 'is_insured', 'health_card_serial']
         widgets = {
-            'phone':             forms.TextInput(attrs={**FA, 'placeholder': '07xx xxx xxx'}),
-            'cnp':               forms.TextInput(attrs={**FA, 'placeholder': '13 cifre', 'maxlength': '13'}),
-            'birth_date':        forms.DateInput(attrs={**FA, 'type': 'date'}),
-            'blood_type':        forms.TextInput(attrs={**FA, 'placeholder': 'Ex: A+, O-, AB+'}),
-            'allergies':         forms.Textarea(attrs={**FA, 'rows': 3, 'placeholder': 'Ex: penicilină, latex...'}),
-            'health_card_serial':forms.TextInput(attrs={**FA, 'placeholder': 'Ex: 0004-1234-5678-9012'}),
+            'phone':              forms.TextInput(attrs={**FA, 'placeholder': '07xx xxx xxx'}),
+            'cnp':                forms.TextInput(attrs={**FA, 'placeholder': '13 cifre', 'maxlength': '13'}),
+            'birth_date':         forms.DateInput(attrs={**FA, 'type': 'date'}, format='%Y-%m-%d'),
+            'blood_type':         forms.TextInput(attrs={**FA, 'placeholder': 'Ex: A+, O-, AB+'}),
+            'allergies':          forms.Textarea(attrs={**FA, 'rows': 3, 'placeholder': 'Ex: penicilină, latex...'}),
+            'health_card_serial': forms.TextInput(attrs={**FA, 'placeholder': 'Ex: 0004-1234-5678-9012'}),
         }
         labels = {
             'is_insured':         'Asigurat CNAS',
             'health_card_serial': 'Serie card de sănătate',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['birth_date'].input_formats = ['%Y-%m-%d']
 
 
 class PrescriptionForm(forms.ModelForm):
